@@ -5,6 +5,7 @@ on:
   pull_request:
 
 env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # errexit and pipefail set by the runner
   SHELLOPTS: nounset
 
@@ -20,6 +21,9 @@ jobs:
 
       - name: Nix Setup
         uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            accept-flake-config = true
 
       - name: Cachix Setup
         uses: cachix/cachix-action@v16
