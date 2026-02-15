@@ -74,7 +74,7 @@ In your `flake.nix` outputs:
 ```nix
   outputs =
     inputs:
-    inputs.flake-utils.lib.eachDefaultSystem (
+    inputs.flake-utils.lib.eachSystem (import inputs.systems) (
       system:
       let
         pkgs = inputs.nixpkgs.legacyPackages.${system};
@@ -86,9 +86,9 @@ In your `flake.nix` outputs:
           # Automatically include buildInputs from your main package
           drv = inputs.self.packages.${system}.default;
           # Or add extra packages manually
-          contents = [
-            pkgs.jq
-            pkgs.ripgrep
+          contents = with pkgs; [
+            jq
+            ripgrep
           ];
         };
       }
