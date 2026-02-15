@@ -20,15 +20,17 @@
 
   outputs =
     inputs:
-    {
+    let
       lib = import ./lib.nix;
+    in
+    {
+      inherit lib;
     }
     // (inputs.flake-utils.lib.eachSystem (import inputs.systems) (
       system:
       let
 
         pkgs = inputs.nixpkgs.legacyPackages.${system};
-        lib = import ./lib.nix;
 
         nixZeroSetupContainer = lib.mkBuildContainer {
           inherit pkgs;

@@ -1,0 +1,27 @@
+name: Nix Zero Setup
+description: Build and push pre-baked Nix environments to GHCR
+
+inputs:
+  github_token:
+    description: GitHub Token for GHCR authentication
+    required: true
+  container_attr:
+    description: Flake attribute of the container image to build
+    default: .#default
+
+runs:
+  using: composite
+  steps:
+    - name: Nix Setup
+      uses: cachix/install-nix-action@v31
+      with:
+        extra_nix_config: |
+          accept-flake-config = true
+
+    - name: Build and Push
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: |
+        nix run "${{ github.action_path }}#github-action" -- \
+          "${{ inputs.container_attr }}"

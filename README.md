@@ -102,7 +102,7 @@ In your `flake.nix` outputs:
 ### 3. Setup the Push Workflow
 
 Create a `.github/workflows/container.yml` to update the container when dependencies
-change:
+change. You can use our provided GitHub Action to simplify this:
 
 ```yaml
 name: Build Container
@@ -122,10 +122,10 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
-      - uses: cachix/install-nix-action@v31
-      - run: nix run .#github-action
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: your-org/nix-zero-setup@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          container_attr: .#build-container
 ```
 
 ### 4. Use in Your Main Workflow
