@@ -8,8 +8,6 @@ pkgs.lib.extend (
 
     mkBuildContainer =
       {
-        # TODO: follow inputsFrom pattern in
-        # <nixpkgs/pkgs/build-support/mkshell/default.nix>
         drv ? null,
         name ? "${drv.pname or drv.name or "unnamed"}-build-container",
         nix ? pkgs.nixVersions.latest,

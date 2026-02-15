@@ -41,7 +41,11 @@
         packages = {
           inherit nixZeroSetupContainer;
           default = nixZeroSetupContainer;
-          example = lib.mkBuildContainer pkgs.spotify;
+          example = lib.mkBuildContainer { drv = pkgs.hello; };
+        };
+
+        checks = {
+          unit = import ./tests/unit.nix { inherit pkgs; };
         };
 
         apps = {
