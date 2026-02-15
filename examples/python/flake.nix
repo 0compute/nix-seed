@@ -32,13 +32,15 @@
         );
       in
       {
-        packages.default = pythonEnv;
+        packages = {
+          default = pythonEnv;
 
-        packages.build-container = inputs.nix-zero-setup.lib.mkBuildContainer {
-          inherit pkgs;
-          name = "ml-build-env";
-          inputsFrom = [ pythonEnv ];
-          contents = with pkgs; [ hatch ];
+          build-container = inputs.nix-zero-setup.lib.mkBuildContainer {
+            inherit pkgs;
+            name = "ml-build-env";
+            inputsFrom = [ pythonEnv ];
+            contents = with pkgs; [ hatch ];
+          };
         };
       }
     );
