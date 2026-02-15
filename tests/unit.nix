@@ -1,36 +1,41 @@
 { pkgs }:
 let
   inherit (pkgs) lib;
-  mockPkgs = pkgs // {
-    dockerTools = pkgs.dockerTools // {
-      buildLayeredImageWithNixDb = args: args;
-    };
-  };
-  nixZeroSetupLib = import ../lib.nix mockPkgs;
+  nixZeroSetupLib = import ../lib.nix;
 
   results = lib.runTests {
     testEnvConfig = {
       expr = lib.sort (a: b: a < b) (
         (nixZeroSetupLib.mkBuildContainer {
+          inherit pkgs;
           drv = pkgs.hello;
           nixConf = "extra-features = nix-command";
         }).config.Env
       );
       expected = lib.sort (a: b: a < b) [
         "USER=root"
-        "NIX_CONFIG=sandbox = false\nextra-features = nix-command\n"
+        "NIX_CONFIG=sandbox = false\nbuild-users-group =\nextra-features = nix-command\n"
         "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+        "PATH=/bin:/usr/bin:/sbin:/usr/sbin"
       ];
     };
 
     testDefaultName = {
-      expr = (nixZeroSetupLib.mkBuildContainer { drv = pkgs.hello; }).name;
-      expected = "hello-build-container";
+      expr =
+        (nixZeroSetupLib.mkBuildContainer {
+          inherit pkgs;
+          drv = pkgs.hello;
+        }).name;
+      expected = "hello-build-container.tar.gz";
     };
 
     testCustomName = {
-      expr = (nixZeroSetupLib.mkBuildContainer { name = "custom"; }).name;
-      expected = "custom";
+      expr =
+        (nixZeroSetupLib.mkBuildContainer {
+          inherit pkgs;
+          name = "custom";
+        }).name;
+      expected = "custom.tar.gz";
     };
 
     testContentsMerging = {
@@ -42,7 +47,7 @@ let
             buildInputs = [ pkgs.hello ];
           };
           container = nixZeroSetupLib.mkBuildContainer {
-            inherit drv;
+            inherit pkgs drv;
             contents = [ pkgs.jq ];
           };
         in
@@ -61,4 +66,3 @@ if results == [ ] then
   pkgs.runCommand "unit-tests" { } "touch $out"
 else
   throw (builtins.toJSON results)
-

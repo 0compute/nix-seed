@@ -34,7 +34,8 @@
       {
         packages.default = pythonEnv;
 
-        packages.build-container = (inputs.nix-zero-setup.lib pkgs).mkBuildContainer {
+        packages.build-container = inputs.nix-zero-setup.lib.mkBuildContainer {
+          inherit pkgs;
           name = "ml-build-env";
           contents = with pkgs; [
             pythonEnv

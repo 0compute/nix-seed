@@ -28,9 +28,10 @@
       let
 
         pkgs = inputs.nixpkgs.legacyPackages.${system};
-        lib = import ./lib.nix pkgs;
+        lib = import ./lib.nix;
 
         nixZeroSetupContainer = lib.mkBuildContainer {
+          inherit pkgs;
           name = "nix-zero-setup";
           tag = with inputs; self.rev or self.dirtyRev or null;
         };
@@ -41,7 +42,10 @@
         packages = {
           inherit nixZeroSetupContainer;
           default = nixZeroSetupContainer;
-          example = lib.mkBuildContainer { drv = pkgs.hello; };
+          example = lib.mkBuildContainer {
+            inherit pkgs;
+            drv = pkgs.hello;
+          };
         };
 
         checks = {

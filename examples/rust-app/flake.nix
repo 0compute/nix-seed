@@ -30,7 +30,8 @@
           cargoLock.lockFile = ./Cargo.lock;
         };
 
-        packages.build-container = (inputs.nix-zero-setup.lib pkgs).mkBuildContainer {
+        packages.build-container = inputs.nix-zero-setup.lib.mkBuildContainer {
+          inherit pkgs;
           name = "rust-build-env";
           contents = with pkgs; [
             cargo
