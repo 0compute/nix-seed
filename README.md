@@ -58,6 +58,11 @@ Add this flake as an input:
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    systems.url = "github:nix-systems/default";
+    flake-utils = {
+      url = "github:numtide/flake-utils";
+      inputs.systems.follows = "systems";
+    };
     nix-zero-setup = {
       url = "github:your-org/nix-zero-setup";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -78,11 +83,9 @@ In your `flake.nix` outputs:
       system:
       let
         pkgs = inputs.nixpkgs.legacyPackages.${system};
-        lib = inputs.nix-zero-setup.lib pkgs;
       in
       {
-        packages.build-container = lib.mkBuildContainer {
-          name = "my-project-build";
+        packages.build-container = (inputs.nix-zero-setup.lib pkgs).mkBuildContainer {
           # Automatically include buildInputs from your main package
           drv = inputs.self.packages.${system}.default;
           # Or add extra packages manually
@@ -117,9 +120,9 @@ jobs:
       packages: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: cachix/install-nix-action@v25
-      - run: nix run .#apps.x86_64-linux.github-action
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+      - run: nix run .#github-action
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -140,7 +143,7 @@ jobs:
     # Run directly inside the pre-baked environment
     container: ghcr.io/your-org/my-project-build:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: nix build
       - run: nix flake check
 ```
