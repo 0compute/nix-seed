@@ -5,7 +5,9 @@
       inputsFrom ? [ ],
       name ? (
         if inputsFrom != [ ] then
-          "${(pkgs.lib.head inputsFrom).pname or (pkgs.lib.head inputsFrom).name or "unnamed"}-build-container"
+          "${
+            (pkgs.lib.head inputsFrom).pname or (pkgs.lib.head inputsFrom).name or "unnamed"
+          }-build-container"
         else
           "nix-zero-setup-env"
       ),
@@ -16,11 +18,9 @@
       ...
     }@args:
     let
-      inherit (pkgs) lib;
-
-      extractedInputs = lib.concatMap (
+      extractedInputs = pkgs.lib.concatMap (
         d:
-        lib.concatMap (attr: d.${attr} or [ ]) [
+        pkgs.lib.concatMap (attr: d.${attr} or [ ]) [
           "buildInputs"
           "nativeBuildInputs"
           "propagatedBuildInputs"
@@ -28,20 +28,21 @@
         ]
       ) inputsFrom;
 
-      contents =
-        [ nix ]
-        ++ (with pkgs; [
-          bashInteractive # for debug, only adds 4MB
-          cacert # for fetchers
-          coreutils # basic unix tools
-          git # required for flakes
-        ])
-        ++ extractedInputs
-        ++ args.contents or [ ];
+      contents = [
+        nix
+      ]
+      ++ (with pkgs; [
+        bashInteractive # for debug, only adds 4mb
+        cacert # for fetchers
+        coreutils # basic unix tools
+        git # required for flakes
+      ])
+      ++ extractedInputs
+      ++ args.contents or [ ];
 
       config = {
-        Entrypoint = [ (lib.getExe nix) ];
-        Env = lib.mapAttrsToList (name: value: "${name}=${value}") {
+        Entrypoint = [ (pkgs.lib.getExe nix) ];
+        Env = pkgs.lib.mapAttrsToList (name: value: "${name}=${value}") {
           USER = "root";
           # requires "sandbox = false" because unprivileged containers lack the
           # kernel privileges (unshare for namespaces) required to create it
@@ -57,7 +58,7 @@
       };
 
       image = pkgs.dockerTools.buildLayeredImageWithNixDb (
-        (lib.removeAttrs args [
+        (pkgs.lib.removeAttrs args [
           "contents"
           "config"
           "inputsFrom"
@@ -67,7 +68,7 @@
         ])
         // {
           inherit name contents config;
-          # nix needs /tmp to build. we also create a standard /bin env.
+          # nix needs /tmp to build. we also create a standard /bin env
           extraCommands = ''
             mkdir -m 1777 tmp
             mkdir -p bin

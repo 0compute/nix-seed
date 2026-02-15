@@ -26,21 +26,17 @@
     {
       inherit lib;
     }
-    // (inputs.flake-utils.lib.eachSystem (import inputs.systems) (
+    // inputs.flake-utils.lib.eachSystem (import inputs.systems) (
       system:
       let
-
         pkgs = inputs.nixpkgs.legacyPackages.${system};
-
         nixZeroSetupContainer = lib.mkBuildContainer {
           inherit pkgs;
           name = "nix-zero-setup";
           tag = inputs.self.rev or inputs.self.dirtyRev or null;
         };
-
       in
       {
-
         packages = {
           inherit nixZeroSetupContainer;
           default = nixZeroSetupContainer;
@@ -58,56 +54,47 @@
         };
 
         apps = {
+          default.program = pkgs.lib.getExe (
+            let
+              inherit (nixZeroSetupContainer) imageName imageTag;
+            in
+            pkgs.writeShellApplication {
+              name = "self-build";
+              text = ''
+                nix() {
+                  if command -v nom >/dev/null;
+                  then
+                    nom "$@"
+                  else
+                    command nix "$@"
+                  fi
+                }
+                nix build .#nixZeroSetupContainer
+                docker load < result
+                docker tag "${imageName}:${imageTag}" "${imageName}:latest"
+              '';
+            }
+          );
 
-          default = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              let
-                inherit (nixZeroSetupContainer) imageName imageTag;
-              in
-              pkgs.writeShellApplication {
-                name = "self-build";
-                text = ''
-                  nix() {
-                    if command -v nom >/dev/null;
-                    then
-                      nom "$@"
-                    else
-                      command nix "$@"
-                    fi
-                  }
-                  nix build .#nixZeroSetupContainer
-                  docker load < result
-                  docker tag "${imageName}:${imageTag}" "${imageName}:latest"
-                '';
-              }
-            );
-          };
-
-          github-action = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "github-action";
-                text = ''
-                  nix build "$@"
-                  docker load < result
-                  name="ghcr.io/$GITHUB_REPOSITORY"
-                  for tag in "$GITHUB_SHA" "$(git describe --tags --always)" latest; do
-                    docker tag "''${GITHUB_REPOSITORY##*/}:$GITHUB_SHA" "$name:$tag"
-                  done
-                  docker login ghcr.io \
-                    --username "$GITHUB_ACTOR" \
-                    --password-stdin <<< "$GITHUB_TOKEN"
-                  docker push --all-tags "$name"
-                '';
-              }
-            );
-          };
-
+          github-action.program = pkgs.lib.getExe (
+            pkgs.writeShellApplication {
+              name = "github-action";
+              text = ''
+                nix build "$@"
+                docker load < result
+                name="ghcr.io/$GITHUB_REPOSITORY"
+                for tag in "$GITHUB_SHA" "$(git describe --tags --always)" latest; do
+                  docker tag "''${GITHUB_REPOSITORY##*/}:$GITHUB_SHA" "$name:$tag"
+                done
+                docker login ghcr.io \
+                  --username "$GITHUB_ACTOR" \
+                  --password-stdin <<< "$GITHUB_TOKEN"
+                docker push --all-tags "$name"
+              '';
+            }
+          );
         };
-
       }
-    ));
+    );
 
 }
