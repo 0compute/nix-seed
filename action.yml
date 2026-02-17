@@ -7,7 +7,7 @@ inputs:
     required: true
   container_attr:
     description: Flake attribute of the container image to build
-    default: .#default
+    default: .#build-container
 
 runs:
   using: composite
@@ -20,8 +20,17 @@ runs:
 
     - name: Build and Push
       shell: bash
-      env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
-      run: |
-        nix run "${{ github.action_path }}#github-action" -- \
-          "${{ inputs.container_attr }}"
+      run: |-
+        # build
+        nix build ${{ inputs.container_attr }}
+        docker load < result
+        # tag
+        name=ghcr.io/${{ github.repository }}
+        for tag in ${{ github.sha }} $(git describe --tags --always) latest; do
+          docker tag ${{ github.event.repository.name }}:${{ github.sha }} $name:$tag
+        done
+        # push
+        docker login ghcr.io \
+          --username ${{ github.actor }} \
+          --password-stdin <<< ${{ inputs.github_token }}
+        docker push --all-tags $name

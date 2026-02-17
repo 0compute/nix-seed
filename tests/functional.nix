@@ -1,4 +1,4 @@
-{ pkgs, nixZeroSetupContainer }:
+{ pkgs, build-container }:
 pkgs.testers.runNixOSTest {
   name = "nix-zero-setup-functional";
   nodes.machine =
@@ -15,7 +15,7 @@ pkgs.testers.runNixOSTest {
   testScript =
     let
       # use the image name and tag from the derivation
-      img = nixZeroSetupContainer;
+      img = build-container;
       tag = "${img.imageName}:${img.imageTag}";
     in
     ''

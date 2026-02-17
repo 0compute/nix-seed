@@ -30,7 +30,7 @@
       system:
       let
         pkgs = inputs.nixpkgs.legacyPackages.${system};
-        nixZeroSetupContainer = lib.mkBuildContainer {
+        build-container = lib.mkBuildContainer {
           inherit pkgs;
           name = "nix-zero-setup";
           tag = inputs.self.rev or inputs.self.dirtyRev or null;
@@ -38,18 +38,15 @@
       in
       {
         packages = {
-          inherit nixZeroSetupContainer;
-          default = nixZeroSetupContainer;
-          example = lib.mkBuildContainer {
-            inherit pkgs;
-            inputsFrom = [ pkgs.hello ];
-          };
+          inherit build-container;
+          default = build-container;
         };
 
         checks = {
           unit = import ./tests/unit.nix { inherit pkgs; };
           functional = import ./tests/functional.nix {
-            inherit pkgs nixZeroSetupContainer;
+            inherit pkgs;
+            inherit build-container;
           };
         };
 
@@ -59,7 +56,7 @@
             type = "app";
             program = pkgs.lib.getExe (
               let
-                inherit (nixZeroSetupContainer) imageName imageTag;
+                inherit (build-container) imageName imageTag;
               in
               pkgs.writeShellApplication {
                 name = "self-build";
@@ -75,27 +72,6 @@
                   nix build .#nixZeroSetupContainer
                   docker load < result
                   docker tag "${imageName}:${imageTag}" "${imageName}:latest"
-                '';
-              }
-            );
-          };
-
-          github-action = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "github-action";
-                text = ''
-                  nix build "$@"
-                  docker load < result
-                  name="ghcr.io/$GITHUB_REPOSITORY"
-                  for tag in "$GITHUB_SHA" "$(git describe --tags --always)" latest; do
-                    docker tag "''${GITHUB_REPOSITORY##*/}:$GITHUB_SHA" "$name:$tag"
-                  done
-                  docker login ghcr.io \
-                    --username "$GITHUB_ACTOR" \
-                    --password-stdin <<< "$GITHUB_TOKEN"
-                  docker push --all-tags "$name"
                 '';
               }
             );
