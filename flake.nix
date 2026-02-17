@@ -54,46 +54,55 @@
         };
 
         apps = {
-          default.program = pkgs.lib.getExe (
-            let
-              inherit (nixZeroSetupContainer) imageName imageTag;
-            in
-            pkgs.writeShellApplication {
-              name = "self-build";
-              text = ''
-                nix() {
-                  if command -v nom >/dev/null;
-                  then
-                    nom "$@"
-                  else
-                    command nix "$@"
-                  fi
-                }
-                nix build .#nixZeroSetupContainer
-                docker load < result
-                docker tag "${imageName}:${imageTag}" "${imageName}:latest"
-              '';
-            }
-          );
 
-          github-action.program = pkgs.lib.getExe (
-            pkgs.writeShellApplication {
-              name = "github-action";
-              text = ''
-                nix build "$@"
-                docker load < result
-                name="ghcr.io/$GITHUB_REPOSITORY"
-                for tag in "$GITHUB_SHA" "$(git describe --tags --always)" latest; do
-                  docker tag "''${GITHUB_REPOSITORY##*/}:$GITHUB_SHA" "$name:$tag"
-                done
-                docker login ghcr.io \
-                  --username "$GITHUB_ACTOR" \
-                  --password-stdin <<< "$GITHUB_TOKEN"
-                docker push --all-tags "$name"
-              '';
-            }
-          );
+          default = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              let
+                inherit (nixZeroSetupContainer) imageName imageTag;
+              in
+              pkgs.writeShellApplication {
+                name = "self-build";
+                text = ''
+                  nix() {
+                    if command -v nom >/dev/null;
+                    then
+                      nom "$@"
+                    else
+                      command nix "$@"
+                    fi
+                  }
+                  nix build .#nixZeroSetupContainer
+                  docker load < result
+                  docker tag "${imageName}:${imageTag}" "${imageName}:latest"
+                '';
+              }
+            );
+          };
+
+          github-action = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "github-action";
+                text = ''
+                  nix build "$@"
+                  docker load < result
+                  name="ghcr.io/$GITHUB_REPOSITORY"
+                  for tag in "$GITHUB_SHA" "$(git describe --tags --always)" latest; do
+                    docker tag "''${GITHUB_REPOSITORY##*/}:$GITHUB_SHA" "$name:$tag"
+                  done
+                  docker login ghcr.io \
+                    --username "$GITHUB_ACTOR" \
+                    --password-stdin <<< "$GITHUB_TOKEN"
+                  docker push --all-tags "$name"
+                '';
+              }
+            );
+          };
+
         };
+
       }
     );
 
