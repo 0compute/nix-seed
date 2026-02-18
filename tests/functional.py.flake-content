@@ -1,0 +1,28 @@
+{
+outputs = _: {
+    packages.x86_64-linux.default =
+    let
+        # minimal mock pkgs for lib.nix
+        pkgs = {
+        lib = (import "@pkgs-path@" { }).lib;
+        nix = { outPath = "/bin/nix"; };
+        coreutils = { outPath = "/bin"; };
+        bashInteractive = { outPath = "/bin/bash"; };
+        dockerTools.buildLayeredImageWithNixDb = args:
+            derivation {
+            name = args.name;
+            builder = "/bin/sh";
+            args = [ "-c" "/bin/touch \$out" ];
+            system = "x86_64-linux";
+            PATH = "/bin";
+            };
+        cacert = { outPath = "/etc/ssl/certs/ca-bundle.crt"; };
+        };
+        mkBuildContainer = import ./mkbuildcontainer.nix;
+    in mkBuildContainer {
+        inherit pkgs;
+        name = "test-container";
+        inputsFrom = [ pkgs.coreutils ];
+    };
+};
+}

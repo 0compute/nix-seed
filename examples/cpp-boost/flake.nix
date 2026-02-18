@@ -34,7 +34,7 @@
       {
         packages = {
           inherit default;
-          build-container = inputs.nix-zero-setup.lib.mkBuildContainer {
+          nix-build-container = inputs.nix-zero-setup.lib.mkBuildContainer {
             inherit pkgs;
             name = "cpp-boost-build-env";
             inputsFrom = [ default ];

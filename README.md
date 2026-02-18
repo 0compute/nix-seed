@@ -24,8 +24,8 @@ container.
 
 ### Advantages
 
-1. **Instant Startup**: The environment is ready immediately. Since GHCR
-   and GitHub Actions share the Azure backbone, image pulls are near-instant. No
+1. **Instant Startup**: The environment is ready immediately. Since GHCR and GitHub
+   Actions share the Azure backbone, image pulls are near-instant. No
    `install-nix-action` or setup tax.
 1. **Strict Reproducibility**: The CI container is built from the same lockfile as your
    project. If it works in the container locally, it works in CI.
@@ -83,7 +83,7 @@ In your `flake.nix` outputs:
       in
       {
         packages = {
-          build-container = inputs.nix-zero-setup.lib.mkBuildContainer {
+          nix-build-container = inputs.nix-zero-setup.lib.mkBuildContainer {
             inherit pkgs;
             # automatically include dependencies from your main package
             inputsFrom = [ inputs.self.packages.${system}.default ];
@@ -123,7 +123,7 @@ jobs:
       - uses: your-org/nix-zero-setup@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          container_attr: .#build-container
+          container_attr: .#nix-build-container
 ```
 
 ### 4. Use in Your Main Workflow

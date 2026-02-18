@@ -6,8 +6,8 @@ inputs:
     description: GitHub Token for GHCR authentication
     required: true
   container_attr:
-    description: Flake attribute of the container image to build
-    default: .#build-container
+    description: Flake package attribute of the build container
+    default: .#nix-build-container
 
 runs:
   using: composite
@@ -15,10 +15,9 @@ runs:
     - name: Nix Setup
       uses: cachix/install-nix-action@v31
       with:
-        extra_nix_config: |
-          accept-flake-config = true
+        extra_nix_config: ${{ inputs.nix_conf }}
 
-    - name: Build and Push
+    - name: Build and Push Container
       shell: bash
       run: |-
         # build

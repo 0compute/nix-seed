@@ -1,3 +1,5 @@
+/.env
+/.gemini/
+/.nvim.local.lua
+/.pre-commit-config.yaml
 /result
-.gemini/
-**/target/

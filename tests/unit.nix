@@ -1,12 +1,11 @@
-{ pkgs }:
+{ pkgs, mkBuildContainer }:
 let
-  nixZeroSetupLib = import ../lib.nix;
 
   results = pkgs.lib.runTests {
     testEnvConfig = {
       expr =
         pkgs.lib.sort (a: b: a < b)
-          (nixZeroSetupLib.mkBuildContainer {
+          (mkBuildContainer {
             inherit pkgs;
             inputsFrom = [ pkgs.hello ];
             nixConf = "extra-features = nix-command";
@@ -21,16 +20,16 @@ let
 
     testDefaultName = {
       expr =
-        (nixZeroSetupLib.mkBuildContainer {
+        (mkBuildContainer {
           inherit pkgs;
           inputsFrom = [ pkgs.hello ];
         }).name;
-      expected = "hello-build-container.tar.gz";
+      expected = "hello-nix-build-container.tar.gz";
     };
 
     testCustomName = {
       expr =
-        (nixZeroSetupLib.mkBuildContainer {
+        (mkBuildContainer {
           inherit pkgs;
           name = "custom";
         }).name;
@@ -50,7 +49,7 @@ let
             version = "1.0";
             nativeBuildInputs = with pkgs; [ ripgrep ];
           };
-          container = nixZeroSetupLib.mkBuildContainer {
+          container = mkBuildContainer {
             inherit pkgs;
             inputsFrom = [
               drv1
@@ -80,7 +79,7 @@ let
             version = "1.0";
             buildInputs = with pkgs; [ hello ];
           };
-          container = nixZeroSetupLib.mkBuildContainer {
+          container = mkBuildContainer {
             inherit pkgs;
             inputsFrom = [ drv ];
             contents = with pkgs; [ jq ];

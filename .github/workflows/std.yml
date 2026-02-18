@@ -1,9 +1,0 @@
-name: Standards Compliance
-
-on:
-  push:
-  pull_request:
-
-jobs:
-  std:
-    uses: kingarrrt/artstd/.github/workflows/std.yml@master

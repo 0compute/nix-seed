@@ -26,16 +26,16 @@
         pkgs = inputs.nixpkgs.legacyPackages.${system};
         python = pkgs.python3;
         pythonEnv = python.withPackages (
-          (inputs.pyproject-nix.lib.project.loadPyproject { projectRoot = ./.; }).renderers.withPackages {
-            inherit python;
-          }
+          (inputs.pyproject-nix.lib.project.loadPyproject { projectRoot = ./.; })
+          .renderers.withPackages
+            { inherit python; }
         );
       in
       {
         packages = {
           default = pythonEnv;
 
-          build-container = inputs.nix-zero-setup.lib.mkBuildContainer {
+          nix-build-container = inputs.nix-zero-setup.lib.mkBuildContainer {
             inherit pkgs;
             name = "ml-build-env";
             inputsFrom = [ pythonEnv ];
