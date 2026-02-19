@@ -3,11 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    systems.url = "github:nix-systems/default";
-    flake-utils = {
-      url = "github:numtide/flake-utils";
-      inputs.systems.follows = "systems";
-    };
+    flake-utils.url = "github:numtide/flake-utils";
     nix-zero-setup = {
       url = "github:your-org/nix-zero-setup";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -16,7 +12,7 @@
 
   outputs =
     inputs:
-    inputs.flake-utils.lib.eachSystem (import inputs.systems) (
+    inputs.flake-utils.lib.eachDefaultSystem (
       system:
       let
         pkgs = inputs.nixpkgs.legacyPackages.${system};
