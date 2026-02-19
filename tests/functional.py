@@ -1,11 +1,3 @@
-# ruff: noqa
-# from typing import TYPE_CHECKING
-#
-# if TYPE_CHECKING:
-#     from nixos_test_driver.driver import Machine
-#
-#     machine: Machine = None
-
 machine.wait_for_unit("docker.service")
 machine.succeed("docker load < @img@")
 
