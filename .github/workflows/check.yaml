@@ -1,0 +1,26 @@
+name: Check
+
+on:
+  push:
+    paths-ignore: &paths-ignore
+      - flake.lock
+      - flake.nix
+  pull_request:
+    paths-ignore: *paths-ignore
+  workflow_run:
+    workflows:
+      - Build
+    types:
+      - completed
+
+env:
+  # errexit and pipefail set by the runner
+  SHELLOPTS: nounset
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    container: ghcr.io/${{ github.repository }}:latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: nix flake check
