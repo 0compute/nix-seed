@@ -131,6 +131,15 @@ let
         mkdir --parents $multiarchDir
         ln --symbolic $libc $multiarchDir/libc.so.6
         ln --symbolic $libstdcpp $multiarchDir/libstdc++.so.6
+        # Provide default loader paths for runtime linking.
+        versionedLibstdcpp=$(readlink --canonicalize $libstdcpp)
+        versionedLibstdcppName=$(basename $versionedLibstdcpp)
+        mkdir --parents lib lib64
+        ln --force --symbolic $libc lib/libc.so.6
+        ln --force --symbolic $libstdcpp lib/libstdc++.so.6
+        ln --force --symbolic $libstdcpp lib64/libstdc++.so.6
+        ln --force --symbolic $versionedLibstdcpp lib/$versionedLibstdcppName
+        ln --force --symbolic $versionedLibstdcpp lib64/$versionedLibstdcppName
       '';
     }
   );
