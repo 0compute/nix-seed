@@ -105,10 +105,6 @@ let
       NIX_CONFIG = ''
         sandbox = false
         build-users-group =
-        extra-experimental-features = read-only-local-store
-        store = local?read-only=1
-        substitute = false
-        fallback = false
         ${nixConf}
       '';
       LD_LIBRARY_PATH =

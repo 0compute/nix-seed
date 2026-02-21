@@ -19,10 +19,6 @@ let
           "NIX_CONFIG="
           + "sandbox = false\n"
           + "build-users-group =\n"
-          + "extra-experimental-features = read-only-local-store\n"
-          + "store = local?read-only=1\n"
-          + "substitute = false\n"
-          + "fallback = false\n"
           + "extra-features = nix-command\n"
         )
         "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
