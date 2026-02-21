@@ -44,6 +44,9 @@ let
       glibc
       stdenv.cc.cc.lib
       # actions/checkout
+      git
+      gnutar
+      gzip
       nodejs
     ]
     ++ lib.optionals (debugTools != [ ]) debugTools;
