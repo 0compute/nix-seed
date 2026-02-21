@@ -14,6 +14,7 @@ let
         "USER=root"
         "GIT_TEXTDOMAINDIR=${pkgs.git}/share/locale"
         "GIT_INTERNAL_GETTEXT_TEST_FALLBACKS="
+        "HOME=/root"
         (
           "NIX_CONFIG="
           + "sandbox = false\n"
