@@ -337,7 +337,9 @@ Next steps:
 3. Hook the workflow into CI/flake checks so promotions run only after every stage passes.
 
 Gas economics matter: because every promotion writes to an L2 registry, prefer batching
-promotions under a Merkle root and reuse the cheapest finality window (e.g., optimistic rollups)
+promotions under a Merkle root and reuse the cheapest finality window (e.g., optimistic rollups).
+Estimate ~50k gas per `anchorPromotion` call, so at 0.5 gwei (~0.0000000005 ETH) the per-hash
+cost is under $0.03 on current rollups; adjust the gas limit if the L2 gas price spikes.
 to keep per-hash gas cost predictable and low.
 
 ### Legal Compliance
