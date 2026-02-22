@@ -310,33 +310,31 @@ builds (mes, stage0, tinycc) for minimal binary seeds and documented compiler ch
 Expect extra effort to align toolchains, trim seeds, and verify each stage across
 independent builders.
 
-### Trusting-Trust Attestation Flow
+### Zero-Trust Attestation Flow
 
-We embed the $n$-of-$m$ consensus model into the Trust No Fucker doctrine by formalizing
-the following pillars:
+To keep Trust No Fucker actionable we require independent builders, transparent attestations,
+and immutable promotion anchors.
 
-- **Nix:** hermetic OCI seeds, pinned `flake.lock`, and `nix path-info --json .#target`
-  to extract per-system `narHash`.
-- **Sigstore:** builders mint In-Toto statements with `cosign` using OIDC identities and
-  push the payload (`commit`, `system`, `narHash`) into Rekor.
-- **Blockchain (EVM L2):** authorized callers or a multisig push the “quorum-complete”
-  mapping (`commit+system -> narHash`) into a smart contract, bundling multiple systems via
-  a Merkle root to optimize gas.
+- **Nix:** Each builder runs inside an OCI seed with a pinned `flake.lock`, then reads the
+  per-system `narHash` via `nix path-info --json .#target`.
+- **Sigstore:** Builders issue In-Toto statements with `cosign` using allowed OIDC subjects
+  and record `{commit, system, narHash}` in Rekor.
+- **Blockchain (EVM L2):** Once $n$ of $m$ builders agree, an authorized caller records
+  `commit+system -> narHash` in the smart contract, batching entries with a Merkle root for
+  gas efficiency.
 
-Workflow:
-1. Hermetic builders capture deterministic `narHash` values.
-2. Each builder logs a Sigstore attestation into Rekor.
-3. The Watchdog polls Rekor, validates builder subjects, and records quorum once $n$
-   identical hashes are observed for a `system`.
-4. The Watchdog triggers the L2 contract to anchor the promotion and expose the agreed hash.
+Flow:
+1. Hermetic builders capture deterministic hashes.
+2. Each builder logs a Sigstore attestation to Rekor.
+3. A watchdog polls Rekor, verifies identities, and declares quorum when $n$ hashes match.
+4. Upon quorum the watchdog (or a multisig) calls the L2 contract to anchor the promotion.
 
-Agent implementation tasks:
-1. Ship Nix tooling (builder helpers, Sigstore wrapper, Rekor poller, watchdog service, and
-   contract caller) with Bats/Nix checks.
-2. Declare quorum parameters (`n`, `m`), Rekor URL, allowed OIDC issuers/subjects, and
-   target EVM L2 + contract ABI.
-3. Hook builder/attestation/watchdog checks into CI/flake tooling so the promotion path
-   only fires when every stage passes.
+Next steps:
+1. Ship the Nix tooling (builder helpers, Sigstore wrapper, Rekor poller, watchdog, contract
+   caller) with Bats/Nix coverage.
+2. Make the policy explicit (`n`, `m`, Rekor URL, permitted issuers/subjects, target L2
+   + contract ABI).
+3. Hook the workflow into CI/flake checks so promotions run only after every stage passes.
 
 ### Legal Compliance
 
