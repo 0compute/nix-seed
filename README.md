@@ -310,6 +310,37 @@ builds (mes, stage0, tinycc) for minimal binary seeds and documented compiler ch
 Expect extra effort to align toolchains, trim seeds, and verify each stage across
 independent builders.
 
+## Project Brief: Nix-Sigstore $n$-of-$m$ Build Attestation System
+
+### Objective
+Promote a Nix-built artifact into production only after $n$ of $m$ independent, hermetic
+builders attest to the same Nix NAR hash for a given system identifier.
+
+### Technical Pillars
+- **Nix:** deterministic builds pinned by `flake.lock`, executed inside sandboxed OCI seeds.
+- **Sigstore:** `cosign` issues In-Toto statements for each builder, attested metadata
+  (`commit`, `system`, `narHash`) is recorded in Rekor.
+- **Blockchain (EVM L2):** immutable registry that anchors the promoted `commit+system ->
+  narHash` mapping with Merkle batching for gas efficiency.
+
+### Workflow
+1. **Hermetic Builders:** Each builder runs `nix build` over the pinned flake inside an OCI
+   container, then captures the `narHash` via `nix path-info --json .#target`.
+2. **Sigstore Attestation:** Builders mint Sigstore attestations with OIDC identities and
+   push the payload to Rekor.
+3. **Consensus Watchdog:** Poll Rekor for a commit, verify builder identities, and declare
+   quorum when $n$ identical hashes exist for a system.
+4. **Blockchain Anchor:** When quorum exists call the L2 smart contract (optionally via a
+   multisig) to record the promotion, batching entries with a Merkle root.
+
+### Agent Implementation Tasks
+1. Define the Nix-based tooling (builder helpers, Sigstore wrapper, Rekor poller, watchdog
+   service, contract caller) and 100% test coverage via Bats/Nix checks.
+2. Document the quorum policy (`n`, `m`), allowed OIDC issuers/subjects, Rekor host, and
+   the target EVM L2 + contract ABI.
+3. Tie the workflow into CI/flake checks so every component (build, attest, watch, anchor)
+   verifies the expected state before a promotion transaction is emitted.
+
 ### Legal Compliance
 
 - Apple SDKs are strictly build-time dependencies; no SDK binaries are included in build
