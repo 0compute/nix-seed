@@ -63,4 +63,4 @@ runs:
             tags+=(--tag "$tag")
           done
         fi
-        nix run .#publish "${tags[@]}" ${{ inputs.registry }}/${{ github.repository }} ${{ github.sha }}
+        nix run .#publish -- "${tags[@]}" ${{ inputs.registry }}/${{ github.repository }} ${{ github.sha }}
