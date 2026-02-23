@@ -38,10 +38,12 @@ let
     seed = buildExample name;
   }) exampleNames;
 
+  seedPaths = map (s: s.seed) seeds;
+
 in
-# AGENT: this is not testing anything - it must do as the header comment says
 pkgs.runCommand "examples"
   {
+    buildInputs = seedPaths;
     passAsFile = [ "seedList" ];
     seedList = lib.concatMapStringsSep "\n" (s: "${s.name}=${s.seed}") seeds;
   }
