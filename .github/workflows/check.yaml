@@ -2,10 +2,11 @@ name: Check
 
 on:
   push:
-    # NOTE: this must match `paths` in ./seed.yaml
+    # XXX: this must match `paths` in ./seed.yaml
     paths-ignore: &paths-ignore
       - flake.lock
       - flake.nix
+      - mkseed.nix
       - .github/workflows/seed.yaml
   pull_request:
     paths-ignore: *paths-ignore

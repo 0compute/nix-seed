@@ -2,9 +2,11 @@ name: Seed
 
 on:
   push:
+    # XXX: this must match `paths-ignore` in ./check.yaml
     paths: &paths
       - flake.lock
       - flake.nix
+      - mkseed.nix
       - .github/workflows/seed.yaml
   pull_request:
     paths: *paths
@@ -14,8 +16,14 @@ jobs:
   seed:
     runs-on: ubuntu-latest
     permissions:
-      packages: write
+      # allow checkout and other read-only ops; this is the default but specifying a
+      # permissions block drops defaults back to `none`
       contents: read
+      # minting an OIDC token lets COSIGN_EXPERIMENTAL=1 keep cosign signing
+      # non-interactive instead of invoking the device flow.
+      id-token: write
+      # allow push to registry
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
