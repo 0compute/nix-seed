@@ -1,4 +1,4 @@
-name: Build Seed
+name: Seed
 
 on:
   push:
@@ -6,13 +6,9 @@ on:
       - flake.lock
       - flake.nix
       - mkseed.nix
-      - .github/workflows/build-seed.yaml
+      - .github/workflows/seed.yaml
   pull_request:
     paths: *paths
-
-env:
-  # errexit and pipefail set by the runner
-  SHELLOPTS: nounset
 
 jobs:
   build:
@@ -26,6 +22,5 @@ jobs:
       - name: Build seed
         uses: ./.
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          seed_attr: .#seed
+          registry_token: ${{ secrets.GITHUB_TOKEN }}
           tags: latest

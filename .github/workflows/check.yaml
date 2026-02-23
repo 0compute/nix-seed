@@ -2,22 +2,18 @@ name: Check
 
 on:
   push:
+    # NOTE: this must match `paths` in ./seed.yaml
     paths-ignore: &paths-ignore
       - flake.lock
       - flake.nix
+      - .github/workflows/seed.yaml
   pull_request:
     paths-ignore: *paths-ignore
   workflow_run:
     workflows:
-      - Build Seed
+      - Seed
     types:
       - completed
-
-env:
-  # errexit and pipefail set by the runner
-  CI: "true"
-  SHELLOPTS: ""
-  HOME: /tmp
 
 jobs:
   check:
@@ -25,9 +21,4 @@ jobs:
     container: ghcr.io/${{ github.repository }}:latest
     steps:
       - uses: actions/checkout@v6
-      - run: |-
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - run: |-
-          nix flake check --print-build-logs --impure \
-            --option substitute false \
-            --option fallback false
+      - run: nix flake check --print-build-logs
