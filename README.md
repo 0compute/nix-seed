@@ -2,10 +2,6 @@
 
 Nix Seed provides high-performance/high-integrity containerized Nix build environments.
 
-- 🧠 Recovered Engineering Flow: $$$
-- ☁️ Reclaimed Build Minutes: $$$
-- ⛓️ A Build You Can Trust: **Priceless**
-
 ## Problem: Purity Ain't Free
 
 Nix is not well suited to non-native ephemeral environments. CI runners must install
@@ -17,7 +13,7 @@ For GitHub CI, [Cache Nix Action](https://github.com/nix-community/cache-nix-act
 the need to reach outside of GitHub's backbone, but are still largely network and CPU
 bound.
 
-## Solution: Seed Containers
+### Solution: Seed Containers
 
 Baking the closure into layered OCI containers eliminates build-time dependency
 realization. Commits affecting only application code trigger near-instant builds as
@@ -34,20 +30,21 @@ Even with hermetic and deterministic builds, attacks like Ken Thompson's
 rigged build environment that undetectably injects code during compilation is always a
 possibility.
 
-## Solution: Trust No Fucker
+### Solution: Trust No Fucker
 
+1. Build on multiple CI providers.
 1. Post build, generate a JSON predicate containing:
    - commit: git sha
    - system: `stdenv.hostPlatform.system` i.e. `x86_64-linux` or `aarch64-darwin`
    - narHash: nar hash of the built image
    - builder identity: who performed the build
-1. Sign the predicate and pushes to the registry as an OCI artifact attached to the
+1. Sign the predicate and push to the registry as an OCI artifact attached to the
    image, then log it to [Rekor](https://rekor.dev/).
 1. Promotion is gated by an n-of-m quorum of Rekor entries.
 
 See [publish](./bin/publish) for full detail.
 
-### Endgame (TODO)
+#### Endgame (TODO)
 
 An n-of-m quorum still relies on a centralized actor (like GitHub Actions) to enforce
 the gate and update registry tags. Endgame moves this from a "log" to a **truth
