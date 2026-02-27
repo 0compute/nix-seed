@@ -2,7 +2,13 @@ name: Seed
 
 on:
   push:
+    paths-ignore: &paths-ignore
+      - .github/workflows/runner-tools.yaml
   pull_request:
+    paths: *paths-ignore
+
+env:
+  HONEYCOMB_DATASET: gha-buildevents
 
 jobs:
 

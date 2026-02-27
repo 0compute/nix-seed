@@ -1,6 +1,6 @@
 # Nix Seed
 
-Nix Seed provides high-performance, high-integrity, multi-system, containerized
+Nix Seed provides high-performance, high-integrity, multi-system containerized
 Nix build environments.
 
 ## Problem: Purity Ain't Free
@@ -43,7 +43,7 @@ Even with hermetic and deterministic builds, Ken Thompson's
 concern. A subverted build environment that undetectably injects code at compile
 time is always possible.
 
-## Solution: Trust No Fucker (optional)
+## Solution: Trust No Fucker
 
 After build, the seed generates an [SLSA provenance](https://slsa.dev)
 predicate, attests it with
@@ -108,20 +108,59 @@ This adds three critical layers of security:
    directly against the L2 contract. The registry cannot serve a tampered image
    or tag undetected.
 
+This approach effectively solves the **"Who watches the watchers?"** problem by
+ensuring that even if a registry or a master builder is compromised, they cannot
+forge a "promoted" status without the cryptographic consent of the quorum,
+verified by a decentralized L2.
+
 ## Quickstart
 
 Add `nix-seed` to your flake and expose a `seed` attribute:
 
 ```nix
-inputs = {
-  nix-seed.url = "github:0compute/nix-seed";
-  seed-self.url = "github:<your-org>/<your-repo>";
-};
+{
 
-packages.seed = inputs.nix-seed.lib.mkSeed {
-  inherit pkgs;
-  inherit (inputs) self;
-};
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nix-seed = {
+      url = "github:your-org/nix-seed";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    systems.url = "github:nix-systems/default";
+  };
+
+  outputs = inputs: {
+    packages =
+      (inputs.nixpkgs.lib.genAttrs (import inputs.systems) (
+        system:
+        let
+          pkgs = inputs.nixpkgs.legacyPackages.${system};
+        in
+        {
+          # placeholder: replace with your package
+          default = pkgs.hello;
+          seed = inputs.nix-seed.lib.mkSeed {
+            inherit pkgs;
+            inherit (inputs) self;
+          };
+        }
+      ))
+      # optional: TNF config
+      // {
+        seedCfg = {
+          builders = {
+            aws = { };
+            azure = { };
+            gcp = { };
+            github.master = true;
+            gitlab = { };
+          };
+          rekor.quorum = 4;
+        };
+      };
+  };
+
+}
 ```
 
 ### GitHub Actions
