@@ -82,10 +82,11 @@ the signing identity (`https://token.actions.githubusercontent.com` for GHA,
 promoter waits up to `seedCfg.rekor.deadline` for quorum before failing the
 build.
 
-[!WARNING] [Reproducible builds](https://reproducible-builds.org/) are a
-prerequisite. Independent builders must produce bit-for-bit identical outputs
-from the same inputs. Without reproducibility, a quorum cannot distinguish a
-legitimate build from a subverted one.
+> [!WARNING]
+> [Reproducible builds](https://reproducible-builds.org/) are a
+> prerequisite. Independent builders must produce bit-for-bit identical outputs
+> from the same inputs. Without reproducibility, a quorum cannot distinguish a
+> legitimate build from a subverted one.
 
 ### Endgame (TODO)
 
