@@ -1,10 +1,4 @@
 [project]
-name = "strata-ml"
+name = "python-example"
 version = "0.1.0"
-description = "Strata ML: A heavy, layered ML environment example for nix-seed"
-dependencies = ["torch", "numpy", "pandas"]
-requires-python = ">=3.11"
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+dependencies = ["torch", "jax", "numpy", "pandas"]

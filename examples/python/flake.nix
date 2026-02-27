@@ -1,42 +1,46 @@
 {
-  description = "Example Python ML project using pyproject.nix and nix-seed";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
-    pyproject-nix = {
-      url = "github:nix-community/pyproject.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nix-seed = {
-      url = "github:your-org/nix-seed";
+      url = ../..;
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    pyproject-nix = {
+      url = "github:kingarrrt/pyproject.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    systems.url = "github:nix-systems/default";
   };
 
-  outputs =
-    inputs:
-    inputs.flake-utils.lib.eachDefaultSystem (
+  outputs = inputs: {
+    packages = inputs.nixpkgs.lib.genAttrs (import inputs.systems) (
       system:
       let
         pkgs = inputs.nixpkgs.legacyPackages.${system};
-        python = pkgs.python3;
-        pythonEnv = python.withPackages (
-          (inputs.pyproject-nix.lib.project.loadPyproject { projectRoot = ./.; })
-          .renderers.withPackages
-            { inherit python; }
+        project = inputs.pyproject-nix.lib.project.loadPyproject {
+          projectRoot = ./.;
+        };
+        python = builtins.head (
+          inputs.pyproject-nix.lib.util.filterPythonInterpreters {
+            inherit (project) requires-python;
+            inherit (pkgs) pythonInterpreters;
+          }
         );
       in
       {
-        packages = {
-          default = pythonEnv;
 
-          seed = inputs.nix-seed.lib.mkSeed {
-            inherit pkgs;
-            name = "ml-build-env";
-            contents = with pkgs; [ hatch ];
-          };
+        default = python.pkgs.buildPythonPackage (
+          project.renderers.buildPythonPackage { inherit python; }
+        );
+
+        seed = inputs.nix-seed.lib.mkSeed {
+          inherit pkgs;
+          inherit (inputs) self;
         };
+
       }
     );
+  };
+
 }
