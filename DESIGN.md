@@ -550,12 +550,12 @@ at the DOJ has the same legal access to your build infrastructure as any other.
 
 > [!WARNING]
 >
-> *Sovereign Cloud is a bullshit marketing term*: providers claim jurisdictional
-> isolation but remain US-operated entities under US law. An AWS EU Region is
-> still Amazon. An Azure Government cloud is still Microsoft. Jurisdiction
-> follows the operator, not the data center. CI platforms headquartered in the
-> US therefore inherit the same exposure regardless of where their runners
-> execute.
+> *Sovereign Cloud is a bullshit marketing term*: providers claiming
+> jurisdictional isolation remain US-operated entities under US law. An AWS EU
+> Region is still Amazon. An Azure Government cloud is still Microsoft.
+> Jurisdiction follows the operator, not the data center. CI platforms
+> headquartered in the US therefore inherit the same exposure regardless of
+> where their runners execute.
 >
 > Region selection provides performance and data residency properties only; it
 > does not alter legal jurisdiction.
