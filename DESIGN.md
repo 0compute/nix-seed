@@ -78,6 +78,9 @@ Nix Seed itself is equally a pinned flake input; its digest is verified by the
 same mechanism, binding build orchestration code to a specific auditable
 revision.
 
+Seed builds are executed offline by passing `--network none` to the container
+runtime.
+
 #### Non-Container Results
 
 Nix Seed works for any Nix build, not only those producing OCI images. When the
@@ -89,7 +92,7 @@ Nix store.
 In this case the release pointer is the NAR content-addressed digest of the
 build output rather than an OCI image digest. The trust and attestation model is
 identical: the in-toto statement binds the output artifact digest, and (in
-L2-anchored mode) that digest is anchored on-chain. An OCI registry is required
+Production mode) that digest is anchored on-chain. An OCI registry is required
 for the seed itself; the project build result does not need to be pushed to a
 registry.
 
@@ -146,11 +149,11 @@ Quorum is only meaningful if builders span independent failure domains:
 organization, jurisdiction, infrastructure, and identity issuer.
 
 **Signing identity independence** requires that no single operator controls the
-signing identities of multiple quorum builders. In standard mode, identity is
+signing identities of multiple quorum builders. In Dev mode, identity is
 established via OIDC issuer: GitHub Actions
 (`token.actions.githubusercontent.com`) and Azure Pipelines
 (`vstoken.dev.azure.com`) share a Microsoft-controlled issuer and do not satisfy
-identity independence when combined. In L2-anchored mode, identity is
+identity independence when combined. In Production mode, identity is
 established by registered contract key; OIDC issuer is not a factor.
 
 **Choosing N:** each of the N required builders should have a distinct
@@ -160,20 +163,22 @@ forge a majority. Unanimous (M-of-M) is the strongest guarantee. See
 [`modules/seedcfg.nix`](modules/seedcfg.nix) and
 [`modules/builders.nix`](modules/builders.nix) for the builder registry schema.
 
-**Timing:** in standard mode with N-of-M and a deadline, a party controlling M-N
+**Timing:** in Dev mode with N-of-M and a deadline, a party controlling M-N
 builders can delay attestation to ensure the deciding N-th vote comes from a
-builder of their choice. L2-anchored mode eliminates this: attestations
+builder of their choice. Production mode eliminates this: attestations
 accumulate indefinitely and quorum is declared when the threshold is met, not
 when a timer expires.
 
 If builders disagree on the digest, release fails.
 
-#### Standard Mode
+#### Modes
+
+##### Development
 
 > [!WARNING]
 >
-> **Not for production.** Standard mode depends on Rekor[^rekor] availability
-> and external OIDC[^oidc] trust roots. Use [L2-anchored mode](#l2-anchored) for
+> **Not for production.** Dev mode depends on Rekor[^rekor] availability
+> and external OIDC[^oidc] trust roots. Use [Production mode](#production) for
 > production releases.
 
 Each project maintains a `.seed.lock` containing a digest per target system:
@@ -216,20 +221,20 @@ At minimum, the statement must bind:
 > [!WARNING]
 >
 > Rekor has no enterprise SLA. If Rekor is unavailable, quorum cannot be reached
-> and builds fail. For production use, use [L2-anchored mode](#l2-anchored).
+> and builds fail. For production use, use [Production mode](#production).
 >
 > [!NOTE]
 >
 > Builder cache configuration (substituters[^substituter]) is not attested in
-> standard mode. Two builders both substituting from the same cache (e.g.
+> Dev mode. Two builders both substituting from the same cache (e.g.
 > `cache.nixos.org`) are trusting the cache operator rather than independently
 > building. This is acceptable in development; for production, use
-> [L2-anchored mode](#l2-anchored) where the constraint is enforced by the
+> [Production mode](#production) where the constraint is enforced by the
 > contract.
 
-#### L2-Anchored
+##### Production
 
-*(Note: L2-anchored mode uses a public blockchain (Ethereum Layer 2) as an
+*(Note: Production mode uses a public blockchain (Ethereum Layer 2) as an
 append-only public ledger. Builders post their results there, and a smart
 contract automatically verifies that enough independent builders got the exact
 same result before approving a release.)*
@@ -273,6 +278,38 @@ publishes it to the OCI registry as a referrer artifact keyed by the build
 result digest. Rekor[^rekor] is not used; the OCI registry hosts the provenance.
 The contract anchor proves N builders agreed on the digest; the in-toto
 statements prove what was built.
+
+```mermaid
+sequenceDiagram
+    participant BuilderA as Builder A (EU)
+    participant BuilderB as Builder B (US)
+    participant BuilderC as Builder C (JP)
+    participant OCI as OCI Registry
+    participant Contract as L2 Smart Contract
+    participant Consumer as Build Consumer
+
+    par Build & Attest
+        BuilderA->>BuilderA: Reproducible Build
+        BuilderB->>BuilderB: Reproducible Build
+        BuilderC->>BuilderC: Reproducible Build
+        BuilderA->>OCI: Push in-toto Statement
+        BuilderB->>OCI: Push in-toto Statement
+        BuilderC->>OCI: Push in-toto Statement
+    end
+
+    par Submit to Contract
+        BuilderA->>Contract: attest(commit, system, digest, in_toto_digest)
+        BuilderB->>Contract: attest(...)
+        BuilderC->>Contract: attest(...)
+    end
+
+    Contract->>Contract: Verify N-of-M Quorum & Independence
+    Contract->>Contract: Publish Merkle Root of Digests
+
+    Consumer->>Contract: Query anchored Merkle Root
+    Consumer->>OCI: Fetch & verify in-toto Statements
+    Consumer->>Consumer: Execute Build in Seed Container
+```
 
 Storing the full in-toto statement on-chain is feasible but not recommended. A
 typical statement is 1,000-2,000 bytes; at 16 gas per non-zero calldata byte
@@ -352,7 +389,7 @@ The `.seed.lock` file is not used.
 Contract quorum verification subsumes the Rekor log check. In-toto provenance is
 verified separately via the OCI artifact.
 
-##### Genesis
+###### Genesis
 
 The first seed has no prior quorum to bootstrap from. Genesis is a controlled
 ceremony distinct from normal builds:
@@ -379,7 +416,7 @@ immutable trust anchor.
 > hardened CI infrastructure instead. Document the environment used; publish a
 > signed incident record if it is later found compromised.
 
-##### L2 Gas Costs
+###### L2 Gas Costs
 
 Gas[^gas] cost depends on calldata[^calldata] size, state writes, and current L2
 fee conditions. The ranges below are planning estimates for a quorum of 3
@@ -402,7 +439,7 @@ builders across 4 systems (`aarch64-darwin`, `aarch64-linux`, `x86_64-darwin`,
 Total anchoring overhead per release: 0.00081 to 0.00296 ETH ($2.43 to $8.88 at
 ETH = $3,000), excluding unusual fee spikes.
 
-#### Governance Constraints
+###### Governance Constraints
 
 - Governance multi-sig must be independent from builder keys.
 - Threshold should be at least 2-of-3 for emergency revocation/rotation.
@@ -414,17 +451,29 @@ ETH = $3,000), excluding unusual fee spikes.
 - If a builder is revoked post-genesis, re-evaluate affected releases and
   republish status.
 
-#### Project Attack Surface
+#### Implicit Trust Boundary
+
+While the design mitigates many attack vectors, it relies on two fundamental
+trust assumptions:
+
+1. **The `flake.lock` Bottleneck:** Nix Seed guarantees *what is in git is what
+   is built*. If a maintainer merges a malicious dependency update into
+   `flake.lock`, Nix Seed will faithfully build, attest, and anchor the malware.
+   The cryptographic system does not audit code intent; it only binds the output
+   to the input. Human review of lockfile updates remains a critical security
+   boundary.
+2. **Registry Tampering:** The OCI registry is treated as an untrusted blob
+   store. The trust boundary assumes the local OCI client (Docker/Podman/Skopeo)
+   correctly verifies that the digest of the fetched content matches the
+   requested digest. We trust the math of content-addressing, not the service
+   providing the bytes.
+
+### Project Attack Surface
 
 This project is intentionally low-code: it mainly defines build policy,
 verification rules, and workflow wiring around existing Nix container systems.
 That limits direct application attack surface because there is little custom
 runtime logic to exploit.
-
-**Scope Boundary (Malicious Code):** Nix Seed guarantees *what is in git is what
-is built*. If an attacker compromises a maintainer's account and merges a
-backdoor, Nix Seed will faithfully execute a quorum-backed build of the malware.
-It does not protect against malicious source code.
 
 The primary risk is **misconfiguration**, not complex code execution. The
 highest-impact failure modes are:
@@ -439,7 +488,9 @@ Security work should prioritize strict defaults, immutable references,
 verification-by-default, and auditable configuration over adding new
 orchestration code.
 
-## .gov Proofing
+## Threat Actors
+
+### .gov
 
 The United States government has structural dominance over the global internet:
 ICANN controls domain name resolution and root DNS; the majority of root
@@ -453,7 +504,7 @@ The legal tools described below are available to any `.gov` actor. Extra-legal
 tools extend the reach further. The design constraint is that no single
 jurisdiction should be capable of unilaterally subverting a release.
 
-### Legal
+#### Legal
 
 All major public cloud providers are subject to the CLOUD Act[^cloud-act], FISA
 Section 702[^fisa-section-702], and National Security Letters[^nsl], any of
@@ -491,7 +542,7 @@ design. Quorum limits the damage: an adversary must coerce N independent
 operators simultaneously, across independent jurisdictions if configured
 correctly.
 
-### Extra-legal
+#### Extra-legal
 
 Legal process is the slow path. A well-resourced signals intelligence agency has
 other options.
@@ -520,10 +571,10 @@ P-256/P-384 may be forced.
 
 **System impact:**
 
-- **Standard mode:** Rekor submissions, OIDC token issuance, and registry
+- **Dev mode:** Rekor submissions, OIDC token issuance, and registry
   traffic are all passively observable. The transparency log is transparent to
   the adversary by design.
-- **L2-anchored mode:** contract transactions are public by design; no
+- **Production mode:** contract transactions are public by design; no
   additional surveillance surface. Builder keys stored in CI secret stores on
   US-provider infrastructure are accessible via PRISM[^prism] without the
   builder's knowledge.
@@ -539,7 +590,7 @@ P-256/P-384 may be forced.
   cost of compromise significantly.
 - At least one quorum builder should be on non-Five-Eyes[^five-eyes]
   infrastructure with a documented, audited supply chain.
-- The L2-anchored contract design already provides the strongest available
+- The Production mode contract design already provides the strongest available
   mitigation: N independent signers on N independent hardware stacks must all be
   compromised simultaneously. Cost scales with N.
 
@@ -552,16 +603,18 @@ detectable, attributable, and expensive.
 
 ______________________________________________________________________
 
-## Other Threat Actors
+### Other 
 
-| Actor | Org | Capability | Mode at risk | | --- | --- | --- | --- | | China |
-MSS / PLA Unit 61398 | Supply chain, HUMINT | Standard, L2 | | Russia | GRU /
-SVR / FSB | Build pipeline | Standard | | North Korea | RGB / Lazarus Group |
-Credential theft | Standard, L2 | | Iran | IRGC / APT33-APT35 | Spear phishing |
-Standard | | Israel | Unit 8200 / NSO Group | Zero-day, implants | All | |
-Criminal | Ransomware, insider threat | Credential theft | Standard |
+| Actor | Org | Capability | Mode at risk |
+| --- | --- | --- | --- |
+| China | MSS / PLA Unit 61398 | Supply chain, HUMINT | Dev, Production |
+| Russia | GRU / SVR / FSB | Build pipeline | Dev |
+| North Korea | RGB / Lazarus Group | Credential theft | Dev, Production |
+| Iran | IRGC / APT33-APT35 | Spear phishing | Dev |
+| Israel | Unit 8200 / NSO Group | Zero-day, implants | All |
+| Criminal | Ransomware, insider threat | Credential theft | Dev |
 
-### China
+#### China
 
 China's National Intelligence Law (2017)[^national-intelligence-law] compels any
 Chinese entity - including Alibaba Cloud - to cooperate with intelligence
@@ -571,15 +624,15 @@ independent.
 
 PLA Unit 61398 and MSS-linked groups (APT10, APT41) have demonstrated sustained
 supply-chain targeting, including software-update hijacking and build-server
-compromise. The L2-anchored design raises the cost by requiring simultaneous
-compromise across N independent builder networks.
+compromise. The Production mode design raises the cost by requiring simultaneous
+across N independent builder networks.
 
 HUMINT recruitment of build-system maintainers is not addressed by any technical
 control. Key ceremony discipline and HSM-resident keys limit insider blast
 radius: an insider can attest a bad build, but cannot retroactively forge the
 quorum.
 
-### Russia
+#### Russia
 
 SUNBURST (SolarWinds)[^sunburst] is the canonical build-pipeline attack: GRU /
 SVR operators compromised the SolarWinds Orion build system and inserted a
@@ -594,7 +647,7 @@ passive interception regardless of TLS[^tls]. Reproducible builds mean an
 observer who intercepts a build gets the same artifact but cannot inject code
 without breaking the digest.
 
-### In General
+### Controls
 
 The [xz-utils backdoor (2024)](https://tukaani.org/xz-backdoor/) demonstrated
 that a patient attacker can socially engineer maintainer trust over years.
@@ -605,19 +658,11 @@ Controls:
   build fails.
 - **CI secret store credential theft** (session tokens, registry push
   credentials) is the most common criminal vector. HSM-resident builder keys
-  defeat environment-variable exfiltration. L2 mode removes the registry push
-  credential from the critical path entirely: the contract controls promotion,
-  not a CI secret.
+  defeat environment-variable exfiltration. Production mode removes the registry
+  push credential from the critical path entirely: the contract controls
+  promotion,  not a CI secret.
 - **Ransomware** targeting CI infrastructure disables builds but cannot forge
   attestations. Redundant builders provide availability.
-
-______________________________________________________________________
-
-## Notes
-
-- Seeded builds execute without network access.
-- Non-redistributable dependencies are represented by NAR digest; upstream changes
-  cause deterministic failure.
 
 ______________________________________________________________________
 

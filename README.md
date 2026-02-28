@@ -34,7 +34,7 @@ yet, the seed is built before application build.
 
 > [!NOTE] This quickstart demonstrates a minimal, single-builder (1-of-1)
 > example for evaluation. This completely bypasses the trust model. For
-> production, see the documentation on orchestrating an N-of-M quorum.
+> production, see the [Production Setup](#production-setup) section.
 
 Add `nix-seed` to your flake and expose a `seed` attribute:
 
@@ -106,6 +106,19 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+______________________________________________________________________
+
+## Production Setup
+
+*This section is a stub.* For a production deployment, you must configure an N-of-M builder quorum spanning independent failure domains. Documentation on configuring `modules/builders.nix`, secret management (HSMs vs. CI variables), and executing the genesis ceremony will go here.
+
+## Troubleshooting
+
+*This section is a stub.* Future content will cover:
+- How to shell into a seed container to debug environment issues.
+- Distinguishing between Nix evaluation errors and seed orchestration failures.
+- Checking L2 quorum status and diagnosing missing attestations.
 
 ______________________________________________________________________
 
