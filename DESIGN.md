@@ -1,5 +1,16 @@
 # Nix Seed: Design
 
+Goal: Near-zero setup time for happy-path builds (application code change only)
+on non-Nix-native CI[^ci] runners[^runner].
+
+The implementation leverages OCI[^oci] seed images, to package a project's
+dependency closure as content-addressed OCI layers, eliminating per-job
+reconstruction of `/nix/store`.
+
+Verifiable integrity is an inherent property of the system, enforced by the
+cryptographic linkage between source code, its dependency closure, and the
+resulting build artifacts.
+
 <!--toc:start-->
 - [Architecture](#architecture)
 - [Performance](#performance)
@@ -30,17 +41,6 @@
 - [Compliance](#compliance)
 - [Footnotes](#footnotes)
 <!--toc:end-->
-
-Goal: Near-zero setup time for happy-path builds (application code change only)
-on non-Nix-native CI[^ci] runners[^runner].
-
-The implementation leverages OCI[^oci] seed images, to package a project's
-dependency closure as content-addressed OCI layers, eliminating per-job
-reconstruction of `/nix/store`.
-
-Verifiable integrity is an inherent property of the system, enforced by the
-cryptographic linkage between source code, its dependency closure, and the
-resulting build artifacts.
 
 ## Architecture
 
