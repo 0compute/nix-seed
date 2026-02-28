@@ -523,7 +523,7 @@ orchestration code.
 
 ## Threat Actors
 
-### .gov
+### US .gov
 
 The United States government has structural dominance over the global internet:
 ICANN controls domain name resolution and root DNS; the majority of root
