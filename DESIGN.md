@@ -1,5 +1,36 @@
 # Nix Seed: Design
 
+<!--toc:start-->
+- [Architecture](#architecture)
+- [Performance](#performance)
+  - [Constraints](#constraints)
+  - [Instrumentation](#instrumentation)
+  - [Comparisons](#comparisons)
+- [Seed Construction](#seed-construction)
+  - [Non-Container Results](#non-container-results)
+- [Trust](#trust)
+  - [Bootstrap Chain](#bootstrap-chain)
+  - [Quorum](#quorum)
+  - [Modes](#modes)
+  - [Development](#development)
+  - [Production](#production)
+    - [Genesis](#genesis)
+    - [L2 Gas Costs](#l2-gas-costs)
+    - [Governance Constraints](#governance-constraints)
+  - [Implicit Trust Boundary](#implicit-trust-boundary)
+- [Project Attack Surface](#project-attack-surface)
+- [Threat Actors](#threat-actors)
+- [.gov](#gov)
+  - [Legal](#legal)
+  - [Extra-legal](#extra-legal)
+- [Other](#other)
+  - [China](#china)
+  - [Russia](#russia)
+- [Controls](#controls)
+- [Compliance](#compliance)
+- [Footnotes](#footnotes)
+<!--toc:end-->
+
 Goal: Near-zero setup time for happy-path builds (application code change only)
 on non-Nix-native CI[^ci] runners[^runner].
 
