@@ -288,10 +288,11 @@ notice.
 > EU Region is still Amazon. An Azure Government cloud is still Microsoft.
 > Jurisdiction follows the operator, not the data center. CI platforms
 > headquartered in the US therefore inherit the same exposure regardless of
-> where their runners execute.
+> where their runners execute. Sovereign cloud is a bullshit marketing term.
 
-Meaningful legal isolation from US government coercion requires at least one
-quorum builder to be:
+A quorum composed entirely of US-headquartered CI providers is legally a single
+failure domain. Practically, meaningful quorum against `.gov` adversaries
+requires that at least one quorum builder be:
 
 - Self-hosted on hardware owned by a non-US legal entity.
 - Operated in a jurisdiction with no mutual legal assistance treaty (MLAT) with
@@ -302,30 +303,22 @@ For the CLOUD Act specifically: data held by a US-controlled provider is
 reachable regardless of physical location. Region selection provides performance
 and data residency properties only; it does not alter legal jurisdiction.
 
+<!-- AGENT: link NSL to footnote -->
+
 NSLs require no judicial approval and carry a gag order. The provider's
 compliance team will not notify you. An administration that has fired inspectors
 general in bulk, declared independent agencies optional, and installed loyalists
 at the DOJ has the same legal access to your build infrastructure as any other.
 The CLOUD Act does not have a carve-out for good behavior.
 
-A quorum composed entirely of US-headquartered CI providers is legally a single
-failure domain. Practically, meaningful quorum against nation-state adversaries
-requires self-hosted runners.
-
 ### Extra-legal
 
 Legal process is the slow path. A well-resourced signals intelligence agency has
 better options.
 
-**Passive collection:** UPSTREAM collection taps internet backbone traffic at
-scale. PRISM provides access to major US tech company data. Rekor submissions,
-registry pushes, OIDC token exchanges, and build metadata are all observable in
-transit by a Five Eyes adversary without any legal process.
-
 **Five Eyes:** the UKUSA agreement extends NSA collection to GCHQ (UK), CSE
 (Canada), ASD (Australia), and GCSB (New Zealand). A builder in any Five Eyes
-jurisdiction is not meaningfully separate from a US builder from an intelligence
-perspective.
+jurisdiction is not meaningfully separate from a US builder.
 
 **Active network attack:** QUANTUM INSERT allows injection of malicious content
 into unencrypted or MITM-able traffic. BGP hijacking has been used to redirect
@@ -334,12 +327,13 @@ capability.
 
 **Hardware interdiction:** TAO's ANT catalog documents implants for network
 equipment, hard drives, and server hardware. Supply chains routed through US
-logistics are interdiction targets.
+logistics are interdiction targets. <!-- AGENT: is it even possible to have
+US-free hardware? -->
 
 **Cryptographic risk:** NSA seeded a backdoor into Dual_EC_DRBG (NIST SP
-800-90A). Any NIST-blessed primitive should be treated as potentially weakened.
+800-90A). Any NIST-blessed primitive should be treated with suspicion.
 P-256 (used in cosign/ECDSA) is NIST-approved. Prefer Ed25519 where the stack
-permits.
+permits. <!-- AGENT: does the stack permit? -->
 
 **System impact:**
 
@@ -361,17 +355,17 @@ permits.
   variables. A hardware token that cannot exfiltrate the private key raises the
   cost of compromise significantly.
 - At least one quorum builder should be on non-Five-Eyes hardware with a
-  documented, audited supply chain.
+  documented, audited supply chain. <!-- AGENT: DRY. -->
 - The L2-anchored contract design already provides the strongest available
   mitigation: N independent signers on N independent hardware stacks must all be
   compromised simultaneously. Cost scales with N.
 
 No software-only solution running on commodity cloud hardware in an automated CI
-environment is proof against a well-resourced signals intelligence agency with
-hardware access. The goal is not to be NSA-proof — that requires air-gapped
-hardware signing ceremonies outside the scope of CI. The goal is to make passive
-supply-chain compromise of a *release* require active, targeted, multi-system
-attack that is detectable, attributable, and expensive.
+environment is proof against a well-resourced adversary with hardware access.
+The goal is not to be NSA-proof — that requires air-gapped hardware signing
+ceremonies outside the scope of CI. The goal is to make passive supply-chain
+compromise of a *release* require active, targeted, multi-system attack that is
+detectable, attributable, and expensive.
 
 ______________________________________________________________________
 
