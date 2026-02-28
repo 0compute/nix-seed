@@ -37,7 +37,7 @@ by workflow scripts external to the container.
 - Requires an OCI registry. A CI provider with a co-located registry is
   preferred for performance, but not required.
 - Darwin builds must be run on macOS builders if they require Apple SDKs. A
-  runner with a differing SDK version produces a differing NAR hash and fails
+  runner with a differing SDK version produces a differing NAR digest and fails
   deterministically.
 
 #### Instrumentation
@@ -70,11 +70,11 @@ The benchmark command is:
    which includes image digest.
 1. The image is pushed to an OCI registry.
 
-`nix2container` is a pinned flake input; its version and hash are verified by
+`nix2container` is a pinned flake input; its version and digest are verified by
 the Nix build system under the same supply chain trust model as all other
 dependencies.
 
-Nix Seed itself is equally a pinned flake input; its hash is verified by the
+Nix Seed itself is equally a pinned flake input; its digest is verified by the
 same mechanism, binding build orchestration code to a specific auditable
 revision.
 
@@ -200,7 +200,7 @@ At minimum, the statement must bind:
 
 - source repository URI
 - source commit digest
-- flake.lock content hash
+- flake.lock content digest
 - target `system`
 - output artifact digest
 - builder identity and issuer
@@ -262,7 +262,7 @@ provenance:
 
 - source repository URI
 - source commit digest (full 40-hex SHA-1 or 64-hex SHA-256)
-- `flake.lock` content hash
+- `flake.lock` content digest
 - target `system`
 - output artifact digest
 - builder identity (contract address)
@@ -278,10 +278,12 @@ Storing the full in-toto statement on-chain is feasible but not recommended. A
 typical statement is 1,000-2,000 bytes; at 16 gas per non-zero calldata byte
 that adds roughly 16,000-32,000 gas per builder per system - a 10-20x increase
 in calldata cost - and bloats L2 data availability. The alternative is to anchor
-only the statement hash on-chain (32 bytes, negligible cost) as a fourth
-parameter `attest(commit, system, digest, intoto_hash)`, binding the off-chain
+only the statement digest on-chain (32 bytes, negligible cost) as a fourth
+parameter `attest(commit, system, digest, in_toto_digest)`, binding the off-chain
 provenance to the quorum record without the size cost. The current design omits
-the hash for simplicity; a production deployment may add it.
+the digest for simplicity; a production deployment may add it.
+
+<!-- AGENT: fix this in-toto is required -->
 
 Each builder holds a persistent signing key registered in the contract at
 genesis. A build produces a single on-chain transaction:
@@ -347,7 +349,7 @@ The `.seed.lock` file is not used.
 1. Verify inclusion proof for the current system; extract digest.
 1. Fetch in-toto provenance statements from OCI artifact; verify each signature
    against the builder's registered contract address; verify statement contents
-   match expected source URI, commit, and `flake.lock` hash.
+   match expected source URI, commit, and `flake.lock` digest.
 1. Execute build steps in seed container by digest.
 
 Contract quorum verification subsumes the Rekor log check. In-toto provenance is
@@ -617,7 +619,7 @@ ______________________________________________________________________
 ## Notes
 
 - Seeded builds execute without network access.
-- Non-redistributable dependencies are represented by NAR hash; upstream changes
+- Non-redistributable dependencies are represented by NAR digest; upstream changes
   cause deterministic failure.
 
 ______________________________________________________________________
@@ -661,9 +663,7 @@ from source.
 
 [^calldata]:
     **[calldata](https://ethereum.org/en/developers/docs/transactions/):** The
-    input data payload of an Ethereum transaction. For `attest()` calls, this
-    encodes the commit hash, system string, and image digest. Larger calldata
-    increases gas cost.
+    input data payload of an Ethereum transaction.
 
 [^ci]: **[CI](https://en.wikipedia.org/wiki/Continuous_integration):**
     Continuous Integration. The practice of automating the integration of code
@@ -719,7 +719,7 @@ from source.
     this design, it is used as an immutable public ledger for release anchors.
 
 [^merkle-root]: **[Merkle root](https://en.wikipedia.org/wiki/Merkle_tree):** A
-    single hash that summarizes a tree of digests and allows efficient inclusion
+    single digest that summarizes a tree of digests and allows efficient inclusion
     proofs for each leaf.
 
 [^mlat]:
@@ -733,7 +733,7 @@ from source.
 
 [^nar]: **[NAR](https://nix.dev/manual/nix/stable/glossary):** Nix Archive.
     Canonical binary serialization of a Nix store path, used as the input to
-    content-addressing. The NAR hash of a path must match its declaration;
+    content-addressing. The NAR digest of a path must match its declaration;
     mismatch fails the build.
 
 [^national-intelligence-law]: **[National Intelligence Law
