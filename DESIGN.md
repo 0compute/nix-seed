@@ -71,10 +71,6 @@ dependencies.
 
 ### Trust
 
-For production use, prefer [L2-anchored mode](#l2-anchored). Standard mode is
-suitable for development and single-team deployments where the Rekor dependency
-is acceptable.
-
 #### Bootstrap Chain
 
 > The source was clean, the build hermetic, but the compiler was pwned.
@@ -152,6 +148,12 @@ If builders disagree on the digest, release fails.
 
 #### Standard Mode
 
+> [!WARNING]
+>
+> **Not for production.** Standard mode depends on Rekor[^rekor]
+> availability and external OIDC[^oidc] trust roots. Use
+> [L2-anchored mode](#l2-anchored) for production releases.
+
 Each project maintains a `.seed.lock` containing a digest per target system:
 
 ```json
@@ -167,8 +169,19 @@ If no digest exists for a system, the seed is built, locked, and the normal
 build proceeds.
 
 After each build, an in-toto statement is generated describing inputs and build
-metadata, signed via OIDC/KMS using cosign, logged to Rekor, and attached to
-the image as an OCI artifact. No mutable registry state is trusted.
+metadata, signed via OIDC[^oidc]/KMS[^kms] using cosign[^cosign],
+logged to Rekor[^rekor], and attached to the image as an OCI artifact. No
+mutable registry state is trusted.
+
+At minimum, the statement must bind:
+
+- source repository URI
+- source commit digest
+- flake.lock content hash
+- target `system`
+- output image digest
+- builder identity and issuer
+- build timestamp and workflow run ID
 
 **Consumption:**
 
@@ -207,8 +220,13 @@ A *seed release* is a set of image digests, one per target system. This is
 distinct from a project release (git tag); a project release may reference one
 or more seed releases.
 
-Rekor is not used. Each builder holds a persistent signing key registered in the
-contract at genesis. A build produces a single transaction:
+The `commit` field in `attest(commit, system, digest)` is the VCS commit object
+ID (full 40-hex SHA-1 or full 64-hex SHA-256 depending on repository format)
+of the source tree that was built. Builders must additionally attest the exact
+`flake.lock` hash to bind dependency resolution.
+
+Rekor[^rekor] is not used. Each builder holds a persistent signing key
+registered in the contract at genesis. A build produces a single transaction:
 
 ```solidity
 attest(commit, system, digest)
@@ -224,7 +242,12 @@ then:
    `jurisdiction`, infrastructure, substituters).
 1. When quorum is satisfied across all target systems, publishes the digest tree
    as a single Merkle root:
-   - leaf = `system || imageDigest`
+   - hash function = `keccak256`
+   - leaf bytes =
+     `0x00 || u16be(len(system)) || utf8(system) || imageDigestBytes`
+   - internal node bytes = `0x01 || leftHash || rightHash`
+   - leaf order = lexical ascending by `system`
+   - odd leaf handling = duplicate the final leaf at each level
    - root = Merkle root across all systems
 1. The anchored root is immutable.
 
@@ -237,8 +260,19 @@ published root. Master-builder trust is removed from the promotion path.
 
 **Key management:** builder keys are persistent secrets held in CI secret
 stores. Compromise triggers revocation via the contract's governance multi-sig
-(see [Constraints](#constraints)). Keys are registered at genesis and rotated by
-contract multi-sig.
+(see [Governance Constraints](#governance-constraints)). Keys are registered at
+genesis and rotated by contract multi-sig.
+
+**Why CI key compromise still matters:** the contract verifies that
+`N` distinct registered builder keys signed the same tuple. It does not
+distinguish an authorized signer from an attacker using a stolen key.
+If fewer than `N` keys are compromised, quorum blocks promotion; if `N`
+or more are compromised, a malicious digest can satisfy quorum until
+revocation occurs.
+
+Builders must enforce `substituters =` (empty) and `trusted-substituters =`
+(empty), and include the effective `nix show-config` output in the attested
+build metadata so verifiers can reject substituted builds.
 
 The `.seed.lock` file is not used.
 
@@ -250,8 +284,22 @@ The `.seed.lock` file is not used.
 
 Contract quorum verification subsumes attestation checks.
 
-Anchoring costs less than the smallest practical denomination in most
-currencies.
+##### L2 Gas Costs
+
+Gas[^gas] cost depends on calldata size, state writes, and current L2 fee
+conditions. The ranges below are planning estimates, not guarantees.
+
+- `attest(commit, system, digest)` submission:
+  - expected gas: 120,000 to 220,000
+  - expected cost: 0.00006 to 0.00022 ETH
+  - expected USD (ETH = $3,000): about $0.18 to $0.66
+- root publication (once quorum is met for all systems):
+  - expected gas: 180,000 to 320,000
+  - expected cost: 0.00009 to 0.00032 ETH
+  - expected USD (ETH = $3,000): about $0.27 to $0.96
+
+Total anchoring overhead per release is typically below 0.001 ETH
+(about $3.00 at ETH = $3,000), excluding unusual fee spikes.
 
 ##### Genesis
 
@@ -271,6 +319,35 @@ ceremony distinct from normal builds:
 
 Post-genesis builds use the standard N-of-M threshold. The genesis root is the
 immutable trust anchor.
+
+#### Governance Constraints
+
+- Governance multi-sig must be independent from builder keys.
+- Threshold should be at least 2-of-3 for emergency revocation/rotation.
+- If a genesis key is lost before finalization, restart genesis with a new
+  builder set and publish a signed incident record.
+- If a builder is revoked post-genesis, re-evaluate affected releases and
+  republish status.
+
+#### Project Attack Surface
+
+This project is intentionally low-code: it mainly defines build policy,
+verification rules, and workflow wiring around existing Nix/Sigstore/container
+systems. That limits direct application attack surface because there is little
+custom runtime logic to exploit.
+
+The primary risk is **misconfiguration**, not complex code execution. The
+highest-impact failure modes are:
+
+- accepting mutable references (tags) instead of digests,
+- weak quorum/independence configuration,
+- enabling substituters[^substituter] in L2[^l2] mode,
+- trusting unsigned or under-specified attestations[^attestation],
+- insecure key handling in CI.
+
+Security work should prioritize strict defaults, immutable references,
+verification-by-default, and auditable configuration over adding new
+orchestration code.
 
 ## .gov Proofing
 
@@ -384,12 +461,11 @@ ______________________________________________________________________
 | North Korea | RGB / Lazarus Group | Credential theft | Standard, L2 |
 | Iran | IRGC / APT33–APT35 | Spear phishing | Standard |
 | Israel | Unit 8200 / NSO Group | Zero-day, implants | All |
-| Criminal / non-state | Ransomware, insider threat | Credential theft | Standard |
+| Criminal | Ransomware, insider threat | Credential theft | Standard |
 
 ### China
 
-China's
-[National Intelligence Law (2017)](https://www.chinalawtranslate.com/en/national-intelligence-law/)
+China's National Intelligence Law (2017)[^national-intelligence-law]
 compels any Chinese entity — including Alibaba Cloud — to cooperate with
 intelligence services on demand and without disclosure. A quorum that includes
 Alibaba Cloud or any runner operated by a Chinese-headquartered entity is not
@@ -407,8 +483,8 @@ quorum.
 
 ### Russia
 
-[SUNBURST (SolarWinds)](https://www.mandiant.com/resources/blog/evasive-attacker-leverages-solarwinds-supply-chain-compromises-with-sunburst-backdoor)
-is the canonical build-pipeline injection attack: GRU / SVR operators
+SUNBURST (SolarWinds)[^sunburst] is the canonical build-pipeline
+attack: GRU / SVR operators
 compromised the SolarWinds Orion build system and inserted a backdoor that was
 signed with the legitimate code-signing key. A multi-builder quorum would not
 have prevented a single-builder build compromise — but would have caught it:
@@ -454,131 +530,200 @@ Upstream license terms for non-redistributable SDKs are fully respected.
 
 ______________________________________________________________________
 
-## Definitions
 
-**[ANT catalog](https://en.wikipedia.org/wiki/ANT_catalog)** — NSA's classified
-menu of hardware and software implants for targeted surveillance, leaked by
-Snowden in 2013. Documents implants for network equipment, hard drives, and
-server firmware.
+## Footnotes
 
-**[bootstrappable builds](https://bootstrappable.org/)** — project and community
-focused on enabling software to be built from a minimal, auditable binary seed,
-eliminating implicit trust in compiler binaries. Coordinates the stage0, GNU
-Mes, and live-bootstrap projects.
+[^gas]: **Gas** — The unit used to measure computational work on
+  EVM-compatible chains. Transaction fee = gas used × gas price.
 
-**[CLOUD Act](https://www.justice.gov/dag/cloudact)** — Clarifying Lawful
-Overseas Use of Data Act (2018). Requires US-operated providers to produce data
-stored abroad when served with a US warrant, regardless of physical location.
+[^kms]: **KMS** — Key Management Service. A managed system used to store
+  cryptographic keys and perform signing operations without exposing private
+  key material to build scripts.
 
-**[cosign](https://docs.sigstore.dev/cosign/overview/)** — Sigstore tool for
-signing, verifying, and storing signatures and attestations in OCI registries.
+[^anchor]: **Anchor** — Writing a release fingerprint (digest or Merkle root) to
+  an immutable ledger so it cannot be silently changed later.
 
-**[Dual_EC_DRBG](https://en.wikipedia.org/wiki/Dual_EC_DRBG)** — Dual Elliptic
-Curve Deterministic Random Bit Generator. A NIST-standardized PRNG (SP 800-90A)
-subsequently confirmed to contain an NSA-planted backdoor.
+[^ant-catalog]: **[ANT catalog](https://en.wikipedia.org/wiki/ANT_catalog)** —
+  NSA's classified menu of hardware and software implants for
+  targeted surveillance, leaked by Snowden in 2013. Documents
+  implants for network equipment, hard drives, and server
+  firmware.
 
-**[Ed25519](https://ed25519.cr.yp.to/)** — Edwards-curve Digital Signature
-Algorithm over Curve25519. Not NIST-standardized; preferred over P-256 where the
-stack permits.
+[^attestation]: **Attestation** — A signed statement describing what was built,
+  from which inputs, and by which builder.
 
-**[FISA Section 702](https://www.dni.gov/index.php/704-702-overview)** — Foreign
-Intelligence Surveillance Act Section 702. Authorizes warrantless collection of
-communications of non-US persons from US-based providers.
+[^bootstrappable-builds]: **[bootstrappable
+  builds](https://bootstrappable.org/)** — project and
+  community focused on enabling software to be built
+  from a minimal, auditable binary seed, eliminating
+  implicit trust in compiler binaries. Coordinates the
+  stage0, GNU Mes, and live-bootstrap projects.
 
-**[Five Eyes](https://en.wikipedia.org/wiki/Five_Eyes)** — UKUSA signals
-intelligence alliance: United States (NSA), United Kingdom (GCHQ), Canada (CSE),
-Australia (ASD), New Zealand (GCSB). Intelligence collected by any member is
-shared across all.
+[^builder]: **Builder** — A machine or CI runner that performs a build and
+  submits evidence (attestations).
 
-**[GNU Mes](https://www.gnu.org/software/mes/)** — Minimal C compiler and Scheme
-interpreter bootstrapped from the stage0 assembler. An intermediate stage in the
-nixpkgs source bootstrap chain between stage0-posix and gcc.
+[^cloud-act]: **[CLOUD Act](https://www.justice.gov/dag/cloudact)** — Clarifying
+  Lawful Overseas Use of Data Act (2018). Requires US-operated
+  providers to produce data stored abroad when served with a US
+  warrant, regardless of physical location.
 
-**[HSM](https://en.wikipedia.org/wiki/Hardware_security_module)** — Hardware
-Security Module. Tamper-resistant hardware device for cryptographic key storage
-and operations. Private keys cannot be exported; signing occurs inside the
-device.
+[^cosign]: **[cosign](https://docs.sigstore.dev/cosign/overview/)** — Sigstore
+  tool for signing, verifying, and storing signatures and attestations
+  in OCI registries.
 
-**[in-toto](https://in-toto.io/)** — Framework for securing software supply
-chains by defining and verifying each step in a build pipeline via signed link
-metadata.
+[^digest]: **Digest** — A content fingerprint (hash). If the content changes,
+  the digest changes.
 
-**[L2](https://ethereum.org/en/layer-2/)** — Ethereum Layer 2. A scaling network
-that settles to the Ethereum base chain (L1), inheriting its security guarantees
-while reducing transaction cost and latency.
+[^dual-ec-drbg]: **[Dual_EC_DRBG](https://en.wikipedia.org/wiki/Dual_EC_DRBG)**
+  — Dual Elliptic Curve Deterministic Random Bit Generator. A
+  NIST-standardized PRNG (SP 800-90A) subsequently confirmed to
+  contain an NSA-planted backdoor.
 
-**[live-bootstrap](https://github.com/fosslinux/live-bootstrap)** — Project that
-reproducibly builds a large set of software packages starting from a minimal,
-auditable binary seed. Handles the upper layers of the nixpkgs full source
-bootstrap chain above GNU Mes and tcc.
+[^ed25519]: **[Ed25519](https://ed25519.cr.yp.to/)** — Edwards-curve Digital
+  Signature Algorithm over Curve25519. Not NIST-standardized;
+  preferred over P-256 where the stack permits.
 
-**[MLAT](https://en.wikipedia.org/wiki/Mutual_legal_assistance_treaty)** —
-Mutual Legal Assistance Treaty. Bilateral or multilateral agreement for
-cross-border legal cooperation, including evidence requests. Processing time
-varies from months to years.
+[^fisa-section-702]: **[FISA Section
+  702](https://www.dni.gov/index.php/704-702-overview)** —
+  Foreign Intelligence Surveillance Act Section 702.
+  Authorizes warrantless collection of communications of
+  non-US persons from US-based providers.
 
-**[NAR](https://nixos.org/manual/nix/stable/store/file-system-object/content-address.html)**
-— Nix Archive. Canonical binary serialization of a Nix store path, used as the
-input to content-addressing. The NAR hash of a path must match its declaration;
-mismatch fails the build.
+[^five-eyes]: **[Five Eyes](https://en.wikipedia.org/wiki/Five_Eyes)** — UKUSA
+  signals intelligence alliance: United States (NSA), United Kingdom
+  (GCHQ), Canada (CSE), Australia (ASD), New Zealand (GCSB).
+  Intelligence collected by any member is shared across all.
 
-**[nix2container](https://github.com/nlewo/nix2container)** — Tool that produces
-OCI images from Nix store paths, mapping each path to a content-addressed layer
-to maximize cache reuse.
+[^genesis]: **Genesis** — The first trusted anchoring event in L2 mode that
+  initializes contract state for future quorum-based releases.
 
-**[NSL](https://www.eff.org/issues/national-security-letters)** — National
-Security Letter. Administrative subpoena issued by the FBI without judicial
-review. Carries a statutory gag order: the recipient cannot disclose that the
-letter was received.
+[^gnu-mes]: **[GNU Mes](https://www.gnu.org/software/mes/)** — Minimal C
+  compiler and Scheme interpreter bootstrapped from the stage0
+  assembler. An intermediate stage in the nixpkgs source bootstrap
+  chain between stage0-posix and gcc.
 
-**[OCI](https://opencontainers.org/)** — Open Container Initiative. Industry
-standards for container image format, distribution, and runtime.
+[^hsm]: **[HSM](https://en.wikipedia.org/wiki/Hardware_security_module)** —
+  Hardware Security Module. Tamper-resistant hardware device for
+  cryptographic key storage and operations. Private keys cannot be
+  exported; signing occurs inside the device.
 
-**[OIDC](https://openid.net/connect/)** — OpenID Connect. Identity layer on
-OAuth 2.0. Used here for keyless signing: a CI platform issues a short-lived
-OIDC token asserting the workflow identity, which cosign uses as the signing
-credential.
+[^in-toto]: **[in-toto](https://in-toto.io/)** — Framework for securing software
+  supply chains by defining and verifying each step in a build
+  pipeline via signed link metadata.
 
-**[P-256](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-5.pdf)** — NIST
-P-256 elliptic curve (secp256r1). Used in ECDSA. NIST-standardized and widely
-deployed; treat as potentially weakened given the Dual_EC_DRBG precedent.
+[^l2]: **[L2](https://ethereum.org/en/layer-2/)** — Ethereum Layer 2. A network
+  that records transactions and ultimately settles them to Ethereum (L1).
+  In this design, it is used as an immutable public ledger for release
+  anchors.
 
-**[PRISM](https://en.wikipedia.org/wiki/PRISM)** — NSA program for collection of
-stored internet communications directly from major US tech companies under FISA
-Section 702 authority.
+[^live-bootstrap]: **live-bootstrap**
+  — Project that reproducibly builds a large set of software
+  packages starting from a minimal, auditable binary seed.
+  Handles the upper layers of the nixpkgs full source bootstrap
+  chain above GNU Mes and tcc.
+  Source: <https://github.com/fosslinux/live-bootstrap>.
 
-**[QUANTUM INSERT](https://en.wikipedia.org/wiki/QUANTUM_INSERT)** — NSA/GCHQ
-technique for injecting malicious content into HTTP streams via a
-man-on-the-side attack. The attacker races the legitimate server response with a
-crafted packet.
+[^merkle-root]: **Merkle root** — A single hash that summarizes many digests and
+  allows efficient inclusion proofs for each digest.
 
-**[Rekor](https://github.com/sigstore/rekor)** — Sigstore's immutable,
-append-only transparency log for software supply chain attestations. Entries are
-publicly verifiable; the log is operated by the Sigstore project.
+[^mlat]: **MLAT**
+  — Mutual Legal Assistance Treaty. Bilateral or multilateral agreement
+  for cross-border legal cooperation, including evidence requests.
+  Processing time varies from months to years.
+  Source: <https://en.wikipedia.org/wiki/Mutual_legal_assistance_treaty>.
 
-**[Sigstore](https://sigstore.dev/)** — Open-source project providing
-infrastructure for signing, transparency, and verification of software
-artifacts. Comprises cosign, Rekor, and Fulcio.
+[^nar]: **NAR**
+  — Nix Archive. Canonical binary serialization of a Nix store path, used
+  as the input to content-addressing. The NAR hash of a path must match
+  its declaration; mismatch fails the build.
 
-**[SLSA](https://slsa.dev/)** — Supply-chain Levels for Software Artifacts.
-Framework defining levels of supply chain integrity guarantees, from basic
-provenance (L1) to hermetic, reproducible builds (L4).
+[^nix2container]: **[nix2container](https://github.com/nlewo/nix2container)** —
+  Tool that produces OCI images from Nix store paths, mapping
+  each path to a content-addressed layer to maximize cache
+  reuse.
 
-**[stage0-posix](https://github.com/oriansj/stage0-posix)** — A self-hosting
-assembler whose initial bootstrap binary is a few hundred bytes of hex-encoded
-machine instructions — small enough to audit by hand. The trust anchor for the
-nixpkgs full source bootstrap chain.
+[^nsl]: **[NSL](https://www.eff.org/issues/national-security-letters)** —
+  National Security Letter. Administrative subpoena issued by the FBI
+  without judicial review. Carries a statutory gag order: the recipient
+  cannot disclose that the letter was received.
 
-**[TAO](https://en.wikipedia.org/wiki/Tailored_Access_Operations)** — Tailored
-Access Operations. NSA division responsible for active exploitation of foreign
-targets, including hardware implants and network-level attacks.
+[^oci]: **[OCI](https://opencontainers.org/)** — Open Container Initiative.
+  Industry standards for container image format, distribution, and
+  runtime.
 
-**[trusting trust](https://dl.acm.org/doi/10.1145/358198.358210)** — Attack
-described by Ken Thompson (1984): a compiler can be modified to insert a
-backdoor into programs it compiles, including a modified copy of itself, making
-the backdoor invisible in source. Defeated by bootstrapping the compiler chain
-from a human-auditable binary seed rather than an opaque binary.
+[^oidc]: **[OIDC](https://openid.net/connect/)** — OpenID Connect. Identity
+  layer on OAuth 2.0. Used here for keyless signing: a CI platform issues
+  a short-lived OIDC token asserting the workflow identity, which cosign
+  uses as the signing credential.
 
-**[UPSTREAM](https://en.wikipedia.org/wiki/UPSTREAM_collection)** — NSA program
-for bulk collection of internet traffic at the backbone level under FISA Section
-702, operating at major fiber and switching infrastructure.
+[^p-256]: **P-256**
+  — NIST P-256 elliptic curve (secp256r1). Used in ECDSA.
+  NIST-standardized and widely deployed; treat as potentially weakened
+  given the Dual_EC_DRBG precedent.
+
+[^prism]: **[PRISM](https://en.wikipedia.org/wiki/PRISM)** — NSA program for
+  collection of stored internet communications directly from major US
+  tech companies under FISA Section 702 authority.
+
+[^quantum-insert]: **[QUANTUM
+  INSERT](https://en.wikipedia.org/wiki/QUANTUM_INSERT)** —
+  NSA/GCHQ technique for injecting malicious content into HTTP
+  streams via a man-on-the-side attack. The attacker races the
+  legitimate server response with a crafted packet.
+
+[^quorum-n-of-m]: **Quorum (N-of-M)** — Out of `M` configured builders, at least
+  `N` independent builders must report the same result.
+
+[^rekor]: **[Rekor](https://github.com/sigstore/rekor)** — Sigstore's immutable,
+  append-only transparency log for software supply chain attestations.
+  Entries are publicly verifiable; the log is operated by the Sigstore
+  project.
+
+[^seed]: **Seed** — A prebuilt dependency base image used to reduce CI setup
+  time.
+
+[^sigstore]: **[Sigstore](https://sigstore.dev/)** — Open-source project
+  providing infrastructure for signing, transparency, and
+  verification of software artifacts. Comprises cosign, Rekor, and
+  Fulcio.
+
+[^slsa]: **[SLSA](https://slsa.dev/)** — Supply-chain Levels for Software
+  Artifacts. Framework defining levels of supply chain integrity
+  guarantees, from basic provenance (L1) to hermetic, reproducible builds
+  (L4).
+
+[^stage0-posix]: **[stage0-posix](https://github.com/oriansj/stage0-posix)** — A
+  self-hosting assembler whose initial bootstrap binary is a few
+  hundred bytes of hex-encoded machine instructions — small
+  enough to audit by hand. The trust anchor for the nixpkgs full
+  source bootstrap chain.
+
+[^substituter]: **Substituter** — A binary cache source that serves prebuilt
+  outputs instead of building locally from source.
+
+[^tao]: **[TAO](https://en.wikipedia.org/wiki/Tailored_Access_Operations)** —
+  Tailored Access Operations. NSA division responsible for active
+  exploitation of foreign targets, including hardware implants and
+  network-level attacks.
+
+[^trusting-trust]: **[trusting
+  trust](https://dl.acm.org/doi/10.1145/358198.358210)** —
+  Attack described by Ken Thompson (1984): a compiler can be
+  modified to insert a backdoor into programs it compiles,
+  including a modified copy of itself, making the backdoor
+  invisible in source. Defeated by bootstrapping the compiler
+  chain from a human-auditable binary seed rather than an
+  opaque binary.
+
+[^upstream]: **[UPSTREAM](https://en.wikipedia.org/wiki/UPSTREAM_collection)** —
+  NSA program for bulk collection of internet traffic at the backbone
+  level under FISA Section 702, operating at major fiber and
+  switching infrastructure.
+
+
+[^national-intelligence-law]: [National Intelligence Law
+  (2017)](https://www.chinalawtranslate.com/en/national-intelligence-law/).
+
+
+[^sunburst]: SUNBURST (SolarWinds) reference:
+  <https://en.wikipedia.org/wiki/SolarWinds>.
