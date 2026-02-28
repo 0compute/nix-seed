@@ -276,19 +276,19 @@ immutable trust anchor.
 
 ### Legal
 
-All major public cloud providers — AWS, Azure, GCP, Cloudflare, Fastly, and
-others — are incorporated and operated under US jurisdiction. They are subject
-to the CLOUD Act, FISA Section 702, and National Security Letters, any of which
-can compel infrastructure access or content disclosure without public notice.
+All major public cloud providers are incorporated and operated under US
+jurisdiction. They are subject to the CLOUD Act, FISA Section 702, and National
+Security Letters, any of which can compel infrastructure access without public
+notice.
 
-*Sovereign cloud* offerings from these providers are marketed as
-jurisdictionally isolated but remain US-operated entities under US law. An AWS
-EU Region is still Amazon. An Azure Government cloud is still Microsoft.
-Jurisdiction follows the operator, not the data center.
-
-CI platforms headquartered in the US — GitHub, GitLab, CircleCI, Buildkite,
-Harness, and others — inherit the same exposure regardless of where their
-runners execute.
+> [!WARNING]
+>
+> *Sovereign cloud* offerings from these providers are marketed as
+> jurisdictionally isolated but remain US-operated entities under US law. An AWS
+> EU Region is still Amazon. An Azure Government cloud is still Microsoft.
+> Jurisdiction follows the operator, not the data center. CI platforms
+> headquartered in the US therefore inherit the same exposure regardless of
+> where their runners execute.
 
 Meaningful legal isolation from US government coercion requires at least one
 quorum builder to be:
