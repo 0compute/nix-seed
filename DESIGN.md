@@ -782,8 +782,8 @@ from source.
     attestations. Entries are publicly verifiable; the log is operated by the
     Sigstore project.
 
-[^runner]: An ephemeral virtual machine that executes CI job steps. Runners
-    start fresh on every job with no persistent state.
+[^runner]: **Ephemeral virtual machine:** Executes CI job steps. Runners start
+    fresh on every job with no persistent state.
 
 [^sigstore]: **[sigstore](https://sigstore.dev/):** Open-source project
     providing infrastructure for signing, transparency, and verification of
