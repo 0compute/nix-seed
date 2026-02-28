@@ -1,49 +1,98 @@
 # Nix Seed
 
-Nix Seed produces OCI seed images for Nix-built projects, packaging their
-dependency closure as content-addressed OCI layers to eliminate per-job
-reconstruction of `/nix/store`.
+## Architecture
 
-## Why
+The design target is time-to-build. Content-addressing, reproducibility, and the
+auditable bootstrap chain are properties of nixpkgs and `nix2container` — not
+added by this system. The trust model is a free consequence of the performance
+model.
 
-In environments without a pre-populated `/nix/store`, the entire dependency
-closure must be realized before a build can begin. For Nix-built projects, this
-setup phase can dominate total job time.
+The release pointer is the image digest,
+`ghcr.io/org/repo.seed@sha256:<digest>`, or digest of other build result NAR.
+Registry tags and metadata are non-authoritative.
 
-Nix Seed removes closure realization from the critical path.
+Layering is delegated to `nix2container`. Execution is handled by external
+workflow scripts.
 
-Build time does not change. Setup time does.
+### Performance Model
 
-Source must always be fetched (typically via a shallow clone). Seeded CI does
-not change that constant cost.
+The system targets time-to-build (setup phase):
 
-Traditional CI setup scales with total dependency size. Seeded CI setup scales
-with dependency change since the last seed.
+- Closure realization is replaced by pulling and mounting an OCI filesystem
+  image.
+- Setup cost scales with dependency change since the last seed.
+- Source fetch (shallow clone size) is unchanged.
+- Build execution time is unchanged.
 
-______________________________________________________________________
+#### Comparisons
 
-## Attestation (standard mode)
+This project can generate CI workflows that compare setup-time overhead against
+cache-based approaches (e.g. public binary cache, cache actions).
 
-For each build result (seed image/application build/etc):
+These workflows are not required for correctness and are intended for
+benchmarking / demonstration.
 
-- An in-toto statement is generated describing inputs and build metadata.
-- The statement is signed (via OIDC or KMS) using cosign.
-- The signed statement is logged to Rekor.
-- The attestation is pushed to the registry as an OCI attachment.
+The benchmark command is:
 
-Consumers verify:
+- `nix develop -c true`
 
-1. Image digest matches expected value.
-1. Attestation signature is valid.
-1. Rekor log inclusion is valid.
-1. Statement contents match expected inputs.
+### Seed Construction
 
-No mutable registry state is trusted.
+1. A seed build evaluates a Nix-built project.
+1. `nix2container` produces an OCI image of the dependency closure whose layers
+   correspond to store paths. The image digest is available from nix2container
+   metadata before push.
+1. The image is pushed to an OCI registry.
+1. The registry-reported digest is verified against the nix2container-computed
+   digest. Mismatch aborts.
 
-[L2-anchored mode](#l2-anchored-quorum-recommended) mode does not use Rekor or
-in-toto attestations.
+`nix2container` is a pinned flake input; its version and hash are verified by
+the Nix build system under the same supply chain trust model as all other
+dependencies.
 
-## Quorum (optional)
+### Trust
+
+For production use, prefer [L2-anchored mode](#l2-anchored). Standard mode is
+suitable for development and single-team deployments where the Rekor dependency
+is acceptable.
+
+#### Bootstrap Chain
+
+> The source was clean, the build hermetic, but the compiler was pwned.
+
+[Trusting trust](https://dl.acm.org/doi/10.1145/358198.358210) has no software
+fix — the compiler chain must terminate at a ground truth small enough for a
+human to audit.
+
+Nixpkgs realizes this by building every compiler, linker, and library from
+source, terminating at a minimal binary seed.
+
+**Stage0.** The initial binary is
+[stage0-posix](https://github.com/oriansj/stage0-posix): a self-hosting
+assembler whose bootstrap binary is a few hundred bytes of hex-encoded machine
+instructions. There is no opaque compiler binary to trust.
+
+From stage0, the chain builds through
+[GNU Mes](https://www.gnu.org/software/mes/) — a minimal C compiler and Scheme
+interpreter bootstrapped entirely from the assembler — then through tcc and gcc,
+arriving at the full toolchain. The upper layers are handled by
+[live-bootstrap](https://github.com/fosslinux/live-bootstrap). The entire chain
+is coordinated with [bootstrappable.org](https://bootstrappable.org/).
+The nixpkgs implementation lives in
+[`pkgs/stdenv`](https://github.com/NixOS/nixpkgs/tree/master/pkgs/stdenv).
+
+**The cost is already paid.** The full source bootstrap exists in the nixpkgs
+dependency graph regardless of this project. Seed images cache its output: the
+first build after a seed update pays the full bootstrap cost once; subsequent CI
+jobs pull prebuilt layers. Trustworthiness is not added overhead — it is a
+property of the build graph that seed images happen to preserve.
+
+Consumers who want independent verification can rebuild from the stage0 binary,
+reproduce the full closure, and check the digest against the anchored value. The
+content-addressed layers provide a direct correspondence between what is pulled
+and what was built.
+
+#### Quorum
 
 > [!WARNING]
 >
@@ -70,7 +119,9 @@ established by registered contract key; OIDC issuer is not a factor.
 **Choosing N:** each of the N required builders should have a distinct
 `corporateParent`, `jurisdiction`, and signing identity. N ≥ 3 is a practical
 minimum; below that a single adversary controlling two independent entities can
-forge a majority. Unanimous (M-of-M) is the strongest guarantee.
+forge a majority. Unanimous (M-of-M) is the strongest guarantee. See
+[`modules/seedcfg.nix`](modules/seedcfg.nix) and
+[`modules/builders.nix`](modules/builders.nix) for the builder registry schema.
 
 **Timing:** in standard mode with N-of-M and a deadline, a party controlling M-N
 builders can delay attestation to ensure the deciding N-th vote comes from a
@@ -80,7 +131,58 @@ when a timer expires.
 
 If builders disagree on the digest, release fails.
 
-## L2-Anchored Quorum (recommended)
+#### Standard Mode
+
+Each project maintains a `.seed.lock` containing a digest per target system:
+
+```json
+{
+  "aarch64-darwin": "sha256:...",
+  "aarch64-linux": "sha256:...",
+  "x86_64-darwin": "sha256:...",
+  "x86_64-linux": "sha256:..."
+}
+```
+
+If no digest exists for a system, the seed is built, locked, and the normal
+build proceeds.
+
+After each build, an in-toto statement is generated describing inputs and build
+metadata, signed via OIDC/KMS using cosign, logged to Rekor, and attached to
+the image as an OCI artifact. No mutable registry state is trusted.
+
+**Consumption:**
+
+1. Read seed digest for the current system from `.seed.lock`.
+1. Verify: attestation signature is valid; Rekor log inclusion is valid;
+   statement contents match expected inputs.
+1. Execute build steps in seed container by digest.
+
+> [!WARNING]
+>
+> Rekor has no enterprise SLA. If Rekor is unavailable, quorum cannot be
+> reached and builds fail. For production use, use
+> [L2-anchored mode](#l2-anchored).
+
+#### L2-Anchored
+
+> [!WARNING]
+>
+> **No substituters.** Each builder must build its closure locally from source
+> with binary caches disabled. Build independence is the source of quorum's
+> security guarantee: N builders on N independent stacks must all produce the
+> same digest. If builders substitute from a shared cache, the cache operator —
+> not N independent builds — is what produced the attested digest. The
+> independence constraints the contract verifies (`corporateParent`,
+> `jurisdiction`, infrastructure) are vacuous if all builders are serving the
+> same pre-built narinfo.
+
+> [!NOTE]
+>
+> The L2 contract maintains a builder revocation list. If a builder is
+> retroactively found compromised, its identity is added to the list; the
+> contract excludes its attestations from quorum counting. Prior seed releases
+> that relied on the revoked builder should be re-evaluated.
 
 A *seed release* is a set of image digests, one per target system. This is
 distinct from a project release (git tag); a project release may reference one
@@ -89,17 +191,18 @@ or more seed releases.
 Rekor is not used. Each builder holds a persistent signing key registered in the
 contract at genesis. A build produces a single transaction:
 
-```
-attest(digest, system)
+```solidity
+attest(commit, system, digest)
 ```
 
 signed by the builder's registered key. The contract records
-`(digest, system, builder_address, block_number)` for each submission, then:
+`(commit, system, digest, builder_address, block_number)` for each submission,
+then:
 
 1. Checks that N distinct registered builders have submitted the same
-   `(digest, system)` pair.
+   `(commit, system, digest)` tuple.
 1. Verifies independence constraints across the N builders (`corporateParent`,
-   `jurisdiction`, infrastructure).
+   `jurisdiction`, infrastructure, substituters).
 1. When quorum is satisfied across all target systems, publishes the digest tree
    as a single Merkle root:
    - leaf = `system || imageDigest`
@@ -118,19 +221,20 @@ stores. Compromise triggers revocation via the contract's governance multi-sig
 (see [Constraints](#constraints)). Keys are registered at genesis and rotated by
 contract multi-sig.
 
-The `.seed.lock` file is not used in L2-anchored mode; see
-[Seed Lock](#seed-lock).
+The `.seed.lock` file is not used.
 
-Consumers verify:
+**Consumption:** The contract must not be empty; see [Genesis](#genesis).
 
-1. The anchored Merkle root (on-chain).
-1. Inclusion proof for their target system.
-1. The image digest.
+1. Query the L2 contract for the current anchored Merkle root.
+1. Verify inclusion proof for the current system; extract digest.
+1. Execute build steps in seed container by digest.
+
+Contract quorum verification subsumes attestation checks.
 
 Anchoring costs less than the smallest practical denomination in most
 currencies.
 
-### Genesis
+##### Genesis
 
 The first seed has no prior quorum to bootstrap from. Genesis is a controlled
 ceremony distinct from normal builds:
@@ -149,101 +253,12 @@ ceremony distinct from normal builds:
 Post-genesis builds use the standard N-of-M threshold. The genesis root is the
 immutable trust anchor.
 
-______________________________________________________________________
-
-## Architecture
-
-The release pointer is the image digest:
-`ghcr.io/org/repo.seed@sha256:<digest>`. Registry tags and metadata are
-non-authoritative.
-
-Layering is delegated to `nix2container`. Execution is handled by external
-workflow scripts.
-
-### Seed Construction
-
-1. A seed build evaluates a Nix-built project.
-1. `nix2container` produces an OCI image of the dependency closure whose layers
-   correspond to store paths. The image digest is available from nix2container
-   metadata before push.
-1. The image is pushed to an OCI registry.
-1. The registry-reported digest is verified against the nix2container-computed
-   digest. Mismatch aborts.
-
-**Standard mode:** an in-toto attestation is generated, signed via OIDC/KMS,
-logged to Rekor, and attached to the image as an OCI artifact.
-
-**L2-anchored mode:** the builder submits `attest(digest, system)` to the
-contract. No Rekor interaction.
-
-### Seed Lock
-
-In standard mode, each project maintains a `.seed.lock` containing a digest per
-target system.
-
-In L2-anchored mode the `.seed.lock` is not used. Consumers query the L2
-contract directly to obtain the anchored digest and inclusion proof for their
-target system. The contract is the authoritative release pointer.
-
-Structure:
-
-```json
-{
-  "aarch64-darwin": "sha256:...",
-  "aarch64-linux": "sha256:...",
-  "x86_64-darwin": "sha256:...",
-  "x86_64-linux": "sha256:..."
-}
-```
-
-If no digest exists for a system:
-
-- the build produces a seed first,
-- locks,
-- then proceeds with the normal build.
-
 ### Registry
 
 An OCI registry is required.
 
 A CI provider with a co-located registry is preferred for performance, but not
 required.
-
-### Consumption Model
-
-### Standard mode
-
-1. Read seed digest for the current system from `.seed.lock`.
-1. Verify: attestation signature is valid; Rekor log inclusion is valid;
-   statement contents match expected inputs.
-1. Execute build steps in seed container by digest.
-
-If no lock or digest is available, a seed build runs first, then the lock is
-written. For L2-anchored mode the contract must not be empty; see
-[Genesis](#genesis).
-
-### L2-anchored mode
-
-1. Query the L2 contract for the current anchored Merkle root.
-1. Verify inclusion proof for the current system; extract digest.
-1. Execute build steps in seed container by digest.
-
-Contract quorum verification subsumes attestation checks. No `.seed.lock` is
-read.
-
-### Performance Model
-
-The system changes only the setup phase:
-
-- Closure realization is replaced by pulling and mounting an OCI filesystem
-  image.
-- Setup cost scales with dependency change since the last seed.
-- Source fetch (shallow clone size) is unchanged.
-- Build execution time is unchanged.
-
-Reference benchmark command:
-
-- `nix develop -c true`
 
 ### Instrumentation
 
@@ -252,8 +267,8 @@ Jobs are instrumented with OpenTelemetry spans for:
 - seed pull
 - mount ready
 - build start
-
-<!-- AGENT: any more spans? -->
+- seed build (when a new seed is required before the app build)
+- digest verification
 
 Primary metric: time-to-ready (setup only).
 
@@ -263,14 +278,6 @@ Primary metric: time-to-ready (setup only).
 - Darwin builds must be run on macOS builders if they need Apple SDKs. A runner
   with a differing SDK version produces a differing NAR hash and fails
   deterministically.
-- Standard mode requires Rekor, which has no enterprise SLA. If Rekor is
-  unavailable, quorum cannot be reached and builds fail. For production use,
-  consider a private Rekor instance. L2-anchored mode has no Rekor dependency.
-- The L2 contract maintains a builder revocation list. If a builder is
-  retroactively found compromised, its identity is added to the list; the
-  contract excludes its attestations from quorum counting. Prior seed releases
-  that relied on the revoked builder should be re-evaluated.
-
 ______________________________________________________________________
 
 ## .gov Proofing
@@ -378,14 +385,14 @@ ______________________________________________________________________
 
 ## Other Threat Actors
 
-| Actor | Org | Capability | Mode at risk | | ------------------ |
---------------------------- | -------------------- | ----------------- | | China
-| MSS / PLA Unit 61398 | Supply chain, HUMINT | Standard, L2 | | Russia | GRU /
-SVR / FSB | Build pipeline | Standard | | North Korea | RGB / Lazarus Group |
-Credential theft | Standard, L2 | | Iran | IRGC / APT33–APT35 | Spear phishing |
-Standard | | Israel | Unit 8200 / NSO Group | Zero-day, implants | All | |
-Criminal / non-state | Ransomware, insider threat | Credential theft | Standard
-|
+| Actor | Org | Capability | Mode at risk |
+| --- | --- | --- | --- |
+| China | MSS / PLA Unit 61398 | Supply chain, HUMINT | Standard, L2 |
+| Russia | GRU / SVR / FSB | Build pipeline | Standard |
+| North Korea | RGB / Lazarus Group | Credential theft | Standard, L2 |
+| Iran | IRGC / APT33–APT35 | Spear phishing | Standard |
+| Israel | Unit 8200 / NSO Group | Zero-day, implants | All |
+| Criminal / non-state | Ransomware, insider threat | Credential theft | Standard |
 
 ### China
 
@@ -422,12 +429,11 @@ passive interception regardless of TLS. Reproducible builds mean an observer who
 intercepts a build gets the same artifact but cannot inject code without
 breaking the digest.
 
-### Criminal / Non-State
+### In General
 
 The [xz-utils backdoor (2024)](https://tukaani.org/xz-backdoor/) demonstrated
-that a patient attacker — attribution is contested; circumstantial evidence
-(years of operational patience, tight OPSEC, precise target selection) points to
-a state-sponsored operation — can socially engineer maintainer trust over years.
+that a patient attacker can socially engineer maintainer trust over years.
+
 Controls:
 
 - **Quorum over commits**: if any one builder's reproducible build diverges, the
@@ -442,32 +448,17 @@ Controls:
 
 ______________________________________________________________________
 
-## Comparisons
-
-This project can generate CI workflows that compare setup-time overhead against
-cache-based approaches (e.g. public binary cache, cache actions).
-
-These workflows are not required for correctness and are intended for
-benchmarking / demonstration.
-
-The benchmark command is:
-
-- `nix develop -c true`
-
-(Workflows are stubbed.)
-
-______________________________________________________________________
-
 ## Notes
 
-- All Nix inputs are declared and hash-pinned. Nixpkgs has full source
-  bootstrap.
-- `nix2container` is a pinned flake input; its version and hash are verified by
-  the Nix build system under the same supply chain trust model as all other
-  dependencies.
 - Seeded builds execute without network access.
 - Non-redistributable dependencies are represented by NAR hash; upstream changes
   cause deterministic failure.
+
+______________________________________________________________________
+
+## Compliance
+
+Upstream license terms for non-redistributable SDKs are fully respected.
 
 ______________________________________________________________________
 
@@ -477,6 +468,11 @@ ______________________________________________________________________
 menu of hardware and software implants for targeted surveillance, leaked by
 Snowden in 2013. Documents implants for network equipment, hard drives, and
 server firmware.
+
+**[bootstrappable builds](https://bootstrappable.org/)** — project and community
+focused on enabling software to be built from a minimal, auditable binary seed,
+eliminating implicit trust in compiler binaries. Coordinates the stage0, GNU
+Mes, and live-bootstrap projects.
 
 **[CLOUD Act](https://www.justice.gov/dag/cloudact)** — Clarifying Lawful
 Overseas Use of Data Act (2018). Requires US-operated providers to produce data
@@ -502,6 +498,10 @@ intelligence alliance: United States (NSA), United Kingdom (GCHQ), Canada (CSE),
 Australia (ASD), New Zealand (GCSB). Intelligence collected by any member is
 shared across all.
 
+**[GNU Mes](https://www.gnu.org/software/mes/)** — Minimal C compiler and Scheme
+interpreter bootstrapped from the stage0 assembler. An intermediate stage in the
+nixpkgs source bootstrap chain between stage0-posix and gcc.
+
 **[HSM](https://en.wikipedia.org/wiki/Hardware_security_module)** — Hardware
 Security Module. Tamper-resistant hardware device for cryptographic key storage
 and operations. Private keys cannot be exported; signing occurs inside the
@@ -514,6 +514,11 @@ metadata.
 **[L2](https://ethereum.org/en/layer-2/)** — Ethereum Layer 2. A scaling network
 that settles to the Ethereum base chain (L1), inheriting its security guarantees
 while reducing transaction cost and latency.
+
+**[live-bootstrap](https://github.com/fosslinux/live-bootstrap)** — Project that
+reproducibly builds a large set of software packages starting from a minimal,
+auditable binary seed. Handles the upper layers of the nixpkgs full source
+bootstrap chain above GNU Mes and tcc.
 
 **[MLAT](https://en.wikipedia.org/wiki/Mutual_legal_assistance_treaty)** —
 Mutual Legal Assistance Treaty. Bilateral or multilateral agreement for
@@ -567,9 +572,20 @@ artifacts. Comprises cosign, Rekor, and Fulcio.
 Framework defining levels of supply chain integrity guarantees, from basic
 provenance (L1) to hermetic, reproducible builds (L4).
 
+**[stage0-posix](https://github.com/oriansj/stage0-posix)** — A self-hosting
+assembler whose initial bootstrap binary is a few hundred bytes of hex-encoded
+machine instructions — small enough to audit by hand. The trust anchor for the
+nixpkgs full source bootstrap chain.
+
 **[TAO](https://en.wikipedia.org/wiki/Tailored_Access_Operations)** — Tailored
 Access Operations. NSA division responsible for active exploitation of foreign
 targets, including hardware implants and network-level attacks.
+
+**[trusting trust](https://dl.acm.org/doi/10.1145/358198.358210)** — Attack
+described by Ken Thompson (1984): a compiler can be modified to insert a
+backdoor into programs it compiles, including a modified copy of itself, making
+the backdoor invisible in source. Defeated by bootstrapping the compiler chain
+from a human-auditable binary seed rather than an opaque binary.
 
 **[UPSTREAM](https://en.wikipedia.org/wiki/UPSTREAM_collection)** — NSA program
 for bulk collection of internet traffic at the backbone level under FISA Section
