@@ -20,7 +20,7 @@
   - [Implicit Trust Boundary](#implicit-trust-boundary)
 - [Project Attack Surface](#project-attack-surface)
 - [Threat Actors](#threat-actors)
-- [.gov](#gov)
+- [US .gov](#us-gov)
   - [Legal](#legal)
   - [Extra-legal](#extra-legal)
 - [Other](#other)
