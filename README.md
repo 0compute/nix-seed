@@ -27,12 +27,6 @@ further info
 >
 > - Anonymous, c. 1967
 
-> [!WARNING]
->
-> The [design doc](./DESIGN.md) details critical security information.
->
-> Read it. Twice. Or, get pwned.
-
 ### Trust Level: Innocent
 
 > IDGAF about trust. Gimme the Fast!
@@ -230,11 +224,17 @@ jobs:
 
 ## Production Configuration
 
+> [!WARNING]
+>
+> The [design doc](./DESIGN.md) details critical security information.
+>
+> Read it. Twice. Or, get pwned.
+
 Update `seedCfg`: set `trust` to `credulous` and define `builders` and
 `quorum`. See [Threat Actors](./DESIGN.md#threat-actors) for guidance on
 builder independence.
 
-> [!WARNING]
+> [!NOTE]
 >
 > This is the only option until [Trust Level: Zero](#trust-level-zero) is
 > implemented. Refer to [Trust Level: Credulous](#trust-level-credulous) for
