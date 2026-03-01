@@ -12,9 +12,9 @@ server firmware.
 a specific build occurred from specified inputs by a known builder. See also:
 in-toto, Rekor, OIDC, Registry.
 
-**[BGP](https://www.rfc-editor.org/rfc/rfc4271):** Border Gateway Protocol
-(RFC 4271). The routing protocol that directs traffic between autonomous systems
-on the internet. BGP hijacking redirects traffic through an adversary-controlled
+**[BGP](https://www.rfc-editor.org/rfc/rfc4271):** Border Gateway Protocol (RFC
+4271). The routing protocol that directs traffic between autonomous systems on
+the internet. BGP hijacking redirects traffic through an adversary-controlled
 network path.
 
 **Builder:** A machine or CI runner that performs a build and submits evidence
@@ -71,15 +71,15 @@ Australia (ASD), New Zealand (GCSB). Intelligence collected by any member is
 shared across all.
 
 **[Gas](https://ethereum.org/en/developers/docs/gas/):** The unit used to
-measure computational work on EVM-compatible chains. Transaction fee = gas used
-* gas price. Used on Ethereum L2.
+measure computational work on EVM-compatible chains. Transaction fee is gas used
+times gas price. Used on Ethereum L2.
 
 **[HSM](https://en.wikipedia.org/wiki/Hardware_security_module):** Hardware
 Security Module. Tamper-resistant hardware device for cryptographic key storage
 and operations. Private keys cannot be exported; signing occurs inside the
 device.
 
-**[HUMINT](https://en.wikipedia.org/wiki/Human_intelligence_(intelligence_gathering)):**
+**[HUMINT](<https://en.wikipedia.org/wiki/Human_intelligence_(intelligence_gathering)>):**
 Human Intelligence. Intelligence gathered through interpersonal contact:
 recruitment, social engineering, or insider threats. Technical controls do not
 address HUMINT; key ceremony discipline and HSM-resident keys limit insider
@@ -96,9 +96,9 @@ metadata.
 
 **KMS:** Key Management Service. A managed system used to store cryptographic
 keys and perform signing operations without exposing private key material to
-build scripts. See [NIST SP
-800-57](https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final) for key management
-recommendations.
+build scripts. See
+[NIST SP 800-57](https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final) for key
+management recommendations.
 
 **[L2](https://ethereum.org/en/layer-2/):** Ethereum Layer 2. A network that
 records transactions and ultimately settles them to Ethereum (L1). In this
@@ -114,9 +114,9 @@ legal cooperation, including evidence requests. Processing time varies from
 months to years.
 
 **[Multi-sig](https://en.wikipedia.org/wiki/Threshold_cryptosystem):**
-Multi-signature scheme requiring M-of-N keyholders to co-sign an operation.
-Used here for governance (builder key rotation and revocation) to prevent
-unilateral control. See also: N-of-M.
+Multi-signature scheme requiring M-of-N keyholders to co-sign an operation. Used
+here for governance (builder key rotation and revocation) to prevent unilateral
+control. See also: N-of-M.
 
 **N-of-M:** Out of `M` configured builders, at least `N` independent builders
 must report the same result.
@@ -132,8 +132,8 @@ references, deriver, and optional signature. Fetched by a substituter before
 downloading the NAR archive.
 
 **[National Intelligence Law (2017)](https://www.chinalawtranslate.com/en/national-intelligence-law/):**
-Chinese law compelling any Chinese entity to cooperate with intelligence services
-on demand and without public disclosure.
+Chinese law compelling any Chinese entity to cooperate with intelligence
+services on demand and without public disclosure.
 
 **[NSL](https://www.eff.org/issues/national-security-letters):** National
 Security Letter. Administrative subpoena issued without judicial review. Carries
@@ -147,9 +147,9 @@ The basis for OIDC identity assertions used in keyless signing.
 **[OCI](https://opencontainers.org/):** Open Container Initiative. Industry
 standards for container image format, distribution, and runtime.
 
-**[OIDC](https://openid.net/connect/):** OpenID Connect. Identity layer on
-OAuth 2.0. Used here for keyless signing: a CI platform issues a short-lived
-OIDC token asserting the workflow identity, which cosign uses as the signing
+**[OIDC](https://openid.net/connect/):** OpenID Connect. Identity layer on OAuth
+2.0. Used here for keyless signing: a CI platform issues a short-lived OIDC
+token asserting the workflow identity, which cosign uses as the signing
 credential.
 
 **[OpenTelemetry](https://opentelemetry.io/):** Vendor-neutral observability
@@ -188,14 +188,13 @@ artifacts. Comprises cosign, Rekor, and Fulcio.
 
 **[SLA](https://en.wikipedia.org/wiki/Service-level_agreement):** Service Level
 Agreement. A contractual commitment on availability, reliability, and support
-response time. Rekor (Sigstore's transparency log) carries no enterprise SLA;
-an outage blocks attestation in Dev mode.
+response time. Rekor (Sigstore's transparency log) carries no enterprise SLA; an
+outage blocks attestation in Dev mode.
 
-**[SORM](https://en.wikipedia.org/wiki/SORM):** Sistema
-Operativno-Rozysknikh Meropriyatiy (System for Operative Investigative
-Activities). Russian federal law requiring telecommunications operators to
-install equipment providing FSB with real-time access to all communications
-traffic, without a warrant.
+**[SORM](https://en.wikipedia.org/wiki/SORM):** Sistema Operativno-Rozysknikh
+Meropriyatiy (System for Operative Investigative Activities). Russian federal
+law requiring telecommunications operators to install equipment providing FSB
+with real-time access to all communications traffic, without a warrant.
 
 **[Substituter](https://nix.dev/manual/nix/stable/command-ref/conf-file#conf-substituters):**
 A Nix binary cache endpoint. When enabled, Nix fetches pre-built store paths
@@ -211,11 +210,10 @@ agencies.
 Access Operations. NSA division responsible for active exploitation of foreign
 targets, including hardware implants and network-level attacks.
 
-**[TLS](https://www.rfc-editor.org/rfc/rfc8446):** Transport Layer Security
-(RFC 8446). Cryptographic protocol that encrypts network traffic between two
-parties. Protects against passive eavesdropping but not against a provider
-compelled to cooperate or a network-level man-on-the-side attacker (see QUANTUM
-INSERT).
+**[TLS](https://www.rfc-editor.org/rfc/rfc8446):** Transport Layer Security (RFC
+8446). Cryptographic protocol that encrypts network traffic between two parties.
+Protects against passive eavesdropping but not against a provider compelled to
+cooperate or a network-level man-on-the-side attacker (see QUANTUM INSERT).
 
 **[Trusting Trust](https://dl.acm.org/doi/10.1145/358198.358210):** Ken
 Thomson's seminal attack: a compiler can be modified to insert a backdoor into

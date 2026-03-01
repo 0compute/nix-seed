@@ -17,12 +17,6 @@ closure, and output artifact - not assumed.
 
 ## Architecture
 
-> [!NOTE]
->
-> A **digest** is a unique cryptographic fingerprint of a file's contents. If
-> the contents change by a single byte, the fingerprint changes entirely. Nix
-> Seed uses this to prove exactly what code went into a build.
-
 The release pointer is the OCI image digest
 (`ghcr.io/org/repo.seed@sha256:<digest>`). Registry[^registry] tags and metadata
 are non-authoritative.
@@ -74,59 +68,78 @@ The benchmark command is:
 
 #### Constraints
 
-- Requires an OCI registry. A CI provider with a co-located registry is
-  preferred for performance, but not required.
 - Darwin builds must be run on macOS builders if they require Apple SDKs. A
   runner with a differing SDK version produces a differing NAR digest and fails
   deterministically.
 
-### Seed Construction
+### Build Output
 
-1. The seed build evaluates a Nix-built project.
-1. `nix2container`: produces an OCI image of the dependency
-   closure, whose layers correspond to store paths, and a metadata manifest,
-   which includes image digest.
-1. The image is pushed to an OCI registry.
+Nix Seed's output is a Nix store path. The project build runs inside the seed
+container and writes its result to the local Nix store. The release pointer is
+the content-addressed digest of that output: a NAR digest for store path
+outputs, an OCI image digest for container outputs. The trust and attestation
+model is identical in both cases: the in-toto statement binds the output
+artifact digest, and (in Zero) that digest is anchored on-chain.
 
-`nix2container` is a pinned flake input, as is Nix Seed itself; their digests
-are verified by the Nix build system under the same supply chain trust model as
-all other dependencies.
+For distribution, [Cachix](https://cachix.org/) provides a managed binary cache
+service for store path results. Cachix push credentials are a deployment secret,
+not a trust root. Container outputs are pushed to an OCI registry. Cachix is not
+required when all outputs are container images; it is recommended for store path
+outputs and dev shells.
 
-### Seeded Builds
-
-Seed builds are executed offline by passing `--network none` to the container
-runtime.
-
-Before any build begins, source retrieval MUST be immutable and pinned to a
-commit digest (never a mutable branch ref). `flake.lock` integrity verification
-is handled by Nix evaluation/build itself, and mismatches fail by design.
-
-### Non-Container Results
-
-The seed model applies to any Nix derivation - binaries, libraries, development
-shells, not just container images. When the project build produces a
-NAR[^nar], the seed container ships all dependencies as OCI layers; the project
-build runs inside it and writes its output to the local Nix store.
-
-In this case the release pointer is the NAR content-addressed digest of the
-build output rather than an OCI image digest. The trust and attestation model is
-identical: the in-toto statement binds the output artifact digest, and (in
-Production mode) that digest is anchored on-chain. An OCI registry is required
-for the seed itself; the project build result does not need to be pushed to a
-registry.
-
-For distribution of NAR build results, [Cachix](https://cachix.org/) provides a
-managed binary cache service. Pushing to Cachix after a successful build makes
-the result available to downstream builds. Cachix push
-credentials are a deployment secret, not a trust root.
+Output references are system-qualified at evaluation time: `apps.default`
+resolves to `apps.x86_64-linux.default` on an x86_64-linux builder. All
+configured outputs are built in parallel. Projects with large independent outputs
+should use separate CI jobs per output to distribute build load across dedicated
+runners.
 
 Nix store signing (`nix store sign`) attaches an Ed25519[^ed25519] signature to
 each narinfo[^narinfo] in the cache, binding the store path to the signer's key.
 A consumer configured with `trusted-public-keys` verifies the signature before
-accepting a substituted path. In Production mode, store signing is complementary
+accepting a substituted path. In Zero, store signing is complementary
 to the on-chain quorum: a compromised cache can serve a valid signature only if
 the signing key is also compromised, while the anchored digest provides an
 independent ground truth.
+
+### Building Containers
+
+> Nix Seed is not a container-building tool. Container images are one possible
+> Nix derivation output. Their layers are store paths, packaged by
+> [nix2container](https://github.com/nlewo/nix2container). Nothing about a
+> container build is special relative to any other Nix output.
+
+The release pointer for a container build is the OCI image digest
+(`ghcr.io/org/repo@sha256:<digest>`). Registry tags and metadata are
+non-authoritative. An OCI registry is required to store and distribute container
+outputs; a CI provider with a co-located registry is preferred for performance.
+
+`nix2container` is a pinned flake input; its digest is verified by the Nix
+build system under the same supply-chain trust model as all other dependencies.
+
+#### Seed Container
+
+The seed container is the primary example: a standard `nix2container` build
+that packages the project's dependency closure. It inherits all the properties
+above - its layers are store paths, its release pointer is an OCI image digest,
+and it is stored in an OCI registry.
+
+What distinguishes it is its purpose: it ships pre-built dependencies so the
+project build can start immediately. The project output - store path, container
+image, binary - is produced inside it.
+
+Nix Seed itself is a pinned flake input, subject to the same supply-chain trust
+model as everything it builds.
+
+**Build steps:**
+
+1. Evaluate the project's Nix closure.
+1. `nix2container` produces an OCI image whose layers correspond to store paths,
+   plus a metadata manifest containing the image digest.
+1. Push the image to an OCI registry.
+
+Seed builds are executed offline (`--network none`). Source retrieval MUST be
+pinned to a commit digest (never a mutable branch ref). `flake.lock` integrity
+is verified by Nix evaluation; mismatches fail by design.
 
 ### Trust
 
@@ -181,11 +194,11 @@ Quorum is only meaningful if builders span independent failure domains:
 organization, jurisdiction, infrastructure, and identity issuer.
 
 **Signing identity independence** requires that no single operator controls the
-signing identities of multiple quorum builders. In development mode, identity is
+signing identities of multiple quorum builders. In Credulous, identity is
 established via OIDC issuer: GitHub Actions
 (`token.actions.githubusercontent.com`) and Azure Pipelines
 (`vstoken.dev.azure.com`) share a Microsoft-controlled issuer and do not satisfy
-identity independence when combined. In Production mode, identity is
+identity independence when combined. In Zero, identity is
 established by registered contract key; OIDC issuer is not a factor.
 
 **Choosing N:** each of the N required builders should have a distinct
@@ -195,23 +208,28 @@ forge a majority. Unanimous (M-of-M) is the strongest guarantee. See
 [`modules/seedcfg.nix`](modules/seedcfg.nix) and
 [`modules/builders.nix`](modules/builders.nix) for the builder registry schema.
 
-**Timing:** in development mode with N-of-M and a deadline, a party controlling
+**Timing:** in Credulous with N-of-M and a deadline, a party controlling
 M-N builders can delay attestation to ensure the deciding N-th vote comes from a
-builder of their choice. Production mode eliminates this: attestations
+builder of their choice. Zero eliminates this: attestations
 accumulate indefinitely and quorum is declared when the threshold is met, not
 when a timer expires.
 
 Disagreement among builders is not a bug - it is the protocol. Release is
 blocked until quorum agrees on the same digest.
 
-#### Modes
+#### Levels
 
-##### Development
+##### Innocent
+
+Single builder.
+
+##### Credulous
 
 > [!WARNING]
 >
-> **Not for production.** development mode depends on Rekor[^rekor] availability
-> and external OIDC[^oidc] trust roots.
+> Credulous depends on Rekor[^rekor] availability and external OIDC[^oidc] trust roots.
+> N-of-M quorum requires a central actor, the "master builder", to coordinate
+> the promotion flow.
 
 Each project maintains a `.seed.lock` containing a digest per target system:
 
@@ -233,6 +251,10 @@ and build metadata, signed via OIDC[^oidc]/KMS[^kms] using cosign[^cosign],
 logged to Rekor[^rekor], and published to the registry as a referrer artifact
 keyed by the build result digest. No mutable registry state is trusted.
 
+An SBOM (SPDX or CycloneDX) is generated from the output closure and published
+as an OCI referrer artifact alongside the in-toto statement. This applies to
+both seed builds and project builds.
+
 At minimum, the statement must bind:
 
 - source repository URI
@@ -240,6 +262,7 @@ At minimum, the statement must bind:
 - flake.lock content digest
 - target `system`
 - output artifact digest
+- SBOM digest
 - builder identity and issuer
 - build timestamp and workflow run ID
 
@@ -258,14 +281,14 @@ At minimum, the statement must bind:
 > [!NOTE]
 >
 > Builder cache configuration (substituters[^substituter]) is not attested in
-> development mode. Two builders both substituting from the same cache (e.g.
+> Credulous. Two builders both substituting from the same cache (e.g.
 > `cache.nixos.org`) are trusting the cache operator rather than independently
 > building.
 
-##### Production (TODO)
+##### Zero
 
-> The Mental Model: Think of Dev Mode as a high-speed local cache for your daily
-> CI. Think of Production Mode as a global Clearing House for your software. The
+> The Mental Model: Think of Credulous as a high-speed local cache for your daily
+> CI. Think of Zero as a global Clearing House for your software. The
 > Ethereum L2 acts as the decentralized ledger where multiple independent
 > auditors (builders) must mathematically agree on the output before a release
 > is allowed to "clear."
@@ -299,6 +322,9 @@ At minimum, the statement must bind:
 > contract excludes its attestations from quorum counting. Prior seed releases
 > that relied on the revoked builder should be re-evaluated.
 
+<!-- AGENT: Builder federations work together to share the load and increase the
+--> <!-- quorum? -->
+
 A *seed release* is a set of image digests, one per target system. This is
 distinct from a project release (git tag); a project release may reference one
 or more seed releases.
@@ -307,19 +333,20 @@ The on-chain record is intentionally minimal to limit calldata[^calldata] cost.
 Each builder additionally produces an in-toto[^in-toto] statement binding full
 provenance:
 
-<!-- AGENT: predicate uses SLSA provenance schema -->
-
 - source repository URI
 - source commit digest (full 40-hex SHA-1 or 64-hex SHA-256)
 - `flake.lock` content digest
 - target `system`
 - output artifact digest
+- SBOM digest
 - builder identity (contract address)
 - build metadata (`nix show-config` output, workflow run ID)
 
 Each builder signs the statement with its registered key (not OIDC[^oidc]) and
 publishes it to the OCI registry as a referrer artifact keyed by the build
-result digest. Rekor[^rekor] is not used; the OCI registry hosts the provenance.
+result digest. An SBOM (SPDX or CycloneDX) is generated from the output closure
+and published as a separate OCI referrer artifact. Rekor[^rekor] is not used;
+the OCI registry hosts the provenance.
 The contract anchor proves N builders agreed on the digest; the in-toto
 statements prove what was built.
 
@@ -403,9 +430,9 @@ promotes a release when quorum is met - no coordinator, no single point of
 authority.
 
 **Key management:** builder keys are persistent secrets held in CI secret
-stores. In Production mode, signing keys SHOULD be non-exportable and backed by
+stores. In Zero, signing keys SHOULD be non-exportable and backed by
 HSM/KMS-HSM class infrastructure if costs permit. Raw private keys stored
-directly in CI secret stores are NOT RECOMMENDED for Production mode. Compromise
+directly in CI secret stores are NOT RECOMMENDED for Zero. Compromise
 triggers revocation via the contract's governance multi-sig[^multi-sig] (see [Governance
 Constraints](#governance-constraints)).
 
@@ -453,6 +480,36 @@ The `.seed.lock` file is not used.
 Contract quorum verification subsumes the Rekor log check. In-toto provenance is
 verified separately via the OCI artifact.
 
+###### Configuration Registry
+
+The contract is the authoritative source for all verification parameters:
+builder set, registered keys, N, M, and independence constraints
+(`corporateParent`, `jurisdiction`, infrastructure).
+
+The flake's `seedCfg` is a local declaration used for Credulous only. It should be
+pruned when moving to Zero.
+
+Changes take effect only when a governance transaction updates the contract,
+requiring approval from the governance multi-sig (see [Governance
+Constraints](#governance-constraints)).
+
+This closes the obvious attack: repo write access does not confer the ability to
+redefine the trust model. Genesis (below) is the ceremony that populates the
+registry for the first time.
+
+###### RPC availability
+
+Contract reads are `eth_call` (view functions) - no transaction, no gas,
+50-300ms on a reliable L2 RPC provider. Not a CI bottleneck. The real concern is
+availability: if the RPC is down, verification fails closed and builds stop.
+Mitigations:
+
+- Configure multiple RPC endpoints; fail through to a secondary on error.
+- Cache the last known Merkle root locally with its block number; re-fetch on
+  block advance.
+- Apply the same jurisdiction independence requirement to RPC providers as to
+  builders: a single US-provider RPC is a single failure domain.
+
 ###### Genesis
 
 The first seed has no prior quorum to bootstrap from. Genesis is a controlled
@@ -479,10 +536,8 @@ reconfiguration.
 > [!NOTE]
 >
 > Air-gapping builder hardware during the genesis ceremony eliminates the risk
-> of network-level attacks on the trust anchor. Firmware injection remains a
-> risk. This is best practice but expensive: most teams perform genesis on
-> hardened CI infrastructure instead. Document the environment used; publish a
-> signed incident record if it is later found compromised.
+> of network-level attacks on the trust anchor. This is best practice but
+> expensive. Firmware injection remains a risk.
 
 ###### Gas Costs
 
@@ -632,18 +687,23 @@ operators simultaneously, across independent jurisdictions.
 
 Legal process is the slow path. NSA has other options.
 
-**Five Eyes:** the UKUSA agreement extends NSA collection to GCHQ (UK), CSE
+##### Five Eyes
+
+Tphe UKUSA agreement extends NSA collection to GCHQ (UK), CSE
 (Canada), ASD (Australia), and GCSB (New Zealand). A builder in any Five Eyes
 jurisdiction is not meaningfully separate from a US builder.
 
-**Active network attack:** QUANTUM INSERT allows injection of malicious content
-into unencrypted or MITM-able traffic. BGP hijacking has been used to redirect
-traffic through collection points. DNS manipulation is within documented
-capability.
+##### Active network attack
 
-**Hardware interdiction:** TAO's ANT catalog documents implants for network
-equipment, hard drives, and server hardware. Supply chains routed through US
-logistics are interdiction targets.
+QUANTUM INSERT allows injection of malicious content into unencrypted or
+MITM-able traffic. BGP hijacking has been used to redirect traffic through
+collection points. DNS manipulation is within documented capability.
+
+##### Hardware interdiction
+
+TAO's ANT catalog documents implants for network equipment, hard drives, and
+server hardware. Supply chains routed through US logistics are interdiction
+targets.
 
 > [!NOTE]
 >
@@ -651,19 +711,12 @@ logistics are interdiction targets.
 > relies on N independent stacks so an implant must hit multiple targeted supply
 > chains simultaneously.
 
-##### System impact
+##### PRISM
 
-- **Dev mode:** Rekor submissions, OIDC token issuance, and registry traffic are
-  all passively observable. The transparency log is transparent to the adversary
-  by design.
-- **Production mode:** contract transactions are public by design; no additional
-  surveillance surface. Builder keys stored in CI secret stores on US-provider
-  infrastructure are accessible via PRISM[^prism] without the builder's
-  knowledge.
-- **Any mode:** a builder running on hardware that passed through US logistics,
-  which is to say **all of them**, may carry a firmware implant.
+Builder keys stored in CI secret stores on US-provider infrastructure are
+accessible via PRISM without.
 
-**Mitigations:**
+##### Mitigations
 
 > [!WARNING]
 >
@@ -677,9 +730,9 @@ logistics are interdiction targets.
 - Store genesis and builder keys in HSMs, not CI secret store environment
   variables. A hardware token that cannot exfiltrate the private key raises the
   cost of compromise significantly.
-- At least one quorum builder should be on non-Five-Eyes
-  infrastructure with a documented, audited supply chain.
-- The Production mode contract design already provides the strongest available
+- At least one quorum builder should be on non-Five-Eyes infrastructure with a
+  documented, audited supply chain.
+- The Zero contract design already provides the strongest available
   mitigation: N independent signers on N independent hardware stacks must all be
   compromised simultaneously. Cost scales with N.
 
@@ -699,7 +752,7 @@ Chinese-headquartered entity is not legally independent.
 
 PLA Unit 61398 and MSS-linked groups (APT10, APT41) have demonstrated sustained
 supply-chain targeting, including software-update hijacking and build-server
-compromise. Production mode raises the cost: simultaneous compromise of N
+compromise. Zero raises the cost: simultaneous compromise of N
 independent builder networks, across independent jurisdictions, is required to
 forge a quorum.
 
@@ -717,6 +770,24 @@ Runners in Russia or on Russian cloud infrastructure are subject to passive
 interception regardless of TLS. Reproducible builds mean an observer who
 intercepts a build gets the same artifact but cannot inject code without
 breaking the digest.
+
+## Governance
+
+This project aims to become part of the
+[nix-community](https://github.com/nix-community) organisation. Nix Community
+hosts projects under [shared ownership](https://nix-community.org/), supporting
+multi-person authorisation over releases and repository access. This aligns with
+the trust model: the project's own supply chain is subject to the same
+independence constraints it imposes on its users.
+
+## Versioning
+
+Releases are tagged twice: once as `N` (e.g. `1`) and once as `vN` (e.g.
+`v1`), both pointing to the same commit. The `v` prefix is a cargo-cult
+convention inherited from shell scripting era filenames; it carries no semantic
+content. The canonical tag is `N`. The `vN` alias exists because GitHub Actions
+consumers expect it - `uses: org/repo@v1` is the pattern every GHA user has
+memorised. Both refs resolve identically.
 
 ## Compliance
 
