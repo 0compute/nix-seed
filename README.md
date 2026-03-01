@@ -43,7 +43,7 @@ Another 5s to pull/mount the OCI layers? Highly practical with a local registry
 >
 > - Anonymous, c. 1967
 
-Nix Seed has three trust modes. Choose one.
+Nix Seed provides three trust modes. Choose one.
 
 ### Trust Level: Innocent
 
