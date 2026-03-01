@@ -250,17 +250,17 @@ jobs:
 >
 > Read it. Twice. Or, get pwned.
 
-For production, update `seedCfg`. Set `trust = "credulous"` then define
-`builders` and `quorum`.
-
-See [Threat Actor Mitigations](./THREAT-ACTORS.md#mitigations) for
-builder-independence guidance.
-
 > [!NOTE]
 >
 > This is the only option until [Zero](#trust-level-zero) is implemented. Refer
 > to [Credulous](#trust-level-credulous) for guarantee and attack surface
 > detail.
+
+Update `seedCfg` setting `trust = "credulous"`, then define `builders` and
+`quorum`.
+
+See [Threat Actor Mitigations](./THREAT-ACTORS.md#mitigations) for
+builder-independence guidance.
 
 ```nix
 # in flake outputs
@@ -271,7 +271,7 @@ seedCfg = {
     gitlab = { };
     scaleway = { };
   };
-  # allow 1 builder to be down without blocking quorum
+  # 1 builder down does not block quorum
   quorum = 2;
 };
 ```
