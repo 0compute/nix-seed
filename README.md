@@ -1,12 +1,16 @@
 # Nix Seed
 
-Fast, trustable Nix builds on non-native ephemeral CI.
+Fast, trustable, Nix builds on non-native ephemeral CI.
 
 > Woosh... Wondering what that even means? See [Glossary](./GLOSSARY.md).
 
-Happy-path builds - application code change, dependencies unchanged - start in
-<10 seconds. The dependency closure ships pre-built as an OCI image; pull,
-mount, build.
+Happy-path builds - application code change, dependencies unchanged - start
+*building* near-instantly. The dependency closure ships pre-built as an OCI
+image; pull, mount, build.
+
+CI providers with co-located registries, like GitHub and GHCR, mean the pull is
+fast. The extreme cacheability of Nix-built OCI layers means that the pull may
+not be necessary in the first place.
 
 > Flow state, unbroken: $$$
 >
@@ -21,7 +25,7 @@ See [design](./DESIGN.md) for full detail.
 Standard CI runners rebuild every Nix dependency from scratch. For a typical
 project: 60-90 seconds of setup per job.
 
-Build time does not change. Setup time does.
+Build time does not change. Setup time is virtually eliminated.
 
 ## Quickstart
 
