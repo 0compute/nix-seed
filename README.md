@@ -91,7 +91,8 @@ N-of-M independent builder quorum.
 
 > [!WARNING]
 >
-> Do not use innocent in production. Minimum: credulous.
+> Do not use [Innocent](#trust-level-innocent) in production. Minimum:
+> [Credulous](#trust-level-credulous).
 
 Add `nix-seed` to your flake and expose `seed` and `seedCfg`:
 
