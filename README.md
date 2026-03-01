@@ -154,7 +154,7 @@ Add `nix-seed` to your `flake.nix` then expose `seed` and `seedCfg`:
 > [!WARNING]
 >
 > Seed and project builds require `id-token: write` permission. Seed build, and
-> project build, if outputs include a container image, require
+> project build, if outputs include a container image, requires
 > `packages: write`.
 >
 > Untrusted pull requests with changes to `flake.lock` **MUST NOT** trigger
