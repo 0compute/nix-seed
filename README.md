@@ -1,7 +1,7 @@
 # Nix Seed
 
-Nix on ephemeral CI: happy-path (app src change only) **build starts in
-seconds**.
+Nix on non-native ephemeral CI: happy-path (app src change only) **build starts
+in seconds**.
 
 Dependency closure ships as content-addressed OCI layers; signed provenance and
 SBOM included.
