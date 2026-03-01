@@ -131,7 +131,7 @@ Add `nix-seed` to your flake and expose `seed` and `seedCfg`:
 
 > [!NOTE]
 >
-> This is GitHub-specific. The approach applies to any CI.
+> The below is GitHub-specific. The approach applies to any CI.
 
 > [!WARNING]
 >
