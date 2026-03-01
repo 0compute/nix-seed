@@ -1,11 +1,11 @@
 # Nix Seed
 
-Nix Seed drastically speeds up CI[^ci] for Nix-based projects on non-native
-ephemeral runners. Instead of downloading/compiling the project's dependencies
+Nix Seed drastically speeds up builds for Nix-based projects on non-native
+ephemeral CI runners. Instead of downloading/compiling the project's dependencies
 on every run, it packages them into a reusable container.
 
-*Under the hood:* It creates OCI seed images with the dependency graph packaged
-as content-addressed layers, eliminating the need to reconstruct the
+*Under the hood:* It creates OCI seed images with the dependency closure
+packaged as content-addressed layers, eliminating the need to reconstruct the
 `/nix/store` on ephemeral runners.
 
 Build provenance is cryptographically attested: quorum proves that what is in
@@ -107,23 +107,32 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-______________________________________________________________________
-
 ## Production Setup
 
-*This section is a stub.* For a production deployment, you must configure an N-of-M builder quorum spanning independent failure domains. Documentation on configuring `modules/builders.nix`, secret management (HSMs vs. CI variables), and executing the genesis ceremony will go here.
+*This section is a stub.* Production mode anchors releases on Ethereum L2 using
+an N-of-M builder quorum. See [Design: Production](./DESIGN.md#production-todo)
+for the full trust model.
+
+**Setup sequence:**
+
+1. **Configure builders** — define your builder set in `modules/builders.nix`
+   with distinct `corporateParent`, `jurisdiction`, and signing keys. N ≥ 3,
+   each on independent infrastructure and CI provider.
+2. **Execute genesis** — all M builders independently build the seed from source
+   with substituters disabled, submit unanimous attestations, and co-sign the
+   genesis transaction. See [Design: Genesis](./DESIGN.md#genesis).
+3. **Key management** — store builder signing keys in HSMs, not CI environment
+   variables. Configure governance multi-sig for key rotation and revocation.
+4. **Verify independence** — no two quorum builders may share a corporate parent,
+   CI provider, or OIDC issuer.
+
+See [Design: Threat Actors](./DESIGN.md#threat-actors) for jurisdiction guidance
+on selecting independent builder operators.
 
 ## Troubleshooting
 
 *This section is a stub.* Future content will cover:
+
 - How to shell into a seed container to debug environment issues.
 - Distinguishing between Nix evaluation errors and seed orchestration failures.
 - Checking L2 quorum status and diagnosing missing attestations.
-
-______________________________________________________________________
-
-## Footnotes
-
-\[^ci\]: **CI** - Continuous Integration. The practice of automating the
-integration of code changes from multiple contributors into a single software
-project.

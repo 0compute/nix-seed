@@ -1,35 +1,5 @@
 # Nix Seed: Design
 
-<!--toc:start-->
-- [Architecture](#architecture)
-  - [Performance](#performance)
-    - [Constraints](#constraints)
-    - [Instrumentation](#instrumentation)
-    - [Comparisons](#comparisons)
-  - [Seed Construction](#seed-construction)
-    - [Non-Container Results](#non-container-results)
-  - [Trust](#trust)
-    - [Bootstrap Chain](#bootstrap-chain)
-    - [Quorum](#quorum)
-    - [Modes](#modes)
-    - [Development](#development)
-    - [Production](#production-todo)
-      - [Genesis](#genesis)
-      - [L2 Gas Costs](#l2-gas-costs)
-      - [Governance Constraints](#governance-constraints)
-    - [Implicit Trust Boundary](#implicit-trust-boundary)
-  - [Project Attack Surface](#project-attack-surface)
-- [Threat Actors](#threat-actors)
-  - [USA](#usa)
-    - [Legal](#legal)
-    - [Extra-legal](#extra-legal)
-  - [China](#china)
-  - [Russia](#russia)
-- [Controls](#controls)
-- [Compliance](#compliance)
-- [Footnotes](#footnotes)
-<!--toc:end-->
-
 Goal: Near-zero setup time for happy-path builds (application code change only)
 on non-Nix-native CI[^ci] runners[^runner].
 
@@ -75,7 +45,7 @@ external to the container.
 - Source fetch (shallow clone size) is unchanged.
 - Build execution time is unchanged.
 
-TODO: link actual job runs from the examples.
+<!-- TODO: link actual job runs from the examples. -->
 
 #### Instrumentation
 
@@ -130,7 +100,7 @@ Before any build begins, source retrieval MUST be immutable and pinned to a
 commit digest (never a mutable branch ref). `flake.lock` integrity verification
 is handled by Nix evaluation/build itself, and mismatches fail by design.
 
-#### Non-Container Results
+### Non-Container Results
 
 Nix Seed works for any Nix build, not only those producing OCI images. When the
 project build produces a NAR[^nar] (binary, library, development shell, or other
@@ -147,7 +117,7 @@ registry.
 
 For distribution of NAR build results, [Cachix](https://cachix.org/) provides a
 managed binary cache service. Pushing to Cachix after a successful build makes
-the result available to downstream builds without rebuilding. Cachix push
+the result available to downstream builds. Cachix push
 credentials are a deployment secret, not a trust root.
 
 Nix store signing (`nix store sign`) attaches an Ed25519[^ed25519] signature to
@@ -299,7 +269,7 @@ At minimum, the statement must bind:
 > auditors (builders) must mathematically agree on the output before a release
 > is allowed to "clear."
 
-###### No Substituters
+###### No Substitutions
 
 > [!WARNING]
 >
@@ -432,7 +402,7 @@ published root. Master-builder trust is removed from the promotion path.
 stores. In Production mode, signing keys SHOULD be non-exportable and backed by
 HSM/KMS-HSM class infrastructure if costs permit. Raw private keys stored
 directly in CI secret stores are NOT RECOMMENDED for Production mode. Compromise
-triggers revocation via the contract's governance multi-sig (see [Governance
+triggers revocation via the contract's governance multi-sig[^multi-sig] (see [Governance
 Constraints](#governance-constraints)). Keys are registered at genesis and rotated
 by contract multi-sig.
 
@@ -849,7 +819,9 @@ ______________________________________________________________________
 
 [^humint]: **[HUMINT](https://en.wikipedia.org/wiki/Human_intelligence_(intelligence_gathering)):**
     Human Intelligence. Intelligence gathered through interpersonal contact:
-    recruitment, social engineering, or insider threats. 
+    recruitment, social engineering, or insider threats. Technical controls do
+    not address HUMINT; key ceremony discipline and HSM[^hsm]-resident keys
+    limit insider blast radius.
 
 [^icann]: **[ICANN](https://www.icann.org/):** Internet Corporation for Assigned
     Names and Numbers. US-incorporated nonprofit that administers the global
@@ -978,7 +950,7 @@ ______________________________________________________________________
     NAR[^nar].
 
 [^sunburst]:
-    **[SUNBURST](https://en.wikipedia.org/wiki/2020_United_States_federal_government_data_breach)**
+    **[SUNBURST](https://en.wikipedia.org/wiki/2020_United_States_federal_government_data_breach):**
     The SolarWinds supply chain attack (2020). GRU/SVR operators compromised the
     SolarWinds Orion build system and inserted a backdoor signed with the
     legitimate code-signing key, affecting thousands of organizations including
