@@ -183,7 +183,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-      - uses: 0compute/nix-seed@v1/seed
+      - uses: 0compute/nix-seed/seed@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
