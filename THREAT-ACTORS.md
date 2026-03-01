@@ -87,33 +87,6 @@ targets.
 Builder keys stored in CI secret stores on US-provider infrastructure are
 accessible via PRISM without.
 
-#### Mitigations
-
-> [!WARNING]
->
-> Cryptographic risk: NSA seeded a backdoor into Dual_EC_DRBG (NIST SP 800-90A).
-> Any NIST-blessed primitive must be considered tainted. P-256 (used in
-> cosign/ECDSA) is NIST-approved - use Ed25519 as the standard signing
-> algorithm. Note: Azure Key Vault does not support Ed25519 natively (requires
-> Managed HSM tier); if Azure is a mandatory builder, P-256/P-384 may be forced.
-
-- Use Ed25519 over P-256 for all signing operations.
-- Store genesis and builder keys in HSMs, not CI secret store environment
-  variables. A hardware token that cannot exfiltrate the private key raises the
-  cost of compromise significantly.
-- At least one quorum builder should be on non-Five-Eyes infrastructure with a
-  documented, audited supply chain.
-- The Zero contract design already provides the strongest available mitigation:
-  N independent signers on N independent hardware stacks must all be compromised
-  simultaneously. Cost scales with N.
-
-No software-only solution running on commodity cloud hardware in an automated CI
-environment is proof against a well-resourced adversary with hardware access.
-The goal is not to be NSA-proof - that requires air-gapped hardware signing
-ceremonies outside the scope of CI. The goal is to make passive supply-chain
-compromise of a *release* require active, targeted, multi-system attack that is
-detectable, attributable, and expensive.
-
 ## China
 
 China's National Intelligence Law (2017) compels any Chinese entity - including
@@ -141,6 +114,37 @@ Runners in Russia or on Russian cloud infrastructure are subject to passive
 interception regardless of TLS. Reproducible builds mean an observer who
 intercepts a build gets the same artifact but cannot inject code without
 breaking the digest.
+
+## Mitigations
+
+> [!WARNING]
+>
+> Cryptographic risk: NSA seeded a backdoor into Dual_EC_DRBG (NIST SP 800-90A).
+> Any NIST-blessed primitive must be considered tainted. P-256 (used in
+> cosign/ECDSA) is NIST-approved - use Ed25519 as the standard signing
+> algorithm.
+
+> [!NOTE]
+>
+> Azure Key Vault does not support Ed25519 natively (requires Managed HSM tier);
+> if Azure is a mandatory builder, P-256/P-384 may be forced.
+
+- Use Ed25519 over P-256 for all signing operations.
+- Store genesis and builder keys in HSMs, not CI secret store environment
+  variables. A hardware token that cannot exfiltrate the private key raises the
+  cost of compromise significantly.
+- At least one quorum builder should be on non-Five-Eyes infrastructure with a
+  documented, audited supply chain.
+- The Zero contract design already provides the strongest available mitigation:
+  N independent signers on N independent hardware stacks must all be compromised
+  simultaneously. Cost scales with N.
+
+No software-only solution running on commodity cloud hardware in an automated CI
+environment is proof against a well-resourced adversary with hardware access.
+The goal is not to be NSA-proof - that requires air-gapped hardware signing
+ceremonies outside the scope of CI. The goal is to make passive supply-chain
+compromise of a *release* require active, targeted, multi-system attack that is
+detectable, attributable, and expensive.
 
 ______________________________________________________________________
 

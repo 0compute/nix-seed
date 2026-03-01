@@ -109,14 +109,11 @@ N-of-M independent builder quorum.
 
 ## Quickstart/Evaluation
 
-This section details the minimum setup to evaluate Nix Seed on GitHub Actions.
-
 > [!WARNING]
 >
-> Do not use [Innocent](#trust-level-innocent) in production. Minimum:
-> [Credulous](#trust-level-credulous).
+> [Innocent](#trust-level-innocent) is NOT recommended for production.
 
-Add `nix-seed` to your flake and expose `seed` and `seedCfg`:
+Add `nix-seed` to your `flake.nix` then expose `seed` and `seedCfg`:
 
 ```nix
 {
@@ -128,7 +125,6 @@ Add `nix-seed` to your flake and expose `seed` and `seedCfg`:
     };
     systems.url = "github:nix-systems/default";
   };
-
   outputs = inputs: {
     packages =
       inputs.nixpkgs.lib.genAttrs (import inputs.systems) (
@@ -254,14 +250,11 @@ jobs:
 >
 > Read it. Twice. Or, get pwned.
 
-For production, update `seedCfg`:
+For production, update `seedCfg`. Set `trust = "credulous"` then define
+`builders` and `quorum`.
 
-- set `trust = "credulous"`
-- define `builders`
-- define `quorum`
-
-See [Threat Actors](./DESIGN.md#threat-actors) for builder-independence
-guidance.
+See [Threat Actor Mitigations](./THREAT-ACTORS.md#mitigations) for
+builder-independence guidance.
 
 > [!NOTE]
 >
