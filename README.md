@@ -1,151 +1,287 @@
+
 # Nix Seed
 
 Nix on ephemeral CI.
 
-Source-only change: **build setup \<10s**.
+Source-only change: **build setup <10s**.
 
 Dependencies via OCI layers.
 
-Explicit trust anchors.
+Explicit, configurable trust anchors.
 
-> Supply chain, secured: **$$$**.
->
-> Dependencies realised, once: **$$$**.
->
+> Supply chain, secured: **$$$**.  
+> Dependencies realised, once: **$$$**.  
 > Flow state, uninterrupted: **Priceless**.
 
-Docs → [Design](./DESIGN.md) / [Threat Actors](./THREAT-ACTORS.md) /
-[Plain-English Overview](./PLAIN-ENGLISH.md).
+Docs → [Design](./DESIGN.md) / [Threat Actors](./THREAT-ACTORS.md) / [Plain-English Overview](./PLAIN-ENGLISH.md)
+
+---
 
 ## OCI Layers vs `actions/cache`
 
 `actions/cache` operates by:
 
 1. Downloading a monolithic archive.
-1. Writing it to disk.
-1. Extracting it sequentially.
-1. Re-archiving and uploading post-job.
+2. Writing it to disk.
+3. Extracting it sequentially.
+4. Re-archiving and uploading post-job.
 
-This means:
+This results in:
 
-- High network/disk I/O.
-- Serialisation bottlenecks.
-- Full dataset copy on every job.
-- Poor scaling with cache size.
+- High network and disk I/O
+- Serialisation bottlenecks
+- Full dataset copy on every job
+- Poor scaling with cache size
 
-OCI layers are content-addressed:
+OCI layers:
 
-- Layer pulls are parallelised.
-- Deduplication is automatic.
-- Filesystems mount layered content without full extraction.
-- Only changed layers are transferred.
+- Layer pulls are parallelised
+- Deduplication is automatic
+- Filesystems mount layered content without full extraction
+- Only changed layers are transferred
 
 Observed characteristics:
 
 - **VM provisioning:** ~5s (fixed provider cost)
-- **Layer pull + mount:** \<5s (with runner-local registry, e.g. GHCR)
+- **Layer pull + mount:** <5s (with runner-local registry, e.g. GHCR)
 - **Source fetch:** unchanged
 - **Build execution:** unchanged
 
+---
+
+Nix Seed began as a performance optimisation. Replacing `actions/cache` with OCI
+layers made build artifacts explicit. Once artifact identity became first-class,
+release could no longer be treated as a procedural step. Release is authority.
+The trust postures below make that authority explicit.
+
+---
+
 ## Trust
 
-> **“Just because you're paranoid doesn't mean they aren't after you.”**
->
-> — Anonymous, c. 1967
+Nix Seed provides trust postures. Choose one.
 
-Nix Seed provides four trust modes. Choose one.
+---
 
-### Trust Level: Innocent
+### Trust Posture: Innocent
 
-> **“IDGAF about trust. Gimme the Fast!”**
->
+> **“IDGAF about trust. Gimme the Fast!”**  
 > — Every engineer ever born of woman
 
-[Innocent](./DESIGN.md#innocent) anchors trust on the public-good Rekor instance
-with a single builder.
+Innocent performs builds on a single CI runner.
 
 - Guarantee: None.
-- Attack Surface: Builder, OIDC trust roots, Rekor, and Nix cache
-  infrastructure.
-- Resiliency: Public-good Rekor publishes an availability SLO (not a contractual
-  SLA); downtime blocks build and verify.
-- Cost: Free.
+- Attack Surface: CI provider, Nix binary cache infrastructure.
+- Resiliency: Bounded by CI provider.
+- Cost: Provider-bound.
 
-### Trust Level: Credulous
+---
 
-> **“I Want To Believe.”**
+## Aware
+
+### Quorum
+
+Quorum semantics apply to Transparent and Zero:
+
+- Quorum is a defined N-of-M threshold.
+- Builders must operate in independent failure domains (organisational, jurisdictional, infrastructural).
+- Builders must attest bitwise-identical output.
+
+- Guarantee: No single builder can forge a release; compromise requires quorum capture.
+- Attack Surface: Builder set, OIDC trust roots.
+- Resiliency: Requires coordinated compromise across independent domains.
+
+#### Recommended quorum
+
+Default recommendation: **3 builders** with a **2-of-3** quorum.
+
+- Tolerates one builder outage without blocking promotion.
+- Prevents a single compromised builder from forging a release.
+- Trade-off: if an attacker can disable one builder, only two compromises are then required.
+
+Increasing quorum from 2-of-3 to 3-of-4 raises required compromises from 2 to 3 — roughly a 50% increase in attack effort.
+
+Integrity scales with the quorum threshold (k), not the total number of builders (n). Adding builders without raising quorum improves availability, not security.
+
+---
+
+### Transparent
+
+Transparent retains conventional CI promotion and binary cache consumption.
+Promotion is performed by a Release Node after quorum verification.
+Transparency is anchored on the public-good Rekor instance.
+
+- Attack Surface: Release Node, public-good Rekor, Nix binary cache infrastructure.
+
+Builder quorum does not mitigate compromise of shared Nix binary cache infrastructure; if all builders consume a poisoned cache, identical malicious output can still satisfy quorum.
+
+#### Trust Posture: Credulous
+
+> **“I Want To Believe.”**  
+> — Fox Mulder, *The X-Files*, 1993
+
+Uses a single public-good transparency log.
+
+- Resiliency: Provider-bound.
+- Cost: Provider-bound.
+
+#### Trust Posture: Suspicious
+
+> **“Trust, but verify.”**  
+> — Ronald Reagan, 1987
+
+Extends transparency to a K-of-L log quorum.
+
+- Resiliency: Tolerates single-log failure or capture.
+- Cost: Moderate operational overhead.
+
+---
+
+### Trust Posture: Zero
+
+> **“Ambition must be made to counteract ambition.”**  
+> — James Madison, *Federalist No. 51*, 1788  
 >
-> — Fox Mulder, The X-Files, 1993
-
-[Credulous](./DESIGN.md#credulous) anchors trust on the public-good Rekor
-instance with an N-of-M independent builder quorum (a defined N-of-M threshold).
-
-Bitwise-identical output must be attested across independent failure domains
-(separated across organisational, jurisdictional, and infrastructural
-boundaries).
-
-Credulous assumes builders can fail independently, but treats transparency
-infrastructure as trusted.
-
-When the configured builder quorum is reached, the Release Node creates a signed
-git tag on the source commit.
-
-- Guarantee: No single builder can forge a release; compromise requires quorum
-  capture.
-- Attack Surface: Builder set, OIDC trust roots, Rekor, and Nix cache
-  infrastructure.
-- Resiliency: As for [Innocent](#trust-level-innocent).
-- Cost: Free.
-
-### Trust Level: Suspicious
-
-> **“Trust, but verify.”**
->
-> — Ronald Reagan (from Russian proverb), 1987
-
-[Suspicious](./DESIGN.md#suspicious) keeps [Credulous](#trust-level-credulous)
-builder quorum and adds a K-of-L transparency log quorum, recognising that
-transparency infrastructure is itself a potential failure domain.
-
-When quorum is reached, the Release Node signs and promotes the release.
-
-- Guarantee: No single builder or single transparency log can unilaterally
-  legitimise a release.
-- Attack Surface: Builder set, Release Node, OIDC trust roots, transparency log
-  operators, and Nix cache infrastructure.
-- Resiliency: Higher availability than [Credulous](#trust-level-credulous);
-  single-log outages are not automatically fatal.
-- Cost: Moderate operational overhead for multi-log operation.
-
-### Trust Level: Zero
-
-> **“Ambition must be made to counteract ambition.”**
->
-> — James Madison, *Federalist No. 51*, 1788
-
-> **“Everyone has a plan until they get punched in the mouth.”**
->
+> **“Everyone has a plan until they get punched in the mouth.”**  
 > — Mike Tyson, 2002
 
-[Zero](./DESIGN.md#zero) assumes that any actor may be compromised or coerced.
+Zero assumes that any actor may be compromised or coerced.
 
-Validity is defined by quorum, not by authority.
+Binary caches are not trusted; builders must perform full-source bootstrap.
 
-Promotion occurs mechanically upon quorum verification. No Release Node exists;
-promotion is contract-enforced.
+Promotion occurs mechanically upon quorum verification.  
+No Release Node exists; enforcement is contract-based.
 
-Forgery effort compounds with each additional independent failure domain.
+Ethereum enforces quorum rules and anchors release validity; build integrity
+remains defined by builder consensus.
+
+Contracts are upgradeable under multi-signature, time-delayed governance.  
+Governance cannot alter finalised releases, but can modify future validation rules.
+
+Forgery effort compounds with each independent failure domain.
 
 Structure constrains power. Verification replaces trust.
 
-- Guarantee: Contract-enforced quorum. Trust is anchored on an Ethereum L2 smart
-  contract with an N-of-M independent builder quorum. Backing:
-  - **Full-source bootstrap**
-  - **Immutable ledger**
-  - **Contract-enforced builder independence**
-  - **No central actor**
-- Attack Surface: Governance keys, misconfiguration,
-  [hardware interdiction](./DESIGN.md#hardware-interdiction).
-- Resiliency: High.
-- Cost (3 builders, 4 systems): ~Ξ0.002 per promotion event (±50% depending on
-  L2 gas conditions) (~$6 @ Ξ1=$3k).
+---
+
+## Quickstart
+
+Add `nix-seed` to your `flake.nix`:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nix-seed = {
+      url = "github:0compute/nix-seed/v1";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    systems.url = "github:nix-systems/default";
+  };
+
+  outputs = inputs: {
+    packages =
+      inputs.nixpkgs.lib.genAttrs (import inputs.systems) (
+        system:
+        let pkgs = inputs.nixpkgs.legacyPackages.${system};
+        in {
+          default = pkgs.hello;
+          seed = inputs.nix-seed.lib.mkSeed {
+            inherit pkgs;
+            inherit (inputs) self;
+          };
+        }
+      );
+
+    seedCfg.trust = "innocent";
+  };
+}
+```
+
+---
+
+## GitHub Workflows (Example)
+
+### .github/workflows/seed.yaml
+
+```yaml
+name: seed
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - flake.lock
+  workflow_dispatch:
+
+jobs:
+  seed:
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    strategy:
+      matrix:
+        os:
+          - macos-15
+          - macos-15-intel
+          - ubuntu-22.04
+          - ubuntu-22.04-arm
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: 0compute/nix-seed/seed@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### .github/workflows/build.yaml
+
+```yaml
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - flake.lock
+  workflow_run:
+    workflows: [ seed ]
+    types: [ completed ]
+
+jobs:
+  build:
+    if: ${{
+      github.event_name == 'push' ||
+      github.event.workflow_run.conclusion == 'success'
+    }}
+    strategy:
+      matrix:
+        os:
+          - macos-15
+          - macos-15-intel
+          - ubuntu-22.04
+          - ubuntu-22.04-arm
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: 0compute/nix-seed@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+---
+
+## Production Configuration
+
+Set trust to `credulous` or `suspicious`, define builders and quorum:
+
+```nix
+seedCfg = {
+  trust = "credulous";
+  builders = {
+    github.master = true;
+    gitlab = {};
+    scaleway = {};
+  };
+  quorum = 2;
+};
+```
+
+Refer to the Design document for detailed governance and Zero posture configuration.

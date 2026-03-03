@@ -256,16 +256,16 @@ Suspicious keeps [Credulous](#credulous) builder quorum semantics and adds a
 Rekor logging quorum across multiple independent Rekor operators.
 
 - Guarantee: No single builder or single Rekor operator can forge a release.
-- Attack Surface: Builder set, Master Builder, OIDC issuer roots, and Rekor
-  log operators.
+- Attack Surface: Builder set, Master Builder, OIDC issuer roots, and Rekor log
+  operators.
 - Resiliency: Better than [Credulous](#credulous) for Rekor outages and
   jurisdiction capture, because verification only requires K-of-L Rekor logs.
 - Cost: Low to moderate operational overhead (running or contracting multiple
   Rekor logs, checkpoints, and monitoring).
 
 Suspicious is primarily `.gov`-proofing and availability-hardening for the
-transparency-log dependency. It is not full decentralization: the Master
-Builder remains a central actor in promotion flow.
+transparency-log dependency. It is not full decentralization: the Master Builder
+remains a central actor in promotion flow.
 
 #### Quorum
 
@@ -295,8 +295,8 @@ across locations and time.
 
 Suspicious does not by itself remove OIDC trust-root coupling; like
 [Credulous](#credulous), default identity is OIDC-backed. A future extension
-could allow registered non-OIDC builder keys while still using Rekor quorum,
-but that is out of scope for this tier definition.
+could allow registered non-OIDC builder keys while still using Rekor quorum, but
+that is out of scope for this tier definition.
 
 ### Zero
 
@@ -628,6 +628,59 @@ not prove the absence of firmware implants, compromised hardware roots of trust,
 or malicious maintainers with valid signing authority. These threats require
 operational controls (key ceremony, hardware trust policy, personnel/process
 controls), not software-only fixes.
+
+### Security Audit and Governance Requirements
+
+Zero elevates smart contract logic to release authority. Contract correctness
+and upgrade governance therefore form a critical security boundary.
+
+Zero MUST NOT be considered deployable without at least one independent
+third-party security audit covering:
+
+- Contract logic and state transitions
+- Quorum verification logic
+- Signature validation and replay protection
+- Upgradeability and governance mechanisms
+- Failure modes and edge-case handling
+
+For production deployments, two independent audits are strongly recommended.
+
+Any material change to contract logic, quorum rules, governance controls, or
+trust assumptions requires re-audit prior to redeployment.
+
+______________________________________________________________________
+
+#### Auditor Independence Criteria
+
+An audit is considered independent only if the auditing organisation:
+
+- Is organisationally distinct from core maintainers
+- Has no shared ownership or controlling financial interest with the project
+- Did not author substantial portions of the audited code
+- Operates under a formal engagement with documented methodology
+
+Audit reports SHOULD be published in full, with redactions limited to actively
+exploitable findings pending remediation.
+
+______________________________________________________________________
+
+#### Upgrade and Governance Model
+
+Contracts MUST be upgradeable to accommodate builder churn, security patches,
+and parameter evolution. Upgrade authority is therefore a primary trust surface.
+
+Deployments MUST implement:
+
+- Multi-signature governance (N-of-M)
+- Governance signers distributed across independent organisations and
+  jurisdictions
+- Time-delayed upgrade execution (minimum delay recommended)
+- Publicly observable upgrade announcements
+- Explicit key rotation and revocation procedures
+
+Governance keys cannot retroactively alter finalised release history, but they
+can modify future validation rules. Compromise of governance keys is therefore
+equivalent to compromise of promotion authority.
 
 ## Meta
 
