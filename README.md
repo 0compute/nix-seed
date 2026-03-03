@@ -96,16 +96,19 @@ signed git tag (format configurable) on the source commit.
 >
 > — James Madison, *Federalist No. 51*, 1788
 
+> **“Everyone has a plan until they get punched in the mouth.”**
+>
+> — Mike Tyson
+
 [Zero](./DESIGN.md#zero) assumes that any actor may be compromised or coerced.
 
-Release validity is defined by quorum, not by authority.
+Validity is defined by quorum, not by authority.
 
 Identical output must be attested across independent failure domains.
 
-Promotion occurs mechanically upon quorum verification. No central actor
-controls promotion.
-
 Forgery effort compounds with each additional independent failure domain.
+
+Promotion occurs mechanically upon quorum verification.
 
 Structure constrains power. Verification replaces trust.
 
@@ -115,14 +118,25 @@ Structure constrains power. Verification replaces trust.
   - **Immutable ledger**
   - **Contract-enforced builder independence**
   - **No central actor**
-- Attack Surface: Misconfiguration, governance keys, [hardware
+- Attack Surface: Governance keys, misconfiguration, [hardware
   interdiction](./DESIGN.md#hardware-interdiction).
 - Resiliency: High.
 - Cost (3 builders, 4 systems): Ξ0.001–Ξ0.003 (~$3–$9 @ Ξ1=$3k).
 
-> [!NOTE]
+> [!WARNING]
 >
-> Zero is not yet implemented. Funding applications pending.
+> Full-source bootstrap "Genesis Build" is expensive. The [NixOS Full-Source
+> Bootstrap
+> thesis](https://nzbr.github.io/nixos-full-source-bootstrap/thesis.pdf) reports
+> ~17h30m on 12 logical cores / 16 GiB RAM,
+> a baseline of ~200 vCPU-hours per genesis run. Estimate
+> order-of-magnitude only; cost scales with builders x systems (M x S) for each
+> full bootstrap event.
+>
+> For rough cadence planning, run
+> [`scripts/toolchain_churn.py`](./scripts/toolchain_churn.py) against a local
+> nixpkgs clone to count toolchain-critical churn (events/week and median days
+> between events).
 
 ## Quickstart/Evaluation
 

@@ -269,6 +269,20 @@ At minimum, the statement must bind:
 > application code changes will return to near-zero setup times via the
 > pre-built OCI layers.
 
+Baseline expectation for that Genesis Build: the full-source bootstrap thesis
+reports three offline runs at 17h03m, 17h21m, and 17h43m on 12 logical cores and
+16 GiB RAM. A practical planning number is ~200 vCPU-hours per genesis run
+(order-of-magnitude, assuming all cores remain saturated for ~17.4h). Cost
+scales roughly with builders × systems: M independent builders across S target
+systems implies ~200 x M x S vCPU-hours for each full-bootstrap event. Source:
+[NixOS Full-Source Bootstrap thesis (PDF)](https://nzbr.github.io/nixos-full-source-bootstrap/thesis.pdf).
+
+Toolchain churn drives how often this wall is paid. Use
+[`scripts/toolchain_churn.py`](./scripts/toolchain_churn.py) against a local
+`nixpkgs` checkout to estimate unstable cadence from toolchain-critical path
+changes (events/week and median days-between-events). Treat output as planning
+signal, not protocol truth.
+
 #### Contract Governance
 
 - Governance multi-sig must be independent from builder keys.
