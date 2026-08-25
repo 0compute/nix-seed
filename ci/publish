@@ -140,7 +140,7 @@ predicate="./$commit.$system.json"
 cat <<EOF >"$predicate"
 {
   "schemaVersion": 1,
-  "predicateType": "https://github.com/0compute/nix-seed",
+  "predicateType": "https://github.com/roundtablelove/nix-seed",
   "timestamp": "$(date --utc +'%Y-%m-%dT%H:%M:%SZ')",
   "system": "$system",
   "gitHash": "$commit",

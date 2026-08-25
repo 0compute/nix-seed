@@ -180,7 +180,7 @@ Add `nix-seed` to your `flake.nix` and expose `seed` in `packages`:
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     nix-seed = {
-      url = "github:0compute/nix-seed/v1";
+      url = "github:roundtablelove/nix-seed/v1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     systems.url = "github:nix-systems/default";
@@ -247,7 +247,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-      - uses: 0compute/nix-seed/seed@v1
+      - uses: roundtablelove/nix-seed/seed@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -285,7 +285,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-      - uses: 0compute/nix-seed@v1
+      - uses: roundtablelove/nix-seed@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           cachix_cache: <name>
@@ -325,5 +325,5 @@ mirror the source repository.
 Provider credentials must be present in the environment.
 
 ```sh
-nix run github:0compute/nix-seed/v1#sync
+nix run github:roundtablelove/nix-seed/v1#sync
 ```

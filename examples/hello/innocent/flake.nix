@@ -3,7 +3,7 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     nix-seed = {
-      url = "github:0compute/nix-seed/v1";
+      url = "github:roundtablelove/nix-seed/v1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     systems.url = "github:nix-systems/default";

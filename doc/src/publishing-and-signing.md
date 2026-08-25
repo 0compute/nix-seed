@@ -37,7 +37,7 @@ The publishing process includes a critical "attest" phase:
 
 ### Example Command \`\`\`bash cosign attest \\ --rekor-url https://rekor.sigstore.dev \\
 
---type https://github.com/0compute/nix-seed \\ --predicate
+--type https://github.com/roundtablelove/nix-seed \\ --predicate
 "./$commit.$system.json" \
 "$image" \`\`\`
 
