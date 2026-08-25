@@ -1,5 +1,12 @@
 # Nix Seed
 
+> [!WARNING]
+>
+> This is a work in progress with a somewhat complete design - more prose than
+> code.
+>
+> Don't bother trying to use it. It won't work.
+
 Traditional cache-backed Nix on non-native ephemeral CI runners has a
 performance bottleneck - `/nix/store` hydration. Caches are monolithic archives
 that must be *sequentially* transferred, written to disk, then extracted.
@@ -82,7 +89,8 @@ Integrity scales with the quorum threshold (k), not the total number of builders
 
 > **“Trust, but verify.”**
 >
-> — Ronald Reagan (from Russian proverb), 1987
+> —
+> [Ronald Reagan (from Russian proverb), 1987](https://en.wikisource.org/wiki/Remarks_on_Signing_the_Intermediate-Range_Nuclear_Forces_Treaty)
 
 > **“I Want To Believe.”**
 >
@@ -135,14 +143,14 @@ rules.
 
 Structure constrains power. Verification replaces trust.
 
-- Attack Surface: Governance keys, misconfiguration, [hardware
-  interdiction](./DESIGN.md#hardware-interdiction).
+- Attack Surface: Governance keys, misconfiguration,
+  [hardware interdiction](./DESIGN.md#hardware-interdiction).
 - Resiliency: High.
 
 ##### Cost
 
-Full-source bootstrap (genesis build) is expensive. Wire Jansen's [full-source
-bootstrap thesis](https://nzbr.github.io/nixos-full-source-bootstrap/thesis.pdf)
+Full-source bootstrap (genesis build) is expensive. Wire Jansen's
+[full-source bootstrap thesis](https://nzbr.github.io/nixos-full-source-bootstrap/thesis.pdf)
 reports ~17h30m on 12 logical cores / 16 GiB RAM - ~200 CPU-hours.
 
 Cost scales with:
@@ -150,8 +158,8 @@ Cost scales with:
 - Builders
 - Systems
 - Toolchain churn. A [script](./scripts/toolchain_churn.py) is provided to
-  estimate cadence from toolchain-critical path changes (events/week
-  and median days-between-events)
+  estimate cadence from toolchain-critical path changes (events/week and median
+  days-between-events)
 
 Order-of-magnitude example (3 builders × 4 systems): ~2400 CPU-hours per full
 bootstrap event ≈ $100–$200 at typical rates ($0.04–$0.08 per vCPU-hour).
