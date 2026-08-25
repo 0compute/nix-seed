@@ -1,25 +1,29 @@
-#!/usr/bin/env python3
+#!/usr/bin/env nix-shell
+#!nix-shell -i python3 -p python3 python3Packages.typer
+
 """
 Estimate nixpkgs unstable toolchain rebuild cadence from a local git checkout.
 
 Usage:
-  python3 scripts/toolchain_churn.py /path/to/nixpkgs [--since YYYY-MM-DD] [--branch BRANCH]
+  python3 scripts/toolchain_churn.py /path/to/nixpkgs [--since YYYY-MM-DD]
 
 Notes:
 - Offline only: this script reads local git history and does not fetch.
-- It counts commits touching toolchain-critical paths and reports events/week
-  plus median days between events.
-- Output is intentionally plain text and stable for CI/log parsing.
+- It counts change days from non-merge commits on HEAD history that touch
+  toolchain-critical paths and reports event cadence, including per-path counts
+  and commits.
+- Output is YAML for stable machine parsing.
 """
 
 from __future__ import annotations
 
-import argparse
+import contextlib
 import datetime as dt
-import statistics
 import subprocess
 import sys
 from pathlib import Path
+
+import typer
 
 DEFAULT_PATHS = [
     "pkgs/stdenv",
@@ -30,97 +34,151 @@ DEFAULT_PATHS = [
     "pkgs/development/tools/misc/binutils",
     "pkgs/os-specific/linux/kernel-headers",
 ]
+DATE_FMT = "%Y-%m-%d"
+DEFAULT_SINCE = "2024-01-01"
 
 
 def run_git(repo: Path, args: list[str]) -> str:
     cmd = ["git", "-C", str(repo), *args]
-    out = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    return out.stdout
+    return subprocess.check_output(cmd, text=True, stderr=subprocess.PIPE)
 
 
-def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Estimate nixpkgs toolchain churn")
-    p.add_argument("repo", type=Path, help="Local nixpkgs git checkout")
-    p.add_argument(
-        "--since",
-        default="2024-01-01",
-        help="Lower date bound (inclusive), format YYYY-MM-DD (default: 2024-01-01)",
+def parse_date(value: str) -> dt.date:
+    return dt.datetime.strptime(value, DATE_FMT).date()
+
+
+def head_branch(repo: Path) -> str:
+    branch = "HEAD"
+    with contextlib.suppress(subprocess.CalledProcessError):
+        branch = run_git(repo, ["rev-parse", "--abbrev-ref", "HEAD"]).strip()
+    return branch
+
+
+def commits_for_paths(
+    repo: Path,
+    since: str,
+    paths: list[str],
+) -> list[tuple[str, dt.date]]:
+    raw = run_git(
+        repo,
+        [
+            "log",
+            "--no-merges",
+            "--date=short",
+            "--pretty=format:%H\t%ad",
+            f"--since={since}",
+            "HEAD",
+            "--",
+            *paths,
+        ],
     )
-    p.add_argument(
-        "--branch",
-        default="origin/nixos-unstable",
-        help="Branch/ref to inspect (default: origin/nixos-unstable)",
-    )
-    return p.parse_args()
-
-
-def main() -> int:
-    ns = parse_args()
-    repo = ns.repo
-    if not repo.exists():
-        print(f"error: repo path does not exist: {repo}")
-        return 2
-
-    try:
-        since = dt.datetime.strptime(ns.since, "%Y-%m-%d").date()
-    except ValueError:
-        print("error: --since must be YYYY-MM-DD")
-        return 2
-
-    try:
-        raw = run_git(
-            repo,
-            [
-                "log",
-                "--date=short",
-                "--pretty=format:%H\t%ad",
-                f"--since={ns.since}",
-                ns.branch,
-                "--",
-                *DEFAULT_PATHS,
-            ],
-        )
-    except subprocess.CalledProcessError as e:
-        print("error: failed to read git history")
-        if e.stderr:
-            print(e.stderr.strip())
-        return 2
-
-    rows = [line for line in raw.splitlines() if line.strip()]
-    events: list[tuple[str, dt.date]] = []
-    for row in rows:
+    commits: list[tuple[str, dt.date]] = []
+    for line in raw.splitlines():
+        row = line.strip()
+        if not row:
+            continue
         commit, day = row.split("\t", 1)
-        events.append((commit, dt.datetime.strptime(day, "%Y-%m-%d").date()))
+        commits.append((commit, parse_date(day)))
+    return commits
+
+
+def collapse_commits_by_day(
+    commits: list[tuple[str, dt.date]],
+) -> list[tuple[str, dt.date]]:
+    # Keep the most recent commit seen for each day.
+    selected_by_day: dict[dt.date, str] = {}
+    ordered_days: list[dt.date] = []
+    for commit, day in commits:
+        if day in selected_by_day:
+            continue
+        selected_by_day[day] = commit
+        ordered_days.append(day)
+    return [(selected_by_day[day], day) for day in ordered_days]
+
+
+def sort_events_desc(
+    events: list[tuple[str, dt.date]],
+) -> list[tuple[str, dt.date]]:
+    return sorted(events, key=lambda item: item[1], reverse=True)
+
+
+def main(repo: Path, since: str) -> int:
+    if not repo.exists():
+        print(f"error: repo path does not exist: {repo}", file=sys.stderr)
+        return 2
+
+    try:
+        since_date = parse_date(since)
+    except ValueError:
+        print("error: --since must be YYYY-MM-DD", file=sys.stderr)
+        return 2
+
+    try:
+        commits = commits_for_paths(repo, since, DEFAULT_PATHS)
+        per_path_commits = {
+            path: sort_events_desc(
+                collapse_commits_by_day(commits_for_paths(repo, since, [path])),
+            )
+            for path in DEFAULT_PATHS
+        }
+    except subprocess.CalledProcessError as e:
+        print("error: failed to read git history", file=sys.stderr)
+        if e.stderr:
+            print(e.stderr.strip(), file=sys.stderr)
+        return 2
+
+    events = sort_events_desc(collapse_commits_by_day(commits))
 
     today = dt.date.today()
-    span_days = max(1, (today - since).days)
+    span_days = max(1, (today - since_date).days)
     span_weeks = span_days / 7.0
+    weekly = int(round(len(events) / span_weeks))
 
-    print("nixpkgs toolchain churn estimate")
     print(f"repo: {repo}")
-    print(f"ref: {ns.branch}")
-    print(f"since: {since.isoformat()}")
-    print("paths:")
-    for p in DEFAULT_PATHS:
-        print(f"  - {p}")
-
-    print(f"events: {len(events)}")
-    print(f"events_per_week: {len(events) / span_weeks:.2f}")
-
-    if len(events) >= 2:
-        chron = sorted(events, key=lambda x: x[1])
-        gaps = [(chron[i][1] - chron[i - 1][1]).days for i in range(1, len(chron))]
-        med = statistics.median(gaps)
-        print(f"median_days_between_events: {med:.1f}")
-    else:
-        print("median_days_between_events: n/a")
-
+    print(f"branch: {head_branch(repo)}")
+    print(f"since: {since_date.isoformat()}")
+    print(f"weekly: {weekly}")
     if events:
-        latest_hash, latest_day = max(events, key=lambda x: x[1])
-        print(f"latest_event: {latest_day.isoformat()} {latest_hash}")
+        last_hash, last_day = events[0]
+        print("last:")
+        print(f"  date: {last_day.isoformat()}")
+        print(f"  commit: {last_hash}")
+    else:
+        print("last: null")
+    print("events:")
+    print(f"  count: {len(events)}")
+    print("  paths:")
+    for path in DEFAULT_PATHS:
+        path_events = per_path_commits[path]
+        print(f"    - path: {path}")
+        print(f"      count: {len(path_events)}")
+        if path_events:
+            print("      commits:")
+            for commit, _day in path_events:
+                print(f"        - {commit}")
+        else:
+            print("      commits: []")
 
     return 0
 
 
+app = typer.Typer(
+    add_completion=False,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
+
+
+@app.command()
+def cli(
+    repo: Path = typer.Argument(..., help="Local nixpkgs git checkout"),
+    since: str = typer.Option(
+        DEFAULT_SINCE,
+        "--since",
+        help="Lower date bound (inclusive), format YYYY-MM-DD",
+    ),
+) -> None:
+    raise typer.Exit(main(repo=repo, since=since))
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    app()
