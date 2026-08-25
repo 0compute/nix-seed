@@ -1,6 +1,6 @@
 {
 
-  description = "Nix Flakes, baked. Accept no substitute.";
+  description = "Nix CI, Tax-Free. Unbroken Flow.";
 
   inputs = {
 
