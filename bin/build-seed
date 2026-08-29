@@ -4,12 +4,11 @@ set -eu -o pipefail
 
 seed=$(realpath ${1:-.})#seed
 
-set -x
-
 nix build --print-build-logs $seed
 nix run $seed.copyToPodman
 
 # HACK: tag latest for dev
 name=$(nix eval --raw $seed.name)
 tag=$(nix eval --raw $seed.tag)
-skopeo copy --insecure-policy containers-storage:$name:$tag containers-storage:$name:latest
+
+echo "built seed $name:$tag"

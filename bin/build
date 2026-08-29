@@ -7,6 +7,7 @@ seed=$installable#seed
 
 # host directory the build result (and its closure) is exported to.
 out=${2:-$PWD/result-out}
+rm -rf $out
 mkdir -p "$out"
 
 link=/tmp/result
@@ -33,5 +34,4 @@ PODMAN=(
    && nix copy --offline --no-check-sigs --to file:///out $link \
    && cp -a $link /src/result"
 
-echo "exported to $out; import on host with:"
-echo "  nix copy --no-check-sigs --all --from file://$out"
+nix copy --no-check-sigs --all --from file://$out
