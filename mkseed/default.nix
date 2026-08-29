@@ -52,7 +52,6 @@ let
         nix
       ]
       ++ (with pkgs; [
-        cacert # nix fetchers
         busybox # debug helper
         (writeTextDir "etc/nix/nix.conf" ''
           experimental-features = nix-command flakes
