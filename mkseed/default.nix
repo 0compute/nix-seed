@@ -22,7 +22,7 @@ let
       nix ? pkgs.nixVersions.latest,
       nixConf ? "",
       # TODO: hook in seedCfg
-      githubRunner ? true,
+      githubRunner ? false,
       ...
     }@args:
     let
