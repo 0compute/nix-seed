@@ -1,5 +1,7 @@
 # Nix Seed
 
+> [!WARNING] Work in progress. Does not work as described.
+
 Nix on ephemeral CI.
 
 Source-only change: **build setup \<10s**.
