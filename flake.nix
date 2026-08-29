@@ -22,12 +22,6 @@
 
     flake-parts.url = "github:hercules-ci/flake-parts";
 
-    # transitive: poetry2nix
-    flake-utils = {
-      url = "github:numtide/flake-utils";
-      inputs.systems.follows = "systems";
-    };
-
     git-hooks = {
       url = "github:cachix/git-hooks.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -46,6 +40,11 @@
       url = "git+https://gitlab.horizon-haskell.net/nix/gitlab-ci.git";
       inputs = {
         nixpkgs.follows = "nixpkgs";
+        nixica.inputs = {
+          flake-parts.follows = "flake-parts";
+          nixpkgs.follows = "nixpkgs";
+          treefmt-nix.follows = "treefmt-nix";
+        };
       };
     };
 
@@ -55,6 +54,7 @@
         flake-parts.follows = "flake-parts";
         nixpkgs.follows = "nixpkgs";
         poetry2nix.follows = "poetry2nix";
+        treefmt-nix.follows = "treefmt-nix";
       };
     };
 
@@ -82,7 +82,7 @@
     poetry2nix = {
       url = "github:nix-community/poetry2nix";
       inputs = {
-        flake-utils.follows = "flake-utils";
+        flake-utils.inputs.systems.follows = "systems";
         nix-github-actions.follows = "nix-github-actions";
         nixpkgs.follows = "nixpkgs";
         systems.follows = "systems";

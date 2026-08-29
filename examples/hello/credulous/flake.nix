@@ -6,7 +6,6 @@
       url = ./../../..;
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    systems.url = "github:nix-systems/default";
   };
 
   outputs = inputs: {
@@ -24,19 +23,23 @@
       quorum = 2;
     };
 
-    packages = inputs.nixpkgs.lib.genAttrs (import inputs.systems) (
-      system:
-      let
-        pkgs = inputs.nixpkgs.legacyPackages.${system};
-      in
-      {
-        default = pkgs.hello;
-        seed = inputs.nix-seed.lib.mkSeed {
-          inherit pkgs;
-          inherit (inputs) self;
-        };
-      }
-    );
+    packages =
+      inputs.nixpkgs.lib.genAttrs (import inputs.nix-seed.inputs.systems)
+        (
+          system:
+          let
+            pkgs = inputs.nixpkgs.legacyPackages.${system};
+          in
+          {
+            default = pkgs.writeScriptBin "hello" ''
+              ${pkgs.hello}/bin/hello -g "hello nix-seed"
+            '';
+            seed = inputs.nix-seed.lib.mkSeed {
+              inherit pkgs;
+              inherit (inputs) self;
+            };
+          }
+        );
 
   };
 
