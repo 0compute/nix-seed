@@ -1,6 +1,5 @@
 /.env
 /.env.artstd
 /.nvim.local.lua
-/result
-/result/
-/result-out/
+result
+result-out/
