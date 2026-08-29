@@ -205,14 +205,13 @@ Add `nix-seed` to your `flake.nix` and expose `seed` in `packages`:
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     nix-seed = {
-      url = "github:roundtablelove/nix-seed/v1";
+      url = "github:roundtablelove/nix-seed";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    systems.url = "github:nix-systems/default-linux";
   };
   outputs = inputs: {
     packages =
-      inputs.nixpkgs.lib.genAttrs (import inputs.systems) (
+      inputs.nixpkgs.lib.genAttrs inputs.nixpkgs.lib.systems.flakeExposed (
         system:
         let
           pkgs = inputs.nixpkgs.legacyPackages.${system};
@@ -270,7 +269,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-      - uses: roundtablelove/nix-seed/seed@v1
+      - uses: roundtablelove/nix-seed/seed
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -291,10 +290,7 @@ on:
       - completed
 jobs:
   build:
-    if: ${{
-      github.event_name == 'push' ||
-      github.event.workflow_run.conclusion == 'success'
-    }}
+    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
     permissions:
       contents: read
       id-token: write
