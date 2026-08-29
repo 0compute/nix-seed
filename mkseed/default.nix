@@ -58,11 +58,6 @@ let
           experimental-features = nix-command flakes
           # XXX: why?
           build-users-group =
-          # rootless podman: force a real sandbox and fail loudly rather
-          # than silently degrading to a non-sandboxed (impure) build,
-          # which then trips the /homeless-shelter purity check.
-          # sandbox = true
-          # sandbox-fallback = false
           sandbox = false
           # post-build-hook = ${./post-build-hook}
           # no sub, no fallback, build can only happen here
@@ -102,21 +97,24 @@ let
         in
         lib.filter keepDrv (
           # apps have { type = "app"; program = "..."; }.
-          map (app: app.package or null) (lib.attrValues (byName (self.apps.${system} or { })))
+          map (app: app.package or null) (
+            lib.attrValues (byName (self.apps.${system} or { }))
+          )
           ++ harvest "checks"
           ++ harvest "devShells"
           ++ harvest "packages"
         );
 
       # store paths forced into the image closure by *listing* them in a
-      # file: Nix's reference scanner then pulls each path and its whole
-      # closure in. (buildEnv can't carry them — it only references what it
-      # links under /bin,/etc,/lib, dropping source trees and the
-      # inputDerivation stub.) Two groups:
-      #   - every flake input source, recursively -> offline `nix` eval.
-      #   - each derivation's inputDerivation -> its full build-input
-      #     closure, so `nix build` runs offline without rebuilding
-      #     stdenv/glibc/etc. from source.
+      # file, so Nix's reference scanner pulls each path and its whole
+      # closure into the image (buildEnv would drop them — it only links
+      # /bin,/etc,/lib, and the inputDerivation stub links nothing). Two
+      # groups:
+      #   - every flake input source, recursively -> offline flake
+      #     *evaluation* (nix reads each locked input from the store).
+      #   - each harvested derivation's inputDerivation -> its full
+      #     build-input closure, so `nix build` runs offline without
+      #     rebuilding stdenv/glibc/etc. from source.
       seedClosure = pkgs.writeTextDir "etc/nix-seed/closure" (
         lib.concatStringsSep "\n" (
           let
@@ -169,17 +167,15 @@ let
         )
         ++ corePkgs
         # runtime tools on /bin (PATH) for the harvested derivations.
-        ++ lib.concatMap
-          (
-            drv:
-            lib.concatMap (attr: drv.${attr} or [ ]) [
-              "buildInputs"
-              "nativeBuildInputs"
-              "propagatedBuildInputs"
-              "propagatedNativeBuildInputs"
-            ]
-          )
-          selfDrvs
+        ++ lib.concatMap (
+          drv:
+          lib.concatMap (attr: drv.${attr} or [ ]) [
+            "buildInputs"
+            "nativeBuildInputs"
+            "propagatedBuildInputs"
+            "propagatedNativeBuildInputs"
+          ]
+        ) selfDrvs
         ++ [ seedClosure ]
         ++ args.contents or [ ];
 
