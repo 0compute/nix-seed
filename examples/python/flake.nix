@@ -31,7 +31,9 @@
       {
 
         default = python.pkgs.buildPythonPackage (
-          project.renderers.buildPythonPackage { inherit python; }
+          pkgs.lib.recursiveUpdate (project.renderers.buildPythonPackage { inherit python; }) {
+            meta.mainProgram = "hello";
+          }
         );
 
         seed = inputs.nix-seed.lib.mkSeed {

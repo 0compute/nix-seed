@@ -2,3 +2,13 @@
 name = "python-example"
 version = "0.1.0"
 dependencies = ["torch", "jax", "numpy", "pandas"]
+
+[project.scripts]
+hello = "hello:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["hello"]

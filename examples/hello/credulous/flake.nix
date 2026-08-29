@@ -11,7 +11,18 @@
 
   outputs = inputs: {
 
-    seedCfg.trust = "innocent";
+    seedCfg = {
+      trust = "credulous";
+      builders = {
+        github = {
+          enable = true;
+          master = true;
+        };
+        gitlab.enable = true;
+        scaleway.enable = true;
+      };
+      quorum = 2;
+    };
 
     packages = inputs.nixpkgs.lib.genAttrs (import inputs.systems) (
       system:
@@ -19,9 +30,7 @@
         pkgs = inputs.nixpkgs.legacyPackages.${system};
       in
       {
-        default = pkgs.writeScriptBin "hello" ''
-          ${pkgs.hello}/bin/hello -g "hello nix-seed"
-        '';
+        default = pkgs.hello;
         seed = inputs.nix-seed.lib.mkSeed {
           inherit pkgs;
           inherit (inputs) self;

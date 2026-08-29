@@ -83,7 +83,6 @@ mount -t overlay overlay \
     -o lowerdir=/nix/store,upperdir=/out,workdir=/tmp/work \
     /tmp/merged
 mount --bind /mnt/merged /nix/store
-exec /bin/bash "$@"
 ```
 
 Post-build, the new paths are available in $out.

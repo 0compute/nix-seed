@@ -1,4 +1,3 @@
-{ inputs, inputs', ... }:
 {
 
   imports = [
@@ -15,13 +14,5 @@
     ./seedcfg.nix
     ./builders.nix
   ];
-
-  systems = import inputs.systems;
-
-  flake.lib.mkSeed = import ../mkseed.nix {
-    inherit (inputs') nix-attest nix2container;
-  };
-
-  flake.lib.mkBuild = import ../mkbuild.nix;
 
 }

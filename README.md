@@ -1,175 +1,182 @@
 # Nix Seed
 
-> [!WARNING]
+Nix on ephemeral CI.
+
+Source-only change: **build setup \<10s**.
+
+Dependencies via [OCI] layers.
+
+Explicit trust anchors.
+
+> Dependencies realised, once: **$$$**.
 >
-> This is a work in progress with a somewhat complete design - more prose than
-> code.
+> Supply chain, secured: **$$$**.
 >
-> Don't bother trying to use it. It won't work.
+> Flow state, uninterrupted: **Priceless**.
 
-Traditional cache-backed Nix on non-native ephemeral CI runners has a
-performance bottleneck - `/nix/store` hydration. Caches are monolithic archives
-that must be *sequentially* transferred, written to disk, then extracted.
-Network and disk I/O are heavy, CPU is pegged. For a typical 1.5G cache (6G
-uncompressed) on a standard runner this means *minimum* 60s before useful work
-can begin. The full cache must be transferred on every job, post-job the store
-must be re-archived and uploaded. Caches lack granularity and scale poorly with
-input graph size.
+Docs:
 
-This is extremely wasteful in terms of both compute/energy and engineer flow.
+- [Overview](./OVERVIEW.md) — problems and solutions, plain-English.
+- [Design](./DESIGN.md) — full design spec, unavoidably-technical.
 
-~~This is the unavoidable tax on purity.~~
+______________________________________________________________________
 
-This *was* the unavoidable tax on purity.
+## OCI Layers vs `actions/cache`
 
-Nix seed provides seed OCI images with Nix and the project dependencies baked
-in. OCI layers are content-addressed, so naturally support re-use and extreme
-cacheability, and are pulled and mounted *in parallel*, without full extraction.
+`actions/cache` operates by:
 
-Performance characteristics:
+1. Downloading a monolithic archive.
+1. Writing it to disk.
+1. Extracting it sequentially.
+1. Re-archiving and uploading post-job.
 
-- **CI runner (VM) provisioning:** ~5s (fixed provider cost)
+This means:
+
+- High network/disk I/O.
+- Serialisation bottlenecks.
+- Full dataset copy on every job.
+- Poor scaling with cache size.
+
+OCI layers are content-addressed:
+
+- Layer pulls are parallelised.
+- Deduplication is automatic.
+- Filesystems mount layered content without full extraction.
+- Only changed layers are transferred.
+
+Observed characteristics:
+
+- **VM provisioning:** ~5s (fixed provider cost)
 - **Layer pull + mount:** \<5s (with runner-local registry, e.g. GHCR)
 - **Source fetch:** unchanged
 - **Build execution:** unchanged
 
-Replacing `actions/cache` with OCI layers makes build artifacts explicit. Once
-artifact identity became first-class, release could no longer be treated as a
-procedural step. Release is authority. Nix seed provides trust postures that
-make that authority explicit.
-
-> Supply chain, secured: **$$$**.
->
-> Dependencies realised, once: **$$$**.
->
-> Flow state, uninterrupted: **Priceless**.
+______________________________________________________________________
 
 ## Trust
 
-Nix Seed provides three trust postures: Innocent, Credulous, and Zero.
-
-The default posture is Innocent.
-
-### Trust Posture: Innocent
-
-> **“IDGAF about trust. Gimme Perf!”**
+> **"Just because you're paranoid doesn't mean they aren't after you."**
 >
-> 99.999% of engineers polled
+> — Anonymous, c. 1967
 
-Innocent posture performs builds on a single CI provider.
+Nix Seed provides four trust modes. Choose one.
+
+Quorum-based modes (Credulous and above) require an N-of-M quorum of builders in
+independent failure domains (organisational, jurisdictional, infrastructural) to
+attest bitwise-identical output. Integrity scales with the quorum threshold (k),
+not the builder count (n); adding builders without raising k improves
+availability, not security.
+
+______________________________________________________________________
+
+### Trust Level: Innocent
+
+> **"IDGAF about trust. Gimme the Fast!"**
+>
+> — 99.999% of engineers polled
+
+[Innocent](./DESIGN.md#innocent) anchors trust on the public-good Rekor instance
+with a single builder.
 
 - Guarantee: None.
-- Attack Surface: CI provider, Nix binary cache infrastructure.
-- Resiliency: Bounded by CI provider.
-- Cost: Provider-bound.
+- Attack Surface: Builder, Rekor, and Nix cache infrastructure — all central
+  actors.
+- Resiliency: Public-good Rekor publishes an availability SLO (not a contractual
+  SLA); downtime can block logging and verification when depended on.
+- Cost: Free.
 
-### Quorum-Based
+______________________________________________________________________
 
-Quorum-based postures require an N-of-M quorum of builders operating in
-independent failure domains (organisational, jurisdictional, and
-infrastructural) to attest bitwise-identical output. Forgery effort compounds
-with quorum size.
+### Trust Level: Credulous
 
-Guarantee: No single builder can forge a release.
-
-Recommended quorum: **3 builders** with a **2-of-3** quorum.
-
-- Tolerates single builder outage without blocking promotion.
-- Prevents a single compromised builder from forging a release.
-- Trade-off: if an attacker can disable one builder, only two compromises are
-  required.
-
-Increasing quorum from 2-of-3 to 3-of-4 raises required compromises from 2 to 3
-— a 50% increase in attack effort.
-
-Integrity scales with the quorum threshold (k), not the total number of builders
-(n). Adding builders without raising quorum improves availability, not security.
-
-#### Trust Posture: Credulous
-
-> **“Trust, but verify.”**
+> **"I Want To Believe."**
 >
-> —
-> [Ronald Reagan (from Russian proverb), 1987](https://en.wikisource.org/wiki/Remarks_on_Signing_the_Intermediate-Range_Nuclear_Forces_Treaty)
+> — Fox Mulder, The X-Files, 1993
 
-> **“I Want To Believe.”**
+[Credulous](./DESIGN.md#credulous) anchors trust on the public-good Rekor
+instance with an N-of-M independent builder quorum.
+
+Credulous assumes builders can fail independently, but treats transparency
+infrastructure as trusted.
+
+When the configured builder quorum is reached, the master builder creates a
+signed git tag on the source commit.
+
+- Guarantee: No single builder can forge a release; compromise requires quorum
+  capture.
+- Attack Surface: Builder set, master builder, public-good Rekor, OIDC trust
+  roots.
+- Resiliency: As for [Innocent](#trust-level-innocent).
+- Cost: Free.
+
+______________________________________________________________________
+
+### Trust Level: Suspicious
+
+> [!NOTE]
 >
-> — Fox Mulder, *The X-Files*, 1993
+> Suspicious is not yet implemented.
 
-Credulous posture anchors trust on the Rekor public-good instance. Promotion is
-performed by a Release Node after quorum verification.
-
-- Attack Surface: Builder set, OIDC trust roots, Release Node, Rekor, Nix binary
-  cache infrastructure.
-- Resiliency: Provider-bound. Rekor public-good has a 99.5% SLO (not SLA);
-  downtime blocks block build and verify.
-- Cost: Provider-bound. Rekor public-good is free.
-
-Builders run witness/gossip checks against Rekor both as part of build and on a
-schedule; mismatches indicate split-view/equivocation. A self-hosted
-witness/gossip check is recommended.
-
-> [!WARNING]
+> **"Trust, but verify."**
 >
-> Credulous posture does not mitigate compromise of Nix binary cache
-> infrastructure; if all builders consume the same poisoned cache, malicious
-> output will satisfy quorum.
+> — Ronald Reagan (Russian proverb), 1987
 
-#### Trust Posture: Zero
+[Suspicious](./DESIGN.md#suspicious) keeps [Credulous](#trust-level-credulous)
+builder quorum and adds a K-of-L transparency log quorum, recognising that
+transparency infrastructure is itself a potential failure domain.
 
-> **“Ambition must be made to counteract ambition.”**
+When quorum is reached, the master builder signs and promotes the release.
+
+- Guarantee: No single builder or single transparency log can unilaterally
+  legitimise a release.
+- Attack Surface: Builder set, master builder, OIDC trust roots, transparency
+  log operators.
+- Resiliency: Higher availability than [Credulous](#trust-level-credulous);
+  single-log outages are not automatically fatal.
+- Cost: Moderate operational overhead for multi-log operation.
+
+______________________________________________________________________
+
+### Trust Level: Zero
+
+> [!NOTE]
+>
+> Zero is not yet implemented; funding applications are pending.
+
+> **"Ambition must be made to counteract ambition."**
 >
 > — James Madison, *Federalist No. 51*, 1788
-
-> **“Everyone has a plan until they get punched in the mouth.”**
+>
+> **"Everyone has a plan until they get punched in the mouth."**
 >
 > — Mike Tyson, 2002
 
-Zero assumes that any actor may be compromised or coerced.
+[Zero](./DESIGN.md#zero) assumes that any actor may be compromised or coerced.
 
-Binary caches are not trusted; builders must perform full-source bootstrap.
+Validity is defined by quorum, not by authority.
 
-Promotion occurs mechanically upon quorum verification.
+Bitwise-identical output must be attested across independent failure domains
+(separated across organisational, jurisdictional, and infrastructural
+boundaries).
 
-No Release Node exists; enforcement is contract-based.
+Promotion occurs mechanically upon quorum verification. No master builder
+exists; promotion is contract-enforced.
 
-Ethereum anchors trust and enforces quorum rules; build integrity remains
-defined by builder consensus.
-
-Contracts are upgradeable under multi-signature, time-delayed governance.
-
-Governance cannot alter finalised releases, but can modify future validation
-rules.
+Forgery effort compounds with each additional independent failure domain.
 
 Structure constrains power. Verification replaces trust.
 
+- Guarantee: Contract-enforced quorum. Trust is anchored on an Ethereum L2 smart
+  contract with an N-of-M independent builder quorum. Backing:
+  - **Full-source bootstrap**
+  - **Immutable ledger**
+  - **Contract-enforced builder independence**
+  - **No central actor**
 - Attack Surface: Governance keys, misconfiguration,
   [hardware interdiction](./DESIGN.md#hardware-interdiction).
 - Resiliency: High.
-
-##### Cost
-
-Full-source bootstrap (genesis build) is expensive. Wire Jansen's
-[full-source bootstrap thesis](https://nzbr.github.io/nixos-full-source-bootstrap/thesis.pdf)
-reports ~17h30m on 12 logical cores / 16 GiB RAM - ~200 CPU-hours.
-
-Cost scales with:
-
-- Builders
-- Systems
-- Toolchain churn. A [script](./scripts/toolchain_churn.py) is provided to
-  estimate cadence from toolchain-critical path changes (events/week and median
-  days-between-events)
-
-Order-of-magnitude example (3 builders × 4 systems): ~2400 CPU-hours per full
-bootstrap event ≈ $100–$200 at typical rates ($0.04–$0.08 per vCPU-hour).
-
-Contract enforcement cost ≈ Ξ0.001–Ξ0.003 (~$3–$9 @ Ξ1=$3k)
-
-## Documentation
-
-- [Overview](./OVERVIEW.md) Problems and solutions, plain-English.
-- [Design](./DESIGN.md) Full design spec, unavoidably-technical.
+- Cost (3 builders, 4 systems): ~Ξ0.002 per promotion event (±50% depending on
+  L2 gas conditions) (~$6 @ Ξ1=$3k).
 
 ## Quickstart / Evaluation
 
@@ -327,3 +334,5 @@ Provider credentials must be present in the environment.
 ```sh
 nix run github:roundtablelove/nix-seed/v1#sync
 ```
+
+[oci]: https://opencontainers.org/

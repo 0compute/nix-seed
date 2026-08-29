@@ -6,8 +6,6 @@
 
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    seed-self.url = "github:0compute/nix-seed";
-
     devshell = {
       url = "github:numtide/devshell";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -47,9 +45,7 @@
     gitlab-ci = {
       url = "git+https://gitlab.horizon-haskell.net/nix/gitlab-ci.git";
       inputs = {
-        flake-parts.follows = "flake-parts";
         nixpkgs.follows = "nixpkgs";
-        treefmt-nix.follows = "treefmt-nix";
       };
     };
 
@@ -60,11 +56,6 @@
         nixpkgs.follows = "nixpkgs";
         poetry2nix.follows = "poetry2nix";
       };
-    };
-
-    nix-attest = {
-      url = "github:kingarrrt/nix-attest";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # transitive: nix-unit, poetry2nix
@@ -78,13 +69,12 @@
       inputs = {
         nix-github-actions.follows = "nix-github-actions";
         nixpkgs.follows = "nixpkgs";
-        flake-parts.follows = "flake-parts";
         treefmt-nix.follows = "treefmt-nix";
       };
     };
 
     nix2container = {
-      url = "github:nlewo/nix2container";
+      url = "github:roundtablelove/nix2container";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -112,7 +102,13 @@
   outputs =
     inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+
       imports = [ ./modules ];
+
+      systems = import inputs.systems;
+
+      flake.lib.mkSeed = import ./mkseed { inherit (inputs) nix2container; };
+
     };
 
 }

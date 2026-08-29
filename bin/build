@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -eu -o pipefail
+
+installable=$1
+seed=$installable#seed
+
+# host directory the build result (and its closure) is exported to.
+out=${2:-$PWD/result-out}
+mkdir -p "$out"
+
+link=/tmp/result
+
+name=$(nix eval --raw ./$seed.name)
+tag=$(nix eval --raw ./$seed.tag)
+
+PODMAN=(
+  podman
+  run
+  --network none
+  --tmpfs /tmp
+  --rm
+  -i
+  --volume $PWD:/src
+  --volume "$out":/out
+  $name:$tag
+)
+
+# build offline, then export the result closure to /out as a file-based
+# binary cache (nar + narinfo) that survives the --rm container.
+"${PODMAN[@]}" sh -c \
+  "nix build --offline --out-link $link /src/$installable \
+   && nix copy --offline --no-check-sigs --to file:///out $link \
+   && cp -a $link /src/result"
+
+echo "exported to $out; import on host with:"
+echo "  nix copy --no-check-sigs --all --from file://$out"

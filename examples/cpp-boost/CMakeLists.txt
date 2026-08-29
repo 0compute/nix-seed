@@ -8,3 +8,5 @@ find_package(Boost REQUIRED)
 
 add_executable(cpp-boost-example main.cpp)
 target_link_libraries(cpp-boost-example PRIVATE Boost::boost)
+
+install(TARGETS cpp-boost-example)

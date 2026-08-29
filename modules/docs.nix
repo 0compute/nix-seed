@@ -8,7 +8,7 @@
 
   perSystem = {
 
-    documentation.mkdocs-root = ./doc;
+    documentation.mkdocs-root = ../doc;
 
     emanote.sites = rec {
 
