@@ -12,15 +12,32 @@ let
       # be skipped without ever forcing them.
       selfFilterName ? (_name: true),
       # name from flake default package
-      name ? "${
+      name ?
         let
           package = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
         in
-        package.pname or package.name or "unnamed"
-      }.seed",
+        "${package.pname or package.name or "unnamed"}.seed",
       tag ? self.rev or self.dirtyRev or null,
       nix ? pkgs.nixVersions.latest,
       nixConf ? "",
+      # flake inputs (by name, at any depth) whose source is NOT baked
+      # into the image: nix-seed's own dev/docs/CI tooling, never needed
+      # to build a consumer's project. removeAttrs also stops the collect
+      # recursion into them, dropping their whole subtree (e.g. emanote's
+      # haskell closure).
+      excludeInputs ? [
+        "devshell"
+        "emanote"
+        "git-hooks"
+        "github-actions-nix"
+        "gitlab-ci"
+        "mkdocs-flake"
+        "nix-github-actions"
+        "nix-unit"
+        "nix2container"
+        "poetry2nix"
+        "treefmt-nix"
+      ],
       # TODO: hook in seedCfg
       githubRunner ? false,
       ...
@@ -33,18 +50,23 @@ let
       config = lib.recursiveUpdate {
         Entrypoint = [
           (pkgs.writeShellScript "entrypoint" ''
-            [[ -n $@ ]] || set -- /bin/sh
+            (($#)) || set -- /bin/sh
             exec "$@"
           '')
         ];
-        Env = lib.mapAttrsToList (name: value: "${name}=${value}") {
-          # nix derives its cache dir from HOME; unset yields a relative
-          # ".cache/nix" path and fails inside the container.
-          HOME = "/tmp";
-          LD_LIBRARY_PATH =
-            "/lib:/lib64:/lib/" + stdenv.hostPlatform.linuxArch + "-linux-gnu";
-          SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
-        };
+        Env = lib.mapAttrsToList (name: value: "${name}=${value}") (
+          {
+            # nix derives its cache dir from HOME; unset yields a relative
+            # ".cache/nix" path and fails inside the container.
+            HOME = "/tmp";
+          }
+          # actions runtime loads glibc/libstdc++ from the multiarch path
+          # populated by the githubRunner setup derivation
+          // lib.optionalAttrs githubRunner {
+            LD_LIBRARY_PATH =
+              "/lib:/lib64:/lib/" + stdenv.hostPlatform.linuxArch + "-linux-gnu";
+          }
+        );
       } args.config or { };
 
       corePkgs = [
@@ -55,7 +77,8 @@ let
         busybox # debug helper
         (writeTextDir "etc/nix/nix.conf" ''
           experimental-features = nix-command flakes
-          # XXX: why?
+          # single-user mode: builds run as root in the container, so
+          # disable the build-users mechanism
           build-users-group =
           sandbox = false
           # post-build-hook = ${./post-build-hook}
@@ -68,40 +91,47 @@ let
         '')
       ]);
 
+      # tryEval with a warning + fallback on throw. Catches assert/throw
+      # only; outputs failing with builtin type errors (which tryEval
+      # cannot catch) must be dropped by selfFilterName, before they are
+      # forced at all.
+      tryWarn =
+        msg: fallback: x:
+        let
+          r = builtins.tryEval x;
+        in
+        if r.success then r.value else lib.warn "mkSeed: ${msg}" fallback;
+
       # keep a harvested candidate. isDerivation reads only `.type`
       # (cheap); the isNixSeed guard drops a nested seed before its
       # inputDerivation is taken (which would recurse image -> contents
       # -> seedClosure -> inputDerivation); selfFilter is the value-level
-      # predicate. tryEval is defence-in-depth for outputs that *throw*
-      # (assert/throw are catchable); outputs that fail with a builtin
-      # type error tryEval cannot catch must be dropped earlier by
-      # selfFilterName, before they are forced at all.
+      # predicate.
       keepDrv =
         drv:
-        let
-          r = builtins.tryEval (
-            lib.isDerivation drv && !(drv.isNixSeed or false) && selfFilter drv
-          );
-        in
-        if r.success then
-          r.value
-        else
-          lib.warn "mkSeed: skipping a flake output that threw during evaluation" false;
+        tryWarn "skipping a flake output that threw during evaluation" false (
+          lib.isDerivation drv && !(drv.isNixSeed or false) && selfFilter drv
+        );
 
       # derivations the consumer flake exposes.
       selfDrvs =
         let
-          byName = attrs: lib.filterAttrs (name: _: selfFilterName name) attrs;
-          harvest = attr: lib.attrValues (byName (self.${attr}.${system} or { }));
+          outputs =
+            attr:
+            lib.attrValues (
+              lib.filterAttrs (name: _: selfFilterName name) (
+                self.${attr}.${system} or { }
+              )
+            );
         in
         lib.filter keepDrv (
           # apps have { type = "app"; program = "..."; }.
-          map (app: app.package or null) (
-            lib.attrValues (byName (self.apps.${system} or { }))
-          )
-          ++ harvest "checks"
-          ++ harvest "devShells"
-          ++ harvest "packages"
+          map (app: app.package or null) (outputs "apps")
+          ++ lib.concatMap outputs [
+            "checks"
+            "devShells"
+            "packages"
+          ]
         );
 
       # store paths forced into the image closure by *listing* them in a
@@ -119,20 +149,17 @@ let
           let
             collect =
               flake:
-              lib.concatMap (i: [ i ] ++ collect i) (lib.attrValues (flake.inputs or { }));
+              lib.concatMap (i: [ i ] ++ collect i) (
+                lib.attrValues (removeAttrs (flake.inputs or { }) excludeInputs)
+              );
           in
           lib.unique (
             map (i: i.outPath) (collect self)
             ++ lib.filter (p: p != null) (
               map (
                 drv:
-                let
-                  r = builtins.tryEval (drv.inputDerivation or drv).outPath;
-                in
-                if r.success then
-                  r.value
-                else
-                  lib.warn "mkSeed: no build closure for a flake output (threw)" null
+                tryWarn "no build closure for a flake output (threw)" null
+                  (drv.inputDerivation or drv).outPath
               ) selfDrvs
             )
           )
@@ -179,7 +206,12 @@ let
         ++ args.contents or [ ];
 
       image = nix2container.packages.${system}.nix2container.buildImage (
-        (lib.removeAttrs args (
+        # defaults, overridable via extra mkSeed args
+        {
+          maxLayers = 125;
+          initializeNixDatabase = true;
+        }
+        // (lib.removeAttrs args (
           (builtins.attrNames (builtins.functionArgs mkSeed))
           ++ [
             "config"
@@ -201,8 +233,6 @@ let
               ignoreCollisions = true;
             })
           ];
-          maxLayers = 125;
-          initializeNixDatabase = true;
         }
       );
     in
