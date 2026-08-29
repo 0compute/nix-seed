@@ -10,7 +10,10 @@
 
   outputs = inputs: {
     packages =
-      inputs.nixpkgs.lib.genAttrs (import inputs.nix-seed.inputs.systems)
+      # systems from nixpkgs.lib, not nix-seed: referencing
+      # `inputs.nix-seed.inputs` forces nix-seed's whole flake evaluation
+      # (mkFlake + every flakeModule), which the seed no longer bakes.
+      inputs.nixpkgs.lib.genAttrs inputs.nixpkgs.lib.systems.flakeExposed
         (
           system:
           let
