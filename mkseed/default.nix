@@ -50,6 +50,18 @@ let
       config = lib.recursiveUpdate {
         Entrypoint = [
           (pkgs.writeShellScript "entrypoint" ''
+            ${lib.optionalString (!githubRunner) ''
+              # offline contract: refuse to run with network access.
+              # (githubRunner images are exempt: the actions runtime must
+              # reach GitHub; there the nix sandbox isolates builds.)
+              for i in /sys/class/net/*; do
+                [[ -e $i ]] || continue
+                [[ ''${i##*/} == lo ]] || {
+                  echo "seed: network present; run with --network none" >&2
+                  exit 1
+                }
+              done
+            ''}
             (($#)) || set -- /bin/sh
             exec "$@"
           '')
@@ -85,6 +97,15 @@ let
           # no sub, no fallback, build can only happen here
           substitute = false
           fallback = false
+          # belt-and-braces offline: nothing to substitute from, no
+          # remote builders, no global flake-registry fetch for unlocked
+          # refs; anything that still tries the network fails fast
+          substituters =
+          trusted-substituters =
+          builders =
+          flake-registry =
+          connect-timeout = 1
+          download-attempts = 1
           show-trace = true
           eval-cache = false
           ${nixConf}
