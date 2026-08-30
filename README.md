@@ -23,6 +23,22 @@ Docs:
 
 ______________________________________________________________________
 
+## Platform Support
+
+Linux only: `x86_64-linux` and `aarch64-linux`.
+
+The seed is an OCI image that the build runs *inside*. That needs a container
+runtime to pull and mount it, and an overlay filesystem to capture the store
+paths the build produces. macOS provides neither. GitHub-hosted macOS runners
+cannot run containers at all - they are themselves VMs, and Apple's
+Virtualization framework does not offer nested virtualization on arm64 - and a
+Linux container could not produce `*-darwin` store paths in any case.
+
+macOS support therefore needs a different delivery mechanism, not a port of this
+one. See [Future Work](./DESIGN.md#macos).
+
+______________________________________________________________________
+
 ## OCI Layers vs `actions/cache`
 
 `actions/cache` operates by:
@@ -192,7 +208,7 @@ Add `nix-seed` to your `flake.nix` and expose `seed` in `packages`:
       url = "github:roundtablelove/nix-seed/v1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    systems.url = "github:nix-systems/default";
+    systems.url = "github:nix-systems/default-linux";
   };
   outputs = inputs: {
     packages =
@@ -249,8 +265,6 @@ jobs:
     strategy:
       matrix:
         os:
-          - macos-15
-          - macos-15-intel
           - ubuntu-22.04
           - ubuntu-22.04-arm
     runs-on: ${{ matrix.os }}
@@ -287,8 +301,6 @@ jobs:
     strategy:
       matrix:
         os:
-          - macos-15
-          - macos-15-intel
           - ubuntu-22.04
           - ubuntu-22.04-arm
     runs-on: ${{ matrix.os }}

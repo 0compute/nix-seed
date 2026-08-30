@@ -257,20 +257,30 @@ let
         }
       );
     in
-    # expose metadata for unit testing and inspection. buildLayeredImage does not
-    # support passthru or automatically export its internal arguments
-    image
-    // {
-      inherit
-        name
-        tag
-        contents
-        config
-        corePkgs
-        ;
-      # marker so a seed harvesting self.packages skips a nested seed
-      # (its inputDerivation would recurse through seedClosure).
-      isNixSeed = true;
-    };
+    # nix-seed is Linux only. the seed is an OCI image the build runs
+    # inside, which needs a container runtime to mount it and an overlay
+    # to capture build output; macOS has neither. fail here rather than
+    # producing an image nothing can run. see DESIGN.md#constraints.
+    lib.throwIf (!stdenv.hostPlatform.isLinux) ''
+      mkSeed: unsupported system "${system}". nix-seed is Linux only;
+      see DESIGN.md#constraints and DESIGN.md#macos.
+    ''
+      # expose metadata for unit testing and inspection. buildLayeredImage does
+      # not support passthru or automatically export its internal arguments
+      (
+        image
+        // {
+          inherit
+            name
+            tag
+            contents
+            config
+            corePkgs
+            ;
+          # marker so a seed harvesting self.packages skips a nested seed
+          # (its inputDerivation would recurse through seedClosure).
+          isNixSeed = true;
+        }
+      );
 in
 mkSeed
