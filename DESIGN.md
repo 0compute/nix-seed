@@ -3,7 +3,8 @@
 ## Goals
 
 1. Happy-path builds - application code change only, no dependency update -
-   start *building* in \<10s on a standard ephemeral CI runner.
+   start *building* in \<10s on a standard ephemeral Linux CI runner. See
+   [Constraints](#constraints) for platform support.
 
 ## Prerequisites
 
@@ -51,9 +52,7 @@ system:
 
 ```json
 {
-  "aarch64-darwin": "sha256:...",
   "aarch64-linux": "sha256:...",
-  "x86_64-darwin": "sha256:...",
   "x86_64-linux": "sha256:..."
 }
 ```
@@ -145,9 +144,23 @@ is verified by Nix evaluation; mismatches fail by design.
 
 ### Constraints
 
-Darwin builds must be run on macOS builders if they require Apple SDKs. A runner
-with a differing SDK version produces a differing NAR digest and fails
-deterministically.
+Nix Seed is Linux only: `x86_64-linux` and `aarch64-linux`.
+
+The seed is an OCI image the build runs *inside*. That requires a container
+runtime to pull and mount it, and an overlay filesystem to capture the store
+paths the build produces. macOS provides neither. GitHub-hosted macOS runners
+cannot run containers at all - they are themselves VMs, and Apple's
+Virtualization framework does not offer nested virtualization on arm64.
+
+Nor would a runtime help. A Linux container cannot produce `*-darwin` store
+paths, and Darwin builds requiring Apple SDKs must run on a macOS host
+regardless: a runner with a differing SDK version produces a differing NAR
+digest and fails deterministically.
+
+Supporting macOS therefore means replacing the delivery mechanism, not porting
+this one. See [macOS](#macos) under Future Work. Until it lands, every builder
+in a quorum runs Linux; see
+[Correlated Failure Domains](#correlated-failure-domains).
 
 ## Trust Model
 
@@ -194,6 +207,19 @@ minimum; below that a single adversary controlling two independent entities can
 forge a majority. Unanimous (M-of-M) is the strongest guarantee. See
 [`modules/seedcfg.nix`](modules/seedcfg.nix) and
 [`modules/builders.nix`](modules/builders.nix) for the builder registry schema.
+
+#### Correlated Failure Domains
+
+Independence is bounded by what the builder set holds in common. Nix Seed is
+[Linux only](#constraints), so every builder in a quorum runs the same kernel
+and, on SaaS runners, a small number of near-identical runner images. A
+kernel-level compromise, or a subverted runner image shared across providers, is
+a correlated failure that no value of N detects: every builder produces the same
+wrong output, and quorum is reached on it.
+
+Organisational, jurisdictional and infrastructural independence do not address
+this. Operating system diversity is the missing axis, and it is blocked on
+[macOS support](#macos).
 
 **Timing:** in [Credulous](#credulous) with N-of-M and a deadline, a party
 controlling M-N builders can delay attestation to ensure the deciding N-th vote
@@ -868,6 +894,35 @@ Both refs resolve identically.
 
 ## Future Work / Out of Scope
 
+### macOS
+
+macOS support is deferred; see [Constraints](#constraints) for why the current
+delivery mechanism does not port. The options are:
+
+1. **OCI as transport only.** Keep the image and the registry, drop the runtime.
+   Pull the layer blobs over the distribution API and extract them onto the
+   host's `/nix`, then build with the host's Nix. Preserves one artefact, one
+   registry and one trust anchor across both platforms. Costs the container's
+   isolation, and pays tar extraction - file-count bound on APFS, and the main
+   risk to the [\<10s goal](#goals).
+1. **Read-only disk image.** Ship the store as a compressed disk image attached
+   at `/nix`. `hdiutil attach` is constant time and a compressed image
+   decompresses blocks on demand, so nothing is extracted; `-shadow` supplies
+   the missing copy-on-write layer. Loses cross-version deduplication, which
+   buys nothing on a cold ephemeral runner in any case.
+1. **Closure archive.** Drop OCI on Darwin. Publish the closure as a single
+   archive, extract it to a local `file://` binary cache, and build with that as
+   the only [substituter]. One request rather than thousands of [narinfo] round
+   trips, signatures preserved, and paths materialise on demand. The simplest
+   option, and the slowest.
+1. **macOS VMs.** [Tart] distributes macOS VM images through OCI registries and
+   runs them on Apple's Virtualization framework: the same distribution model,
+   with real isolation and a real Darwin guest. Requires a host that permits
+   VMs, so self-hosted builders only.
+
+Whichever is chosen, the trust anchor is the seed's closure, which is
+independent of the delivery mechanism.
+
 ### Federated Builders
 
 In theory, independent organisations could federate builders to share the cost
@@ -883,8 +938,8 @@ Seed's explicit guarantees and independence between organisations.
 ## Compliance
 
 Seed images fully respect upstream licences prohibiting redistribution. Seed
-images do not include the Apple SDK, they reference it at build time on macOS
-hosts.
+images do not include the Apple SDK; when [macOS](#macos) support lands, Darwin
+builds reference it at build time on the macOS host.
 
 [calldata]: https://ethereum.org/en/developers/docs/transactions/
 [ed25519]: https://ed25519.cr.yp.to/
@@ -900,3 +955,4 @@ hosts.
 [rekor]: https://github.com/sigstore/rekor
 [sla]: https://en.wikipedia.org/wiki/Service-level_agreement
 [substituter]: https://nix.dev/manual/nix/stable/command-ref/conf-file#conf-substituters
+[tart]: https://tart.run/
