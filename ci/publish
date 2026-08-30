@@ -135,6 +135,13 @@ done
 
 system=$(nix eval --raw ".#$seedAttr.system")
 
+# quorum compares the closure manifest, not the image digest: two honest
+# builders can realise identical store paths and still differ on the image
+# bytes (layer compression, manifest serialisation).
+# see DESIGN.md#closure-manifest.
+manifest=$(nix build --no-link --print-out-paths ".#$seedAttr.manifest")
+manifestDigest="sha256:$(sha256sum "$manifest" | cut -d ' ' -f 1)"
+
 predicate="./$commit.$system.json"
 
 cat <<EOF >"$predicate"
@@ -143,6 +150,7 @@ cat <<EOF >"$predicate"
   "predicateType": "https://github.com/roundtablelove/nix-seed",
   "timestamp": "$(date --utc +'%Y-%m-%dT%H:%M:%SZ')",
   "system": "$system",
+  "closureManifest": "$manifestDigest",
   "gitHash": "$commit",
   "narHash": "$(
   nix path-info --json --json-format 1 "$result" | jq --raw-output '.[].narHash'

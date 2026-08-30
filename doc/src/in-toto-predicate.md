@@ -48,6 +48,7 @@ reproducibility:
   "schemaVersion": 1,
   "predicateType": "https://github.com/roundtablelove/nix-seed",
   "narHash": "sha256:123...",
+  "closureManifest": "sha256:456...",
   "commit": "abcdef...",
   "system": "x86_64-linux",
   "builder": {
