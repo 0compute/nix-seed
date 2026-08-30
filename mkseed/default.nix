@@ -226,6 +226,40 @@ let
         ++ [ seedClosure ]
         ++ args.contents or [ ];
 
+      root = pkgs.buildEnv {
+        name = "root";
+        paths = contents;
+        pathsToLink = [
+          "/bin"
+          "/etc"
+          "/lib"
+        ]
+        ++ lib.optionals githubRunner [ "/__e" ];
+        ignoreCollisions = true;
+      };
+
+      # the seed's trust anchor: every store path in the image closure
+      # paired with its NAR hash, sorted. two honest builders can realise
+      # identical store paths and still differ on the image digest (layer
+      # compression, manifest serialisation), which reads as a quorum
+      # failure on a build that in fact reproduced. NAR hashes are what
+      # nix guarantees, so they are what builders compare. derived from
+      # `root` rather than `contents` so it describes what the image
+      # holds, not what it was asked to hold.
+      # see DESIGN.md#closure-manifest.
+      manifest =
+        pkgs.runCommand "${name}-manifest"
+          {
+            __structuredAttrs = true;
+            exportReferencesGraph.closure = [ root ];
+            nativeBuildInputs = [ pkgs.jq ];
+          }
+          ''
+            jq --raw-output '.closure[] | "\(.narHash)  \(.path)"' \
+              "$NIX_ATTRS_JSON_FILE" |
+              LC_ALL=C sort >"$out"
+          '';
+
       image = nix2container.packages.${system}.nix2container.buildImage (
         # defaults, overridable via extra mkSeed args
         {
@@ -241,19 +275,7 @@ let
         ))
         // {
           inherit config name tag;
-          copyToRoot = [
-            (pkgs.buildEnv {
-              name = "root";
-              paths = contents;
-              pathsToLink = [
-                "/bin"
-                "/etc"
-                "/lib"
-              ]
-              ++ lib.optionals githubRunner [ "/__e" ];
-              ignoreCollisions = true;
-            })
-          ];
+          copyToRoot = [ root ];
         }
       );
     in
@@ -276,6 +298,8 @@ let
             contents
             config
             corePkgs
+            root
+            manifest
             ;
           # marker so a seed harvesting self.packages skips a nested seed
           # (its inputDerivation would recurse through seedClosure).

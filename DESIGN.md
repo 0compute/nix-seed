@@ -45,20 +45,68 @@ configured outputs are built in parallel. Projects with large independent
 outputs should use separate CI jobs per output to distribute build load across
 dedicated runners.
 
+### Closure Manifest
+
+A seed's trust anchor is its closure manifest, not its image digest.
+
+The manifest lists every store path in the image closure with that path's NAR
+hash, one path per line, formatted `<narHash>  <path>` and sorted by path in the
+C locale. The manifest digest is the SHA-256 of that file.
+
+Two honest builders in independent failure domains can realise identical store
+paths and still disagree on the image digest. Layer compression settings, the
+byte ordering the image manifest serialises in, and the versions of the tools
+producing both are not part of what Nix reproduces. Comparing image digests
+turns that into a quorum failure: a release blocked on a disagreement that does
+not exist. NAR hashes are precisely what Nix does guarantee, which makes the
+manifest the correct unit of comparison.
+
+The image digest remains the pointer used to fetch the seed, and is not
+authoritative. A consumer verifies the fetched closure against the manifest.
+
+The manifest is derived from the image's `copyToRoot` closure via
+`exportReferencesGraph`, so it describes what the image contains rather than
+what it was asked to contain. It is also independent of how the closure is
+delivered, which is what lets a future non-OCI mechanism (see
+[macOS](#macos)) share the same anchor.
+
 ## Building from Seed
 
-Consuming projects maintains a `.seed.lock` containing a seed digest per target
-system:
+Consuming projects maintain a `.seed.lock` recording, per target system, the
+[closure manifest](#closure-manifest) digest a build must reproduce and the
+mechanism that delivers it:
 
 ```json
 {
-  "aarch64-linux": "sha256:...",
-  "x86_64-linux": "sha256:..."
+  "version": 1,
+  "systems": {
+    "aarch64-linux": {
+      "kind": "oci",
+      "manifest": "sha256:...",
+      "image": "sha256:..."
+    },
+    "x86_64-linux": {
+      "kind": "oci",
+      "manifest": "sha256:...",
+      "image": "sha256:..."
+    }
+  }
 }
 ```
 
-If no digest exists for a system, [the seed is built](#building-the-seed), the
-resulting digest is recorded in a new commit containing the updated
+- `version` gates format migrations. A consumer that does not recognise the
+  value MUST fail rather than guess.
+- `kind` names the delivery mechanism. `oci` is the only value today; the
+  [macOS](#macos) options would add others.
+- `manifest` is the authoritative anchor and is independent of `kind`.
+- `image` is the fetch pointer for `kind: oci`, and is not authoritative.
+
+`version` and `kind` are present while a single mechanism exists because
+`.seed.lock` is committed by every consuming project: adding a discriminator
+later is a migration across all of them.
+
+If no entry exists for a system, [the seed is built](#building-the-seed), the
+resulting entry is recorded in a new commit containing the updated
 `.seed.lock`, and the normal build proceeds.
 
 Build runs inside the seed container as:
@@ -111,7 +159,8 @@ truth.
 
 The release pointer for a container build is the OCI image digest
 (`ghcr.io/org/repo@sha256:<digest>`). Registry tags and metadata are
-non-authoritative. An OCI registry is required to store and distribute container
+non-authoritative, and so is the image digest itself for quorum purposes:
+builders compare the [closure manifest](#closure-manifest) digest. An OCI registry is required to store and distribute container
 outputs; a CI provider with a co-located registry is preferred for performance.
 
 `nix2container` is a pinned flake input; its digest is verified by the Nix build
@@ -187,8 +236,8 @@ Anchors trust on the Rekor public-good instance with a single builder.
 
 #### Quorum
 
-Builds require N-of-M builder agreement on the output digest. No single build is
-trusted.
+Builds require N-of-M builder agreement on the output's
+[closure manifest](#closure-manifest) digest. No single build is trusted.
 
 Quorum is only meaningful if builders span independent failure domains:
 organization, jurisdiction, infrastructure, and identity issuer.
@@ -246,16 +295,18 @@ At minimum, the statement must bind:
 - source commit digest
 - flake.lock content digest
 - target `system`
-- output artifact digest
+- output closure manifest digest
+- output artifact digest (fetch pointer, non-authoritative)
 - SBOM digest
 - builder identity and issuer
 - build timestamp and workflow run ID
 
 **Consumption:**
 
-1. Read seed digest for the current system from `.seed.lock`.
+1. Read the seed entry for the current system from `.seed.lock`.
 1. Verify: attestation signature is valid; Rekor log inclusion is valid;
-   statement contents match expected inputs.
+   statement contents match expected inputs; the attested closure manifest
+   digest matches `.seed.lock`.
 1. Execute build steps in seed container by digest.
 
 > [!WARNING]
@@ -421,9 +472,11 @@ reconfiguration.
 > contract excludes its attestations from quorum counting. Prior seed releases
 > that relied on the revoked builder should be re-evaluated.
 
-A *seed release* is a set of image digests, one per target system. This is
-distinct from a project release (git tag); a project release may reference one
-or more seed releases.
+A *seed release* is a set of [closure manifest](#closure-manifest) digests, one
+per target system, each paired with the artifact digest that delivers it. The
+manifest digest is what `attest(commit, system, digest, in_toto_digest)` carries
+and what the contract counts quorum on. This is distinct from a project release
+(git tag); a project release may reference one or more seed releases.
 
 The on-chain record is intentionally minimal to limit [calldata] cost. Each
 builder additionally produces an [in-toto] statement binding full provenance:
@@ -432,7 +485,8 @@ builder additionally produces an [in-toto] statement binding full provenance:
 - source commit digest (full 40-hex SHA-1 or 64-hex SHA-256)
 - `flake.lock` content digest
 - target `system`
-- output artifact digest
+- output closure manifest digest
+- output artifact digest (fetch pointer, non-authoritative)
 - SBOM digest
 - builder identity (contract address)
 - build metadata (`nix show-config` output, workflow run ID)
@@ -545,7 +599,7 @@ Verifier policy MUST fail closed on any of the following:
 - missing in-toto statement, signature, or signature-chain verification failure
 - signer identity not in registered builder set
 - missing required predicate fields (source URI, commit digest, `flake.lock`
-  digest, target `system`, output digest)
+  digest, target `system`, output closure manifest digest)
 - source URI/commit/`flake.lock` mismatch versus expected build inputs
 - `nix show-config` indicates non-empty `substituters` or `trusted-substituters`
 - missing or invalid inclusion proof for the anchored per-system digest
@@ -920,8 +974,9 @@ delivery mechanism does not port. The options are:
    with real isolation and a real Darwin guest. Requires a host that permits
    VMs, so self-hosted builders only.
 
-Whichever is chosen, the trust anchor is the seed's closure, which is
-independent of the delivery mechanism.
+Whichever is chosen, the trust anchor is the
+[closure manifest](#closure-manifest), which is independent of the delivery
+mechanism.
 
 ### Federated Builders
 
