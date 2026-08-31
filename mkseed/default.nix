@@ -260,6 +260,28 @@ let
               LC_ALL=C sort >"$out"
           '';
 
+      # squashfs delivery variant: the same closure as the OCI image
+      # (`root`), packed into a read-only fs the consumer mounts instead
+      # of extracting. store paths sit at the squashfs root (basename =
+      # store hash-name), so mounting it AS /nix/store yields the real
+      # paths. `registration` re-populates a fresh nix db offline so the
+      # baked paths count as valid. see DESIGN.md#macos, squashfs design.
+      seedFs =
+        pkgs.runCommand "${name}-fs"
+          {
+            nativeBuildInputs = [ pkgs.squashfsTools ];
+            ci = pkgs.closureInfo { rootPaths = [ root ]; };
+          }
+          ''
+            mkdir $out
+            # timestamps come from SOURCE_DATE_EPOCH (set by nix) for a
+            # reproducible image; passing -*-time here would conflict.
+            mksquashfs $(cat $ci/store-paths) $out/store.squashfs \
+              -keep-as-directory -all-root -no-hardlinks \
+              -comp zstd -Xcompression-level 19
+            cp $ci/registration $out/registration
+          '';
+
       image = nix2container.packages.${system}.nix2container.buildImage (
         # defaults, overridable via extra mkSeed args
         {
@@ -300,7 +322,9 @@ let
             corePkgs
             root
             manifest
+            seedFs
             ;
+          fs = seedFs;
           # marker so a seed harvesting self.packages skips a nested seed
           # (its inputDerivation would recurse through seedClosure).
           isNixSeed = true;
