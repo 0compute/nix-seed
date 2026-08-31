@@ -85,7 +85,7 @@ if [[ -z $imageName ]]; then
   repository=$(cd $dir && gh repo view --json nameWithOwner --jq .nameWithOwner)
   # path of $dir relative to the repo root ("" at the root)
   rel=$(git -C $dir rev-parse --show-prefix)
-  imageName=$repository${rel:+/${rel%/}}.seed
+  imageName=$repository${rel:+/${rel%/}}/seed
 fi
 # ghcr requires lowercase repository names
 imageName=${imageName,,}
