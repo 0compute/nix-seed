@@ -139,17 +139,56 @@ rm "$digestfile"
 
 # fresh object: drops legacy keys, and a tag change invalidates the
 # recorded digests of the other systems
-[[ -f $lock ]] || printf '{}\n' >$lock
-jq --sort-keys \
-  --arg repository "$repository" --arg tag "$tag" \
-  --arg system "$system" --arg digest "$digest" \
-  '{
-    repository: $repository,
-    tag: $tag,
-    systems: ((if .tag == $tag then .systems else {} end) // {}
-      | .[$system] = $digest)
-  }' $lock >$lock.tmp
-mv $lock.tmp $lock
+update_lock() {
+  [[ -f $lock ]] || printf '{}\n' >$lock
+  jq --sort-keys \
+    --arg repository "$repository" --arg tag "$tag" \
+    --arg system "$system" --arg digest "$digest" \
+    '{
+      repository: $repository,
+      tag: $tag,
+      systems: ((if .tag == $tag then .systems else {} end) // {}
+        | .[$system] = $digest)
+    }' $lock >$lock.tmp
+  mv $lock.tmp $lock
+}
+
+git=(git -C $dir)
+"${git[@]}" config user.email >/dev/null || git+=(
+  -c user.name='github-actions[bot]'
+  -c user.email='41898282+github-actions[bot]@users.noreply.github.com'
+)
+# CI checkouts are detached, so the branch cannot be read from HEAD
+branch=${GITHUB_REF_NAME:-$("${git[@]}" branch --show-current)}
+
+# parallel per-system builds race on the push: rebuild the lock on top
+# of the freshly pulled state each attempt
+committed=
+for _ in 1 2 3 4 5; do
+  "${git[@]}" pull --rebase origin $branch
+  update_lock
+  "${git[@]}" add .seed.lock
+  if "${git[@]}" diff --cached --quiet; then
+    committed=1 # nothing new to record
+    break
+  fi
+  "${git[@]}" commit --message "chore(seed): lock $system"
+  if "${git[@]}" push origin HEAD:$branch; then
+    committed=1
+    break
+  fi
+  # lost the race: drop the commit and our lock edit, then retry
+  "${git[@]}" reset HEAD^
+  if [[ -n $("${git[@]}" ls-files .seed.lock) ]]; then
+    "${git[@]}" checkout -- .seed.lock
+  else
+    rm $lock
+  fi
+done
+[[ -n $committed ]] || {
+  echo >&2 "build-seed: could not push $lock"
+  exit 1
+}
 echo "seed.lock: $repository:$tag $system = $digest"
 
 # }}}
