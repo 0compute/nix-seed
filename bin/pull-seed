@@ -14,7 +14,7 @@ seed=$(jq \
 
 # default is 6 concurrent blob downloads
 mkdir -p ~/.config/containers
-printf '[engine]\nimage_parallel_copies = 16\n' \
+printf '[engine]\nimage_parallel_copies = 32\n' \
   >>~/.config/containers/containers.conf
 
 podman pull --creds $REGISTRY_USER:$REGISTRY_PASS $seed
