@@ -21,13 +21,29 @@ inputs:
 runs:
   using: composite
   steps:
+    # the seed digest keys the image cache: same digest -> same bytes,
+    # so the entry is immutable and restored (not re-fetched from ghcr)
+    - name: seed digest
+      id: seed
+      shell: bash
+      run: |
+        system=$(uname -m | sed s/arm64/aarch64/)-$(uname -s | tr '[:upper:]' '[:lower:]')
+        digest=$(jq -er --arg s "$system" '.systems[$s]' \
+          "${{ inputs.path }}/.seed.lock")
+        echo "key=${digest#sha256:}" >>"$GITHUB_OUTPUT"
+    # in-datacenter restore (~85MB/s) vs ghcr pull (~15MB/s)
+    - name: cache seed image
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.temp }}/seed-cache
+        key: seed-${{ runner.os }}-${{ runner.arch }}-${{ steps.seed.outputs.key }}
     - name: pull seed
       shell: bash
       env:
         REGISTRY_USER: ${{ github.actor }}
         REGISTRY_PASS: ${{ inputs.github_token }}
       run: |
-        "$GITHUB_ACTION_PATH"/bin/pull-seed ${{ inputs.path }}
+        "$GITHUB_ACTION_PATH"/bin/pull-seed ${{ inputs.path }} ${{ runner.temp }}/seed-cache
     - name: build
       shell: bash
       run: |-

@@ -3,21 +3,46 @@
 set -eux -o pipefail
 
 dir=${1:-.}
+cachedir=${2:?cache dir required}
 
 lock=$dir/.seed.lock
+system=$(uname -m | sed s/arm64/aarch64/)-$(uname -s | tr '[:upper:]' '[:lower:]')
 seed=$(jq \
   --exit-status \
   --raw-output \
-  --arg system "$(uname -m | sed s/arm64/aarch64/)-$(uname -s | tr '[:upper:]' '[:lower:]')" \
-  '"\(.repository)@\(.systems[$system] // error("no seed digest for \($system)"))"' \
-  $lock)
+  --arg s "$system" \
+  '"\(.repository)@\(.systems[$s] // error("no seed digest for \($s)"))"' \
+  "$lock")
+digest=${seed#*@}
 
-# rootful podman: native kernel overlayfs applies the ~3GB image far
-# faster than rootless fuse-overlayfs. build must also run rootful to
-# share this storage. drop-in (not the main conf) avoids clobbering a
-# pre-existing [engine] table; default is 6 concurrent blob downloads.
+# fixed local tag the build step runs; decouples the run from the
+# registry digest so a cache-restored image needs no digest re-association
+tag=localhost/nix-seed/seed:pull
+layout=$cachedir/oci
+
+# rootful: native overlayfs apply, shared with the rootful build run.
+# image_parallel_copies lifts the containers/image default of 6 for the
+# cache-miss fetch below.
 sudo mkdir -p /etc/containers/containers.conf.d
 printf '[engine]\nimage_parallel_copies = 32\n' \
   | sudo tee /etc/containers/containers.conf.d/99-nix-seed.conf >/dev/null
 
-sudo podman pull --creds $REGISTRY_USER:$REGISTRY_PASS $seed
+# cache miss: fetch from ghcr into an oci layout (preserves the exact
+# manifest, so the digest stays verifiable) for actions/cache to save
+if [[ ! -d $layout ]]; then
+  mkdir -p "$cachedir"
+  skopeo copy \
+    --src-creds "$REGISTRY_USER:$REGISTRY_PASS" \
+    "docker://$seed" "oci:$layout:pull"
+fi
+
+# the cache key is the digest, so a mismatch is corruption or a poisoned
+# entry: refuse rather than run unverified bytes
+got=$(skopeo inspect --format '{{.Digest}}' "oci:$layout:pull")
+[[ $got == "$digest" ]] || {
+  echo "seed digest mismatch: $got != $digest" >&2
+  exit 1
+}
+
+# load into rootful podman storage under the fixed tag
+sudo skopeo copy "oci:$layout:pull" "containers-storage:$tag"

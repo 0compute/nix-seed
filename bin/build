@@ -6,17 +6,11 @@ dir=${1:-.}
 [[ $dir =~ ^/ ]] || dir=./$dir
 
 installable=$dir
-lock=$dir/.seed.lock
 
-# TODO: handle no seed case
-seed=$(jq \
-  --exit-status \
-  --raw-output \
-  --arg system "$(uname -m | sed s/arm64/aarch64/)-$(uname -s | tr '[:upper:]' '[:lower:]')" \
-  '"\(.repository)@\(.systems[$system] // error("no seed digest for \($system)"))"' \
-  $lock)
+# image loaded into rootful storage by pull-seed under this fixed tag
+tag=localhost/nix-seed/seed:pull
 
-# rootful to share storage with the rootful pull in pull-seed. the
+# rootful to share storage with the rootful load in pull-seed. the
 # container runs as root while /src is owned by the runner user, so
 # nix's libgit2 flake fetcher rejects it; mark it safe. git is not in
 # the seed, so write the global config directly (HOME=/tmp, a tmpfs).
@@ -26,5 +20,5 @@ sudo podman run \
   --rm \
   --interactive \
   --volume $PWD:/src \
-  $seed \
+  $tag \
   sh -c 'printf "[safe]\n\tdirectory = *\n" >"$HOME/.gitconfig" && exec nix build --offline /src/'"$installable"
