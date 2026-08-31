@@ -9,7 +9,7 @@ inputs:
 
   seed_attr:
     description: Flake package attribute of the Seed
-    default: .#seed
+    default: seed
 
   nix_conf:
     description: Extra nix.conf entries
