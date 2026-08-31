@@ -26,21 +26,8 @@ runs:
       env:
         REGISTRY_USER: ${{ github.actor }}
         REGISTRY_PASS: ${{ inputs.github_token }}
-      run: |-
-        set -x
-        lock=${{ inputs.path }}/.seed.lock
-        seed=$(jq \
-        --exit-status \
-        --raw-output \
-        --arg system "$(uname -m | sed s/arm64/aarch64/)-$(uname -s | tr '[:upper:]' '[:lower:]')" \
-                                                                                                   '"\(.repository)@\(.systems[$system] // error("no seed digest for \($system)"))"' \
-                                                                                                      $lock)
-
-        podman login "${seed%%/*}" \
-          --username "$REGISTRY_USER" \
-          --password-stdin \
-          <<<"$REGISTRY_PASS"
-        podman pull $seed
+      run: |
+        "$GITHUB_ACTION_PATH"/bin/pull-seed ${{ inputs.path }}
     - name: build
       shell: bash
       run: |-

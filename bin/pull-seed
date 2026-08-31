@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+set -eux -o pipefail
+
+dir=${1:-.}
+
+lock=$dir/.seed.lock
+seed=$(jq \
+  --exit-status \
+  --raw-output \
+  --arg system "$(uname -m | sed s/arm64/aarch64/)-$(uname -s | tr '[:upper:]' '[:lower:]')" \
+  '"\(.repository)@\(.systems[$system] // error("no seed digest for \($system)"))"' \
+  $lock)
+
+# default is 6 concurrent blob downloads
+mkdir -p ~/.config/containers
+printf '[engine]\nimage_parallel_copies = 16\n' \
+  >>~/.config/containers/containers.conf
+
+podman pull --creds $REGISTRY_USER:$REGISTRY_PASS $seed
