@@ -22,6 +22,9 @@ runs:
   using: composite
   steps:
     - shell: bash
+      env:
+        REGISTRY_USER: ${{ github.actor }}
+        REGISTRY_PASS: ${{ inputs.github_token }}
       run: |-
         set -x
         "$GITHUB_ACTION_PATH"/bin/build ${{ inputs.path }}

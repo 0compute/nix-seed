@@ -16,6 +16,14 @@ seed=$(jq \
   '"\(.repository)@\(.systems[$system] // error("no seed digest for \($system)"))"' \
   $lock)
 
+# private registries: login when credentials are provided
+if [[ -n ${REGISTRY_USER:-} && -n ${REGISTRY_PASS:-} ]]; then
+  podman login "${seed%%/*}" \
+    --username "$REGISTRY_USER" \
+    --password-stdin \
+    <<<"$REGISTRY_PASS"
+fi
+
 # host directory the build result (and its closure) is exported to.
 out=${2:-$PWD/result-out}
 rm -rf $out
