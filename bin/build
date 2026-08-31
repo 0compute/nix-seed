@@ -2,8 +2,19 @@
 
 set -eu -o pipefail
 
-installable=$1
-seed=$installable#seed
+dir=${1:-.}
+[[ $dir =~ ^/ ]] || dir=./$dir
+
+installable=$dir
+lock=$dir/.seed.lock
+
+# TODO: handle no seed case
+seed=$(jq \
+  --exit-status \
+  --raw-output \
+  --arg system "$(uname -m | sed s/arm64/aarch64/)-$(uname -s | tr '[:upper:]' '[:lower:]')" \
+  '"\(.repository)@\(.systems[$system] // error("no seed digest for \($system)"))"' \
+  $lock)
 
 # host directory the build result (and its closure) is exported to.
 out=${2:-$PWD/result-out}
@@ -11,9 +22,6 @@ rm -rf $out
 mkdir -p "$out"
 
 link=/tmp/result
-
-name=$(nix eval --raw ./$seed.name)
-tag=$(nix eval --raw ./$seed.tag)
 
 PODMAN=(
   podman
@@ -24,7 +32,7 @@ PODMAN=(
   -i
   --volume $PWD:/src
   --volume "$out":/out
-  $name:$tag
+  $seed
 )
 
 # build offline, then export the result closure to /out as a file-based

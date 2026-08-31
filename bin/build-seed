@@ -1,14 +1,182 @@
 #!/usr/bin/env bash
+# shellcheck disable=2086
 
 set -eu -o pipefail
 
-seed=$(realpath ${1:-.})#seed
+# {{{ getopt
 
-nix build --print-build-logs $seed
-nix run $seed.copyToPodman
+seedAttr=seed
+registry=ghcr.io
+imageName=
 
-# HACK: tag latest for dev
+usage() {
+  cat <<EOF
+Usage:
+  build-seed [ PATH ]
+Options:
+  --seed-attr SEED_ATTR
+    name of the seed package attr (default: $seedAttr)
+  --registry REGISTRY
+    target registry (default: $registry)
+  --image-name IMAGE_NAME
+    repository to push, e.g. org/nix-seed
+    (default: <gh repo nameWithOwner>/<PATH relative to repo root>)
+  --tag TAG
+    add an extra tag such as IMAGE_NAME:latest
+Args:
+  PATH  path to flake (default=.)
+EOF
+}
+
+PARSED=$(
+  getopt \
+    --options '' \
+    --long seed-attr:,registry:,image-name:,tag: \
+    -- "$@"
+) || {
+  usage
+  exit 1
+}
+eval set -- "$PARSED"
+
+tags=()
+while true; do
+  case "$1" in
+  --seed-attr)
+    seedAttr=$2
+    shift 2
+    ;;
+  --registry)
+    registry=$2
+    shift 2
+    ;;
+  --image-name)
+    imageName=$2
+    shift 2
+    ;;
+  --tag)
+    tags+=("$2")
+    shift 2
+    ;;
+  --)
+    shift
+    break
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+  esac
+done
+
+if [[ $# -gt 1 ]]; then
+  usage
+  exit 1
+fi
+
+dir=${1:-.}
+[[ $dir =~ ^/ ]] || dir=./$dir
+
+if [[ -z $imageName ]]; then
+  command -v gh >/dev/null || {
+    echo >&2 "<gh> github command line client required to resolve image name"
+    exit 1
+  }
+  repository=$(cd $dir && gh repo view --json nameWithOwner --jq .nameWithOwner)
+  # path of $dir relative to the repo root ("" at the root)
+  rel=$(git -C $dir rev-parse --show-prefix)
+  imageName=$repository${rel:+/${rel%/}}.seed
+fi
+# ghcr requires lowercase repository names
+imageName=${imageName,,}
+repository=$registry/$imageName
+
+# }}}
+
+# {{{ sanity check
+
+[[ -n ${REGISTRY_USER:-} && -n ${REGISTRY_PASS:-} ]] || {
+  echo >&2 "REGISTRY_USER and REGISTRY_PASS must be set"
+  exit 1
+}
+
+# }}}
+
+seed=$dir#$seedAttr
+lock=$dir/.seed.lock
+
 name=$(nix eval --raw $seed.name)
 tag=$(nix eval --raw $seed.tag)
+system=$(nix eval --impure --raw --expr builtins.currentSystem)
 
-echo "built seed $name:$tag"
+# build image
+nix build --print-build-logs $seed
+echo "Built seed $name:$tag"
+
+# copy to container runtime
+if command -v docker >/dev/null; then
+  engine=docker
+  nix run $seed.copyToDockerDaemon
+elif command -v podman >/dev/null; then
+  engine=podman
+  nix run $seed.copyToPodman
+else
+  echo "build-seed: no container engine (docker or podman) found" >&2
+  exit 1
+fi
+
+# {{{ load/tag/push
+
+$engine login \
+  --username "$REGISTRY_USER" \
+  --password-stdin "$registry" \
+  <<<"$REGISTRY_PASS"
+
+tags+=(
+  "$tag"
+  #  "$(git -C $dir describe --tags --always --dirty)"
+)
+
+# push each tag; the registry manifest digest differs from the local
+# one (layers are recompressed on upload), so record it from the push
+digestfile=$(mktemp)
+for t in "${tags[@]}"; do
+  nametag="$repository:$t"
+  $engine tag "$name:$tag" "$nametag"
+  if [[ $engine == podman ]]; then
+    podman push --digestfile "$digestfile" "$nametag"
+  else
+    docker push "$nametag"
+  fi
+  echo "pushed $nametag"
+done
+
+if [[ $engine == podman ]]; then
+  digest=$(<"$digestfile")
+else
+  # after a push RepoDigests holds the registry digest
+  digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$nametag")
+  digest=${digest#*@}
+fi
+rm "$digestfile"
+
+# }}}
+
+# {{{ update seed lock
+
+# fresh object: drops legacy keys, and a tag change invalidates the
+# recorded digests of the other systems
+[[ -f $lock ]] || printf '{}\n' >$lock
+jq --sort-keys \
+  --arg repository "$repository" --arg tag "$tag" \
+  --arg system "$system" --arg digest "$digest" \
+  '{
+    repository: $repository,
+    tag: $tag,
+    systems: ((if .tag == $tag then .systems else {} end) // {}
+      | .[$system] = $digest)
+  }' $lock >$lock.tmp
+mv $lock.tmp $lock
+echo "seed.lock: $repository:$tag $system = $digest"
+
+# }}}

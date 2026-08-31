@@ -3,12 +3,16 @@ description: Build Nix Seed images and push to registry
 
 inputs:
 
-  nix_conf:
-    description: Extra nix.conf entries
+  path:
+    description: Path to flake.nix
+    default: .
 
   seed_attr:
     description: Flake package attribute of the Seed
     default: .#seed
+
+  nix_conf:
+    description: Extra nix.conf entries
 
   registry:
     description: Container registry (default ghcr.io)
@@ -44,16 +48,11 @@ runs:
 
     - name: Build seed
       shell: bash
-      run: nix build "${{ inputs.seed_attr }}"
-
-    - name: Publish
-      if: ${{ inputs.github_token != '' }}
       env:
         REGISTRY_USER: ${{ github.actor }}
         REGISTRY_PASS: ${{ inputs.github_token }}
-        # enable keyless signing so sign-in uses existing runner credentials rather than device flow
-        COSIGN_EXPERIMENTAL: '1'
-      shell: bash
       run: |-
-        set -euo pipefail
-        nix run .#publish -- "${tags[@]}" ${{ inputs.registry }}/${{ github.repository }} ${{ github.sha }}
+        ./bin/build-seed \
+          --seed-attr ${{ inputs.seed_attr }} \
+          --registry ${{ inputs.registry }} \
+          ${{ inputs.path }}

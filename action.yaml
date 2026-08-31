@@ -3,20 +3,12 @@ description: Builder for Nix Seed
 
 inputs:
 
-  seed:
-    description: Seed name
-    default: ghcr.io/${{ github.repository }}.seed
-  tag:
-    description: Seed tag
-    default: latest
-  target:
-    description: Target flake attribute
-    default: packages.default
+  path:
+    description: Path to flake.nix
+    default: .
 
   github_token:
     description: GitHub Token
-  tags:
-    description: Extra tags (space-separated)
 
   cachix_name:
     description: Cachix cache name
@@ -30,4 +22,4 @@ runs:
   using: composite
   steps:
     - shell: bash
-      run: ./ci/build-from-seed
+      run: ./bin/build ${{ inputs.path }}
