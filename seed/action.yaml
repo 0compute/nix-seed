@@ -39,7 +39,7 @@ runs:
           ${{ inputs.nix_conf }}
 
     - name: Cachix Setup
-      if: ${{ inputs.cachix_token != '' }}
+      if: ${{ inputs.cachix_auth_token != '' }}
       uses: cachix/cachix-action@v16
       with:
         name: ${{ inputs.cachix_name }}
@@ -49,10 +49,11 @@ runs:
     - name: Build seed
       shell: bash
       env:
+        GH_TOKEN: ${{ inputs.github_token }}
         REGISTRY_USER: ${{ github.actor }}
         REGISTRY_PASS: ${{ inputs.github_token }}
       run: |-
-        ./bin/build-seed \
+        "$GITHUB_ACTION_PATH"/../bin/build-seed \
           --seed-attr ${{ inputs.seed_attr }} \
           --registry ${{ inputs.registry }} \
           ${{ inputs.path }}
