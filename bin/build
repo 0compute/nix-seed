@@ -16,7 +16,10 @@ seed=$(jq \
   '"\(.repository)@\(.systems[$system] // error("no seed digest for \($system)"))"' \
   $lock)
 
-# rootful to share storage with the rootful pull in pull-seed
+# rootful to share storage with the rootful pull in pull-seed. the
+# container runs as root while /src is owned by the runner user, so
+# nix's libgit2 flake fetcher rejects it; mark it safe. git is not in
+# the seed, so write the global config directly (HOME=/tmp, a tmpfs).
 sudo podman run \
   --network none \
   --tmpfs /tmp \
@@ -24,4 +27,4 @@ sudo podman run \
   --interactive \
   --volume $PWD:/src \
   $seed \
-  nix build --offline /src/$installable
+  sh -c 'printf "[safe]\n\tdirectory = *\n" >"$HOME/.gitconfig" && exec nix build --offline /src/'"$installable"
