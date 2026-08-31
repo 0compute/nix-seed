@@ -50,4 +50,6 @@ PODMAN=(
    && nix copy --offline --no-check-sigs --to file:///out $link \
    && cp -a $link /src/result"
 
-nix copy --no-check-sigs --all --from file://$out
+if command -v nix >/dev/null; then
+  nix copy --no-check-sigs --all --from file://$out
+fi
