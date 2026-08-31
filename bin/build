@@ -16,7 +16,8 @@ seed=$(jq \
   '"\(.repository)@\(.systems[$system] // error("no seed digest for \($system)"))"' \
   $lock)
 
-podman run \
+# rootful to share storage with the rootful pull in pull-seed
+sudo podman run \
   --network none \
   --tmpfs /tmp \
   --rm \

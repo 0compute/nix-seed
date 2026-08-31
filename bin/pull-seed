@@ -12,9 +12,12 @@ seed=$(jq \
   '"\(.repository)@\(.systems[$system] // error("no seed digest for \($system)"))"' \
   $lock)
 
-# default is 6 concurrent blob downloads
-mkdir -p ~/.config/containers
+# rootful podman: native kernel overlayfs applies the ~3GB image far
+# faster than rootless fuse-overlayfs. build must also run rootful to
+# share this storage. drop-in (not the main conf) avoids clobbering a
+# pre-existing [engine] table; default is 6 concurrent blob downloads.
+sudo mkdir -p /etc/containers/containers.conf.d
 printf '[engine]\nimage_parallel_copies = 32\n' \
-  >>~/.config/containers/containers.conf
+  | sudo tee /etc/containers/containers.conf.d/99-nix-seed.conf >/dev/null
 
-podman pull --creds $REGISTRY_USER:$REGISTRY_PASS $seed
+sudo podman pull --creds $REGISTRY_USER:$REGISTRY_PASS $seed

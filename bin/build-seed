@@ -125,10 +125,12 @@ tags+=(
 digestfile=$(mktemp)
 for t in "${tags[@]}"; do
   nametag="$repository:$t"
-  # zstd: consumers pull-decompress much faster than gzip
+  # zstd: consumers pull-decompress much faster than gzip. level 19
+  # costs push-side time once to shrink every consumer pull
   nix run $seed.copyTo -- docker://$nametag \
     --dest-creds "$REGISTRY_USER:$REGISTRY_PASS" \
     --dest-compress-format zstd \
+    --dest-compress-level 19 \
     --digestfile "$digestfile"
   echo "pushed $nametag"
 done
