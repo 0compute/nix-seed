@@ -113,51 +113,24 @@ system=$(nix eval --impure --raw --expr builtins.currentSystem)
 nix build --print-build-logs $seed
 echo "Built seed $name:$tag"
 
-# copy to container runtime
-if command -v docker >/dev/null; then
-  engine=docker
-  nix run $seed.copyToDockerDaemon
-elif command -v podman >/dev/null; then
-  engine=podman
-  nix run $seed.copyToPodman
-else
-  echo "build-seed: no container engine (docker or podman) found" >&2
-  exit 1
-fi
-
-# {{{ load/tag/push
-
-$engine login \
-  --username "$REGISTRY_USER" \
-  --password-stdin "$registry" \
-  <<<"$REGISTRY_PASS"
+# {{{ push
 
 tags+=(
   "$tag"
   #  "$(git -C $dir describe --tags --always --dirty)"
 )
 
-# push each tag; the registry manifest digest differs from the local
-# one (layers are recompressed on upload), so record it from the push
+# push straight from the nix store (skopeo nix: transport): no engine
+# round-trip, and the manifest digest is deterministic across pushes
 digestfile=$(mktemp)
 for t in "${tags[@]}"; do
   nametag="$repository:$t"
-  $engine tag "$name:$tag" "$nametag"
-  if [[ $engine == podman ]]; then
-    podman push --digestfile "$digestfile" "$nametag"
-  else
-    docker push "$nametag"
-  fi
+  nix run $seed.copyTo -- docker://$nametag \
+    --dest-creds "$REGISTRY_USER:$REGISTRY_PASS" \
+    --digestfile "$digestfile"
   echo "pushed $nametag"
 done
-
-if [[ $engine == podman ]]; then
-  digest=$(<"$digestfile")
-else
-  # after a push RepoDigests holds the registry digest
-  digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$nametag")
-  digest=${digest#*@}
-fi
+digest=$(<"$digestfile")
 rm "$digestfile"
 
 # }}}

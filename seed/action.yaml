@@ -53,6 +53,7 @@ runs:
         REGISTRY_USER: ${{ github.actor }}
         REGISTRY_PASS: ${{ inputs.github_token }}
       run: |-
+        set -x
         "$GITHUB_ACTION_PATH"/../bin/build-seed \
           --seed-attr ${{ inputs.seed_attr }} \
           --registry ${{ inputs.registry }} \
