@@ -67,8 +67,8 @@ authoritative. A consumer verifies the fetched closure against the manifest.
 The manifest is derived from the image's `copyToRoot` closure via
 `exportReferencesGraph`, so it describes what the image contains rather than
 what it was asked to contain. It is also independent of how the closure is
-delivered, which is what lets a future non-OCI mechanism (see
-[macOS](#macos)) share the same anchor.
+delivered, which is what lets a future non-OCI mechanism (see [macOS](#macos))
+share the same anchor.
 
 ## Building from Seed
 
@@ -106,8 +106,8 @@ mechanism that delivers it:
 later is a migration across all of them.
 
 If no entry exists for a system, [the seed is built](#building-the-seed), the
-resulting entry is recorded in a new commit containing the updated
-`.seed.lock`, and the normal build proceeds.
+resulting entry is recorded in a new commit containing the updated `.seed.lock`,
+and the normal build proceeds.
 
 Build runs inside the seed container as:
 
@@ -160,8 +160,9 @@ truth.
 The release pointer for a container build is the OCI image digest
 (`ghcr.io/org/repo@sha256:<digest>`). Registry tags and metadata are
 non-authoritative, and so is the image digest itself for quorum purposes:
-builders compare the [closure manifest](#closure-manifest) digest. An OCI registry is required to store and distribute container
-outputs; a CI provider with a co-located registry is preferred for performance.
+builders compare the [closure manifest](#closure-manifest) digest. An OCI
+registry is required to store and distribute container outputs; a CI provider
+with a co-located registry is preferred for performance.
 
 `nix2container` is a pinned flake input; its digest is verified by the Nix build
 system under the same supply-chain trust model as all other dependencies.
