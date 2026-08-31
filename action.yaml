@@ -22,4 +22,6 @@ runs:
   using: composite
   steps:
     - shell: bash
-      run: ./bin/build ${{ inputs.path }}
+      run: |-
+        set -x
+        "$GITHUB_ACTION_PATH"/../bin/build ${{ inputs.path }}
