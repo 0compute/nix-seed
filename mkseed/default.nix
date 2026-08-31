@@ -263,7 +263,7 @@ let
       image = nix2container.packages.${system}.nix2container.buildImage (
         # defaults, overridable via extra mkSeed args
         {
-          maxLayers = 125;
+          maxLayers = 50;
           initializeNixDatabase = true;
         }
         // (lib.removeAttrs args (
