@@ -33,7 +33,18 @@ fi
 # verify the manifest against the lock digest, then each blob against
 # the manifest, so a corrupt or poisoned cache entry is rejected. the
 # blobs are then used in place (symlinked, mounted directly): no copy.
-sha256sum --check --quiet <<<"${digest#sha256:}  $manifest"
+# openssl: hardware sha256 (~2GB/s); the runner's coreutils sha256sum
+# is scalar (~250MB/s) and would dominate the hot path.
+verify() {
+  local got
+  got=$(openssl dgst -sha256 -r "$2")
+  [[ ${got%% *} == "$1" ]] || {
+    echo "seed: digest mismatch for $2" >&2
+    return 1
+  }
+}
+
+verify "${digest#sha256:}" "$manifest"
 mkdir -p "$out"
 jq --raw-output '
   .layers[]
@@ -42,6 +53,6 @@ jq --raw-output '
         // error("untitled layer"))"' \
   "$manifest" |
   while read -r hex name; do
-    sha256sum --check --quiet <<<"$hex  $blobs/$hex"
+    verify "$hex" "$blobs/$hex"
     ln -sf "$blobs/$hex" "$out/$name"
   done
