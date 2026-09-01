@@ -26,6 +26,16 @@ let
       # not the whole closure -- buildEnv collides on duplicate paths and
       # the closure (already at /nix/store) is full of build-only deps.
       pathPackages ? [ nix ],
+      # what the seed carries for the consumer (see doc/drv-seeds.md):
+      #   "sources" -- every flake input source; the consumer runs
+      #     `nix build ./dir`, proving the flake *evaluates* offline.
+      #   "drvs" -- planned: the instantiated .drv recipes; the consumer
+      #     realises them with zero evaluation, so no flake-input sources
+      #     (nixpkgs et al.) are baked at all. NOT IMPLEMENTED YET --
+      #     closureInfo/exportReferencesGraph over a drv demands the full
+      #     build-time OUTPUT closure be valid (spike finding, see doc);
+      #     the recipe set has to be collected differently.
+      bake ? [ "sources" ],
       nixConf ? "",
       # squashfs zstd level. 15 is squashfs's default and the knee of the
       # curve: ~3x faster to build than 19 for ~1% more size. drop toward
@@ -133,15 +143,15 @@ let
       # every store path the seed must contain, as closureInfo rootPaths:
       #   - nix itself: the consumer runs it from the mounted store.
       #   - pathEnv: the buildEnv exposed at .seed/env (bin/ + etc/nix.conf).
-      #   - every flake input source, recursively -> offline flake
-      #     *evaluation* (nix reads each locked input from the store).
+      #   - "sources": every flake input source, recursively -> offline
+      #     flake *evaluation* (nix reads each locked input from the store).
       #   - each output's inputDerivation -> its full build-input closure,
-      #     so `nix build` runs offline without rebuilding stdenv/glibc.
+      #     so the build runs offline without rebuilding stdenv/glibc.
       rootPaths = [
         nix
         pathEnv
       ]
-      ++ (
+      ++ lib.optionals (lib.elem "sources" bake) (
         let
           collect =
             flake:
@@ -207,6 +217,11 @@ let
     lib.throwIf (!stdenv.hostPlatform.isLinux) ''
       mkSeed: unsupported system "${system}". nix-seed is Linux only;
       see DESIGN.md#constraints and DESIGN.md#macos.
-    '' seedFs;
+    ''
+      (lib.throwIf (lib.elem "drvs" bake) ''
+        mkSeed: bake = "drvs" is not implemented yet; see doc/drv-seeds.md
+        (spike finding: the recipe closure cannot be collected via
+        closureInfo/exportReferencesGraph).
+      '' seedFs);
 in
 mkSeed

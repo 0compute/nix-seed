@@ -10,6 +10,27 @@ set -eux -o pipefail
 dir=${1:-.}
 [[ $dir =~ ^/ ]] || dir=./$dir
 
+manifest=/nix/.ro-store/.seed/drvs.json
+
+# drv-baked seed (see doc/drv-seeds.md): the recipe closure is baked and
+# registered, so realise it directly -- zero evaluation, which is why such
+# seeds carry no flake-input sources. no evaluator also means no libgit2
+# (no safe.directory) and no boehm GC to disable.
+if drv=$(jq -er .default.drv "$manifest" 2>/dev/null); then
+  # the baked drv builds the SEEDED source. until the src graft lands,
+  # refuse src-bearing targets rather than silently building a revision
+  # that may not match the checkout.
+  if jq -e .default.src "$manifest" >/dev/null 2>&1; then
+    echo >&2 "build: drv-baked seed has a src-bearing target;" \
+      "src graft not yet implemented -- bake sources instead"
+    exit 1
+  fi
+  sudo env HOME=/tmp unshare --net \
+    "$(command -v nix-store)" --realise "$drv"
+  exit 0
+fi
+
+# sources mode: offline flake evaluation + build.
 # nix runs as root; /src (the checkout) is owned by the runner user, so
 # its libgit2 flake fetcher rejects it -> mark it a safe directory.
 printf '[safe]\n\tdirectory = *\n' | sudo tee -a /etc/gitconfig >/dev/null
