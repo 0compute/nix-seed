@@ -18,6 +18,11 @@ let
         "${package.pname or package.name or "unnamed"}.seed",
       tag ? self.rev or self.dirtyRev or null,
       nix ? pkgs.nixVersions.latest,
+      # packages whose bin/ (and share/, etc.) are unioned into a buildEnv,
+      # baked into the seed and reachable at .seed/bin -- a single dir the
+      # consumer can put on the runner's PATH. its symlinks point into
+      # /nix/store, resolved once the seed is mounted. defaults to just nix.
+      pathPackages ? [ nix ],
       nixConf ? "",
       # squashfs zstd level. 15 is squashfs's default and the knee of the
       # curve: ~3x faster to build than 19 for ~1% more size. drop toward
@@ -110,14 +115,23 @@ let
           ]
         );
 
+      # a buildEnv unioning pathPackages' bin/, baked into the seed and
+      # exposed at .seed/bin so the consumer can drop one dir on PATH.
+      pathEnv = pkgs.buildEnv {
+        name = "${name}-path";
+        paths = pathPackages;
+      };
+
       # every store path the seed must contain, as closureInfo rootPaths:
       #   - nix itself: the consumer runs it from the mounted store.
+      #   - pathEnv: the buildEnv exposed at .seed/bin for the runner PATH.
       #   - every flake input source, recursively -> offline flake
       #     *evaluation* (nix reads each locked input from the store).
       #   - each output's inputDerivation -> its full build-input closure,
       #     so `nix build` runs offline without rebuilding stdenv/glibc.
       rootPaths = [
         nix
+        pathEnv
       ]
       ++ (
         let
@@ -142,18 +156,19 @@ let
 
       # the seed: a squashfs of the build closure the consumer mounts as
       # /nix/store (store paths sit at the fs root, basename = store
-      # hash-name). `registration` (to re-populate a fresh nix db offline,
-      # marking the baked paths valid) and `nix.conf` are baked under
-      # .seed/ so the squashfs is the seed's only artifact; the consumer
-      # reads them from the read-only mount. mounting is O(1); reads
-      # decompress lazily, so there is no per-file extraction. see
+      # hash-name). under .seed/ (so the squashfs is the seed's only
+      # artifact) it also carries `registration` (to re-populate a fresh
+      # nix db offline, marking the baked paths valid), `nix.conf`, and a
+      # `bin` symlink into the baked buildEnv (a single dir for PATH). the
+      # consumer reads them from the read-only mount. mounting is O(1);
+      # reads decompress lazily, so there is no per-file extraction. see
       # DESIGN.md#delivery.
       seedFs =
         pkgs.runCommand "${name}"
           {
             nativeBuildInputs = [ pkgs.squashfsTools ];
             passthru = {
-              inherit name tag;
+              inherit name tag pathEnv;
               nixConf = nixConfText;
               # marker so a seed harvesting self.packages skips a nested
               # seed (its inputDerivation would recurse into this closure).
@@ -164,15 +179,18 @@ let
             mkdir $out
             # timestamps come from SOURCE_DATE_EPOCH (set by nix) for a
             # reproducible image; passing -*-time here would conflict.
-            # registration + nix.conf go under .seed/ as pseudo-files so the
-            # squashfs is the only output. mksquashfs clamps pseudo-file
+            # registration + nix.conf + bin go under .seed/ as pseudo-entries
+            # so the squashfs is the only output. mksquashfs clamps pseudo
             # mtimes to SOURCE_DATE_EPOCH too, so the image stays reproducible.
+            # .seed/bin -> the buildEnv's bin/, resolved through the mounted
+            # store; the consumer adds /nix/.ro-store/.seed/bin to PATH.
             mksquashfs $(cat ${closure}/store-paths) $out/store.squashfs \
               -keep-as-directory -all-root -no-hardlinks \
               -comp zstd -Xcompression-level ${toString compressionLevel} \
               -p '.seed d 555 0 0' \
               -p ".seed/registration f 444 0 0 cat ${closure}/registration" \
-              -p ".seed/nix.conf f 444 0 0 cat ${pkgs.writeText "nix.conf" nixConfText}"
+              -p ".seed/nix.conf f 444 0 0 cat ${pkgs.writeText "nix.conf" nixConfText}" \
+              -p ".seed/bin s 777 0 0 ${pathEnv}/bin"
           '';
     in
     # nix-seed is Linux only. the consumer mounts the squashfs as
