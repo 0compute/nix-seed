@@ -5,8 +5,11 @@ on:
     branches:
       - master
     paths:
-      - examples/*/flake.lock
-      - examples/*/*/flake.lock
+      # any build-affecting change under an example (flake.nix, sources,
+      # flake.lock) must re-seed; exclude .seed.lock so the seeder's own
+      # `chore(seed): lock` commits don't retrigger this workflow.
+      - examples/**
+      - '!examples/**/.seed.lock'
       - .github/workflows/seed-examples.yaml
   workflow_dispatch:
 
