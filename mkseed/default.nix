@@ -26,14 +26,6 @@ let
       # not the whole closure -- buildEnv collides on duplicate paths and
       # the closure (already at /nix/store) is full of build-only deps.
       pathPackages ? [ nix ],
-      # eval-frozen metadata: files the drv graph was derived from. a
-      # consumer src graft is refused when these differ (see
-      # doc/drv-seeds.md) because the baked dep drvs would be stale.
-      graftGuards ? [
-        "flake.lock"
-        "Cargo.lock"
-        "pyproject.toml"
-      ],
       nixConf ? "",
       # squashfs zstd level. 15 is squashfs's default and the knee of the
       # curve: ~3x faster to build than 19 for ~1% more size. drop toward
@@ -242,14 +234,6 @@ let
         pkgs.writeText "drvs.json" (
           builtins.toJSON {
             inherit bake;
-            guards = lib.listToAttrs (
-              lib.concatMap (
-                f:
-                lib.optional (builtins.pathExists "${self}/${f}") (
-                  lib.nameValuePair f (builtins.hashFile "sha256" "${self}/${f}")
-                )
-              ) graftGuards
-            );
             default =
               if target == null then
                 null

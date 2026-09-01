@@ -18,17 +18,6 @@ manifest=/nix/.ro-store/.seed/drvs.json
 # (no safe.directory) and no boehm GC to disable.
 if drv=$(jq -er .default.drv "$manifest" 2>/dev/null); then
   if src=$(jq -er .default.src "$manifest" 2>/dev/null); then
-    # eval-frozen metadata guard: the baked dep drvs were derived from
-    # these files at seed time; a graft over changed metadata would build
-    # against a stale dep graph, so demand a re-seed instead.
-    while read -r f; do
-      want=$(jq -er --arg f "$f" '.guards[$f]' "$manifest")
-      got=$(sha256sum "$dir/$f" 2>/dev/null | awk '{print $1}') || got=missing
-      [[ $want == "$got" ]] || {
-        echo >&2 "build: $f differs from the seeded dep graph; re-seed"
-        exit 1
-      }
-    done < <(jq -r '.guards | keys[]' "$manifest")
     # hash the checkout (tracked files, approximating the flake source
     # filter) and graft it onto the baked recipe when it drifted; the
     # identity case realises the baked drv untouched.

@@ -128,9 +128,12 @@ patches. Contract:
 | code edits                                       | graft   |
 | Cargo.lock / pyproject.toml / flake.lock / deps  | re-seed |
 
-Guard mechanically: bake hashes of the metadata files in the manifest;
-refuse the graft on mismatch. This decouples seed cadence from commit
-cadence: consumers re-seed on lockfile changes, graft every push.
+The graft is deliberately unguarded: a graft over changed dep metadata
+builds against the seeded dep graph (and typically fails loudly there).
+Re-seeding on metadata changes is the operator's contract -- in this
+repo, seed-drvs-examples re-seeds on any examples/** change. This
+decouples seed cadence from commit cadence: consumers re-seed on
+lockfile changes, graft every push.
 
 ## Projections (against measured baselines)
 
@@ -152,7 +155,7 @@ cadence: consumers re-seed on lockfile changes, graft every push.
    closureInfo's records (uniform sha256:base32, parses exactly).
    Remaining: CI realise path end to end (first push exercises it).
 3. [x] src graft: bin/regraft + regraft.nix, wired into bin/build
-   behind the graftGuards metadata check. Acceptance verified on
+   (unguarded: metadata drift is a re-seed matter). Acceptance verified on
    cpp-boost: identity graft reproduces the baked drvPath bit-for-bit;
    a mutated src grafts to a distinct canonical drv that realises and
    builds against the baked dep graph.
