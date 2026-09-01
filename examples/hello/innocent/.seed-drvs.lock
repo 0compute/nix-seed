@@ -1,7 +1,8 @@
 {
   "repository": "ghcr.io/roundtablelove/nix-seed/examples/hello/innocent/seed-drvs",
   "systems": {
-    "aarch64-linux": "sha256:ff4bf18d172c098ab1fcc1039a28eacf40dc85856fb1267809236b8ba8f64dec"
+    "aarch64-linux": "sha256:ff4bf18d172c098ab1fcc1039a28eacf40dc85856fb1267809236b8ba8f64dec",
+    "x86_64-linux": "sha256:adfa14f8fcb7068596f19411212139af786bd7686c3a048e4892342678a05e1e"
   },
   "tag": "ad5e4f5498f6ef66bade9e2757e1790659f4a993"
 }
