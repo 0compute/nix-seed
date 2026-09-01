@@ -13,6 +13,22 @@ inputs:
 runs:
   using: composite
   steps:
+    # the seed digest keys the image cache: same digest -> same bytes, so
+    # the entry is immutable and restored in-datacenter instead of pulled
+    # from ghcr. ghcr stays the durable, verifiable source of truth.
+    - name: seed digest
+      id: seed
+      shell: bash
+      run: |
+        system=$(uname -m | sed s/arm64/aarch64/)-$(uname -s | tr '[:upper:]' '[:lower:]')
+        digest=$(jq -er --arg s "$system" '.systems[$s]' \
+          "${{ inputs.path }}/.seed.lock")
+        echo "key=${digest#sha256:}" >>"$GITHUB_OUTPUT"
+    - name: cache seed
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.temp }}/seed-cache
+        key: seed-${{ runner.os }}-${{ runner.arch }}-${{ steps.seed.outputs.key }}
     - name: install oras
       shell: bash
       run: |
@@ -23,7 +39,8 @@ runs:
         REGISTRY_USER: ${{ github.actor }}
         REGISTRY_PASS: ${{ inputs.github_token }}
       run: |
-        "$GITHUB_ACTION_PATH"/bin/pull-seed ${{ inputs.path }} "$RUNNER_TEMP/seed"
+        "$GITHUB_ACTION_PATH"/bin/pull-seed ${{ inputs.path }} \
+          "$RUNNER_TEMP/seed" "$RUNNER_TEMP/seed-cache"
     - name: build
       shell: bash
       run: |

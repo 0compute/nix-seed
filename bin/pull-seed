@@ -5,6 +5,7 @@ set -eux -o pipefail
 
 dir=${1:-.}
 out=${2:?artifact output dir required}
+layout=${3:?oci layout cache dir required}
 
 lock=$dir/.seed.lock
 system=$(uname -m | sed s/arm64/aarch64/)-$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -16,10 +17,16 @@ digest=$(jq \
   '.systems[$s] // error("no seed digest for \($s)")' \
   "$lock")
 
-# oras pull by digest verifies content against $digest (the pull anchor
-# recorded in .seed.lock); a mismatch or tamper fails here.
-[[ -z ${REGISTRY_USER:-} ]] || oras login "${repository%%/*}" \
-  --username "$REGISTRY_USER" --password-stdin <<<"$REGISTRY_PASS"
+# cache miss: fetch from ghcr into a local oci layout (preserves the
+# exact manifest) for actions/cache to save. keyed by digest upstream,
+# so a hit restores this same layout and skips the network.
+if [[ ! -f $layout/index.json ]]; then
+  [[ -z ${REGISTRY_USER:-} ]] || oras login "${repository%%/*}" \
+    --username "$REGISTRY_USER" --password-stdin <<<"$REGISTRY_PASS"
+  oras cp --to-oci-layout "$repository@$digest" "$layout:pull"
+fi
 
+# extract by digest: verifies the layout content against $digest whether
+# it came from ghcr or the cache, so a poisoned cache entry is rejected.
 mkdir -p "$out"
-oras pull "$repository@$digest" --output "$out"
+oras pull --oci-layout "$layout@$digest" --output "$out"
