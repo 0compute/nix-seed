@@ -6,21 +6,29 @@ on:
       - master
     paths:
       - examples/*/flake.lock
+      - examples/*/*/flake.lock
       - .github/workflows/seed-examples.yaml
   workflow_dispatch:
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      examples: ${{ steps.list.outputs.examples }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: list
+        uses: ./.github/actions/list-examples
+
   seed:
+    needs: setup
     permissions:
       contents: write
       id-token: write
       packages: write
     strategy:
       matrix:
-        example:
-          - rust
-          - python
-          - cpp-boost
+        example: ${{ fromJSON(needs.setup.outputs.examples) }}
         os:
           - ubuntu-22.04
           - ubuntu-22.04-arm

@@ -1,0 +1,21 @@
+name: list examples
+description: Emit a JSON array of example flake dirs (paths under examples/).
+
+outputs:
+  examples:
+    description: 'JSON array, e.g. ["cpp-boost","hello/innocent","rust"]'
+    value: ${{ steps.list.outputs.examples }}
+
+runs:
+  using: composite
+  steps:
+    - id: list
+      shell: bash
+      run: |
+        examples=$(
+          find examples -name flake.nix -printf '%h\n' \
+            | sed 's|^examples/||' | sort \
+            | jq -Rsc 'split("\n") | map(select(length > 0))'
+        )
+        echo "examples=$examples" >>"$GITHUB_OUTPUT"
+        echo "examples: $examples"
