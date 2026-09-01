@@ -38,37 +38,8 @@
             }
             {
               name = "Build Seed";
-              uses = "./.";
-              "with" = {
-                github_token = "$${{ secrets.GITHUB_TOKEN }}";
-                # TODO: tag should be done by after check
-                tags = "latest";
-              };
-            }
-          ];
-        };
-
-        check = {
-          runsOn = "ubuntu-latest";
-          container = "ghcr.io/$${{ github.repository }}:$${{ github.sha }}";
-          "if" = "$${{ github.event.workflow_run.conclusion == 'success' }}";
-          steps = [
-            {
-              name = "Checkout";
-              uses = "actions/checkout@v6";
-            }
-            {
-              name = "Check";
-              # NOTE: `--network none`: the build should never need net, this
-              # is a safety net for broken seeds
-              # FIXME: ghcr hard-coded
-              run = ''
-                docker run \
-                  --network none \
-                  --volume $${{ github.workspace }}:/src \
-                  ghcr.io/$${{ github.repository }}:$${{ github.sha }} \
-                  nix flake check --print-build-logs /src
-              '';
+              uses = "./seed";
+              "with".github_token = "$${{ secrets.GITHUB_TOKEN }}";
             }
           ];
         };

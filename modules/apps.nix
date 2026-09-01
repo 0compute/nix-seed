@@ -33,31 +33,6 @@
             '';
           };
 
-          test = mkApp {
-            name = "test";
-            runtimeInputs = with pkgs; [
-              coreutils
-              jq
-              oras
-              skopeo
-            ];
-            text = ''
-
-            '';
-          };
-
-          publish = mkApp {
-            name = "publish";
-            runtimeInputs = with pkgs; [
-              gnutar
-              gzip
-              jq
-              cosign
-              podman
-            ];
-            text = builtins.readFile ./bin/publish;
-          };
-
         };
 
     };
