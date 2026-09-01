@@ -19,7 +19,17 @@
           let
             pkgs = inputs.nixpkgs.legacyPackages.${system};
           in
-          {
+          rec {
+
+            # deliberately non-upstream: a patched dependency can never be
+            # substituted from cache.nixos.org, so the caching workflows
+            # have a real local build to amortise
+            expensive = pkgs.zstd.overrideAttrs (previous: {
+              pname = "${previous.pname}-nonsubstitutable";
+              postPatch = (previous.postPatch or "") + ''
+                echo '/* nix-seed benchmark */' >>lib/zstd.h
+              '';
+            });
 
             default = pkgs.stdenv.mkDerivation {
               pname = "cpp-boost-example";
@@ -29,7 +39,10 @@
                 cmake
                 ninja
               ];
-              buildInputs = with pkgs; [ boost ];
+              buildInputs = [
+                pkgs.boost
+                expensive
+              ];
             };
 
             seed = inputs.nix-seed.lib.mkSeed {
