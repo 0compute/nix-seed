@@ -16,7 +16,7 @@ jobs:
     outputs:
       examples: ${{ steps.list.outputs.examples }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - id: list
         uses: ./.github/actions/list-examples
 
@@ -34,7 +34,7 @@ jobs:
           - ubuntu-22.04-arm
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./seed
         with:
           path: examples/${{ matrix.example }}
