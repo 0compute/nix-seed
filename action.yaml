@@ -25,7 +25,7 @@ runs:
           "${{ inputs.path }}/.seed.lock")
         echo "key=${digest#sha256:}" >>"$GITHUB_OUTPUT"
     - name: cache pull
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ${{ runner.temp }}/seed-cache
         key: seed-${{ runner.os }}-${{ runner.arch }}-${{ steps.seed.outputs.key }}
