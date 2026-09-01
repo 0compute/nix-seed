@@ -32,4 +32,4 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: nixbuild/nix-quick-install-action@v35
-      - run: nix build --print-build-logs examples/${{ matrix.example }}
+      - run: nix build --print-build-logs ./examples/${{ matrix.example }}

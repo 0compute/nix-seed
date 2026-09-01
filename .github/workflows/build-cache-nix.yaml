@@ -36,4 +36,4 @@ jobs:
         with:
           primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ matrix.example }}-${{ hashFiles(format('examples/{0}/**', matrix.example)) }}
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-${{ matrix.example }}-
-      - run: nix build --print-build-logs examples/${{ matrix.example }}
+      - run: nix build --print-build-logs ./examples/${{ matrix.example }}
