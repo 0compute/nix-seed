@@ -1,0 +1,25 @@
+# baseline: plain `nix build` with the default substituter (cache.nixos.org)
+# and no store cache -> non-substitutable paths recompile every run.
+name: build-raw-examples
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        example:
+          - rust
+          - python
+          - cpp-boost
+        os:
+          - ubuntu-22.04
+          - ubuntu-22.04-arm
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: nixbuild/nix-quick-install-action@v35
+      - run: nix build --print-build-logs examples/${{ matrix.example }}

@@ -1,0 +1,29 @@
+# comparison: plain `nix build` with nix-community/cache-nix-action
+# restoring/saving /nix/store via the GitHub Actions cache.
+name: build-cache-nix
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        example:
+          - rust
+          - python
+          - cpp-boost
+        os:
+          - ubuntu-22.04
+          - ubuntu-22.04-arm
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: nixbuild/nix-quick-install-action@v35
+      - uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ matrix.example }}-${{ hashFiles(format('examples/{0}/**', matrix.example)) }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-${{ matrix.example }}-
+      - run: nix build --print-build-logs examples/${{ matrix.example }}

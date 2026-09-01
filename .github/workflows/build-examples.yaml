@@ -1,19 +1,10 @@
-name: build-example-rust
+# build each example from its seed (pull + mount + offline nix build)
+name: build-examples
 
 on:
-  push:
-    branches:
-      - master
-    # source only: the seed workflow owns flake.lock and .seed.lock
-    paths:
-      - examples/rust/src/**
-      - examples/rust/Cargo.toml
-      - examples/rust/Cargo.lock
-      - examples/rust/flake.nix
-      - .github/workflows/build-example-rust.yaml
   workflow_run:
     workflows:
-      - seed-example-rust
+      - seed-examples
     types:
       - completed
   workflow_dispatch:
@@ -27,6 +18,10 @@ jobs:
       packages: read
     strategy:
       matrix:
+        example:
+          - rust
+          - python
+          - cpp-boost
         os:
           - ubuntu-22.04
           - ubuntu-22.04-arm
@@ -35,5 +30,5 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./
         with:
-          path: examples/rust
+          path: examples/${{ matrix.example }}
           github_token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,12 +1,12 @@
-name: seed-example-rust
+name: seed-examples
 
 on:
   push:
     branches:
       - master
     paths:
-      - examples/rust/flake.lock
-      - .github/workflows/seed-example-rust.yaml
+      - examples/*/flake.lock
+      - .github/workflows/seed-examples.yaml
   workflow_dispatch:
 
 jobs:
@@ -17,6 +17,10 @@ jobs:
       packages: write
     strategy:
       matrix:
+        example:
+          - rust
+          - python
+          - cpp-boost
         os:
           - ubuntu-22.04
           - ubuntu-22.04-arm
@@ -25,6 +29,6 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./seed
         with:
-          path: examples/rust
+          path: examples/${{ matrix.example }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
