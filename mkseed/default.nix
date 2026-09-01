@@ -56,26 +56,6 @@ let
       inherit (pkgs) lib stdenv;
       inherit (stdenv.hostPlatform) system;
 
-      # baked into the seed and written by the consumer as the build's
-      # nix.conf: single-user, offline, no substituters/builders/registry
-      # so anything that reaches for the network fails fast.
-      nixConfText = ''
-        experimental-features = nix-command flakes
-        build-users-group =
-        sandbox = false
-        substitute = false
-        fallback = false
-        substituters =
-        trusted-substituters =
-        builders =
-        flake-registry =
-        connect-timeout = 1
-        download-attempts = 1
-        show-trace = true
-        eval-cache = false
-        ${nixConf}
-      '';
-
       # tryEval with a warning + fallback on throw. Catches assert/throw
       # only; outputs failing with builtin type errors (which tryEval
       # cannot catch) must be dropped by selfFilterName, before they are
@@ -124,7 +104,22 @@ let
       pathEnv = pkgs.buildEnv {
         name = "${name}-env";
         paths = pathPackages ++ [
-          (pkgs.writeTextDir "etc/nix.conf" nixConfText)
+          (pkgs.writeTextDir "etc/nix/nix.conf" ''
+            experimental-features = nix-command flakes
+            build-users-group =
+            sandbox = false
+            substitute = false
+            fallback = false
+            substituters =
+            trusted-substituters =
+            builders =
+            flake-registry =
+            connect-timeout = 1
+            download-attempts = 1
+            show-trace = true
+            eval-cache = false
+            ${nixConf}
+          '')
         ];
       };
 
@@ -175,7 +170,6 @@ let
             nativeBuildInputs = [ pkgs.squashfsTools ];
             passthru = {
               inherit name tag pathEnv;
-              nixConf = nixConfText;
               # marker so a seed harvesting self.packages skips a nested
               # seed (its inputDerivation would recurse into this closure).
               isNixSeed = true;

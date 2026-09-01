@@ -72,10 +72,15 @@ sudo mount -t overlay overlay \
 
 # expose the seeded toolchain (buildEnv at .seed/env) on PATH for later
 # job steps. the symlink resolves through the mounted store.
-[[ -z ${GITHUB_PATH:-} ]] || echo /nix/.ro-store/.seed/env/bin >>"$GITHUB_PATH"
+seedenv=/nix/.ro-store/.seed/env
+envbin=$seedenv/bin
+[[ -z ${GITHUB_PATH:-} ]] || echo $envbin >>"$GITHUB_PATH"
 
 # nix comes from the mounted store; register the baked closure as valid.
 # registration is under .seed/ in the squashfs, read from the read-only
 # mount (not /nix/store: it is seed metadata, not a store path).
-nixbin=$(dirname "$(ls /nix/store/*/bin/nix | head -1)")
-sudo "$nixbin/nix-store" --load-db </nix/.ro-store/.seed/registration
+sudo "$envbin/nix-store" --load-db </nix/.ro-store/.seed/registration
+
+# link in seed nix.conf
+sudo mkdir -p /etc/nix
+sudo ln -sf $seedenv/etc/nix/nix.conf /etc/nix/nix.conf
