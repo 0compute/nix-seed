@@ -31,6 +31,7 @@ inputs:
 runs:
   using: composite
   steps:
+
     - name: Nix Setup
       uses: cachix/install-nix-action@v31
       with:
@@ -45,11 +46,6 @@ runs:
         name: ${{ inputs.cachix_name }}
         authToken: ${{ inputs.cachix_auth_token }}
         signingKey: ${{ inputs.cachix_signing_key }}
-
-    - name: Install oras
-      shell: bash
-      run: |
-        "$GITHUB_ACTION_PATH"/../bin/install-oras
 
     - name: Build seed
       id: seed

@@ -13,6 +13,7 @@ inputs:
 runs:
   using: composite
   steps:
+
     # the seed digest keys the image cache: same digest -> same bytes, so
     # the entry is immutable and restored in-datacenter instead of pulled
     # from ghcr. ghcr stays the durable, verifiable source of truth.
@@ -24,6 +25,7 @@ runs:
         digest=$(jq -er --arg s "$system" '.systems[$s]' \
           "${{ inputs.path }}/.seed.lock")
         echo "key=${digest#sha256:}" >>"$GITHUB_OUTPUT"
+
     - name: cache pull
       uses: actions/cache@v6
       with:
@@ -37,6 +39,7 @@ runs:
       run: |
         "$GITHUB_ACTION_PATH"/bin/mount-seed ${{ inputs.path }} \
           "$RUNNER_TEMP/seed" "$RUNNER_TEMP/seed-cache"
+
     - name: build
       shell: bash
       run: |-
