@@ -1,7 +1,8 @@
 {
   "repository": "ghcr.io/roundtablelove/nix-seed/examples/rust-helix/seed",
   "systems": {
-    "aarch64-linux": "sha256:ee03538491defa808c1ad3095458c8ce75f80a3436d9b60816cda4ee452e4f80"
+    "aarch64-linux": "sha256:ee03538491defa808c1ad3095458c8ce75f80a3436d9b60816cda4ee452e4f80",
+    "x86_64-linux": "sha256:462f3fc427e93ff6219f4bf08b6699d678202079bc4c497fc96c76f584047b11"
   },
   "tag": "9e1ca7aec4b31715b086e720ee49e7aa9e2a94ea"
 }
