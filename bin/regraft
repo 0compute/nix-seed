@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# regraft a baked recipe onto a new src store path: dump the drv, replace
+# the old src path with the new one everywhere (literal split/join --
+# store paths are exact strings), then re-derive canonically via
+# builtins.derivation, which recomputes drvPath/outPath reading the baked
+# input drvs. prints the new drvPath. identity property: regrafting the
+# seeded src reproduces the baked drvPath bit-for-bit. doc/drv-seeds.md.
+
+set -eu -o pipefail
+
+drv=${1:?target drv path required}
+old=${2:?old src store path required}
+new=${3:?new src store path required}
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+# v4 schema lists inputs.srcs as store BASENAMES, so swap those too
+nix derivation show "$drv" | jq --arg old "$old" --arg new "$new" \
+  --arg oldb "$(basename "$old")" --arg newb "$(basename "$new")" '
+  .derivations | to_entries[0].value
+  | walk(if type == "string" then (split($old) | join($new)) else . end)
+  | .inputs.srcs |= map(if . == $oldb then $newb else . end)
+' >"$tmp/drv.json"
+
+out=$(NIX_SEED_REGRAFT=$tmp/drv.json \
+  nix-instantiate "$(dirname "$0")/regraft.nix")
+# nix-instantiate may suffix the wanted output (drv!out)
+printf '%s\n' "${out%%!*}"

@@ -17,13 +17,28 @@ manifest=/nix/.ro-store/.seed/drvs.json
 # seeds carry no flake-input sources. no evaluator also means no libgit2
 # (no safe.directory) and no boehm GC to disable.
 if drv=$(jq -er .default.drv "$manifest" 2>/dev/null); then
-  # the baked drv builds the SEEDED source. until the src graft lands,
-  # refuse src-bearing targets rather than silently building a revision
-  # that may not match the checkout.
-  if jq -e .default.src "$manifest" >/dev/null 2>&1; then
-    echo >&2 "build: drv-baked seed has a src-bearing target;" \
-      "src graft not yet implemented -- bake sources instead"
-    exit 1
+  if src=$(jq -er .default.src "$manifest" 2>/dev/null); then
+    # eval-frozen metadata guard: the baked dep drvs were derived from
+    # these files at seed time; a graft over changed metadata would build
+    # against a stale dep graph, so demand a re-seed instead.
+    while read -r f; do
+      want=$(jq -er --arg f "$f" '.guards[$f]' "$manifest")
+      got=$(sha256sum "$dir/$f" 2>/dev/null | awk '{print $1}') || got=missing
+      [[ $want == "$got" ]] || {
+        echo >&2 "build: $f differs from the seeded dep graph; re-seed"
+        exit 1
+      }
+    done < <(jq -r '.guards | keys[]' "$manifest")
+    # hash the checkout (tracked files, approximating the flake source
+    # filter) and graft it onto the baked recipe when it drifted; the
+    # identity case realises the baked drv untouched.
+    name=$(jq -er .default.srcName "$manifest")
+    prefix=$(git -C "$dir" rev-parse --show-prefix)
+    tmp=$(mktemp -d)
+    git -C "$dir" archive "HEAD${prefix:+:$prefix}" | tar -x -C "$tmp"
+    new=$("$(command -v nix)" store add-path --name "$name" "$tmp")
+    [[ $new == "$src" ]] ||
+      drv=$("$(dirname "$0")"/regraft "$drv" "$src" "$new")
   fi
   sudo env HOME=/tmp unshare --net \
     "$(command -v nix-store)" --realise "$drv"

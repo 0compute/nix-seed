@@ -151,10 +151,10 @@ cadence: consumers re-seed on lockfile changes, graft every push.
    flake-input sources; registration format-verified against
    closureInfo's records (uniform sha256:base32, parses exactly).
    Remaining: CI realise path end to end (first push exercises it).
-3. [ ] src graft: guards already baked in the manifest and bin/build
-   refuses src-bearing targets; next is bin/regraft (derivation show -r
-   -> literal src substitution -> appendContext/builtins.derivation
-   re-derivation) + the identity acceptance test (graft of the seeded
-   src must reproduce the baked drvPath bit-for-bit).
+3. [x] src graft: bin/regraft + regraft.nix, wired into bin/build
+   behind the graftGuards metadata check. Acceptance verified on
+   cpp-boost: identity graft reproduces the baked drvPath bit-for-bit;
+   a mutated src grafts to a distinct canonical drv that realises and
+   builds against the baked dep graph.
 4. [ ] flip remaining examples; optional `both`-mode integrity check in
    build-examples.
