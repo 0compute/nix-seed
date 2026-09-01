@@ -191,7 +191,7 @@ committed=
 for _ in 1 2 3 4 5; do
   "${git[@]}" pull --rebase origin $branch
   update_lock
-  "${git[@]}" add .seed.lock
+  "${git[@]}" add ".$suffix.lock"
   if "${git[@]}" diff --cached --quiet; then
     committed=1 # nothing new to record
     break
@@ -203,8 +203,8 @@ for _ in 1 2 3 4 5; do
   fi
   # lost the race: drop the commit and our lock edit, then retry
   "${git[@]}" reset HEAD^
-  if [[ -n $("${git[@]}" ls-files .seed.lock) ]]; then
-    "${git[@]}" checkout -- .seed.lock
+  if [[ -n $("${git[@]}" ls-files ".$suffix.lock") ]]; then
+    "${git[@]}" checkout -- ".$suffix.lock"
   else
     rm $lock
   fi
