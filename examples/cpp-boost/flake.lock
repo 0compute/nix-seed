@@ -433,7 +433,6 @@
         "mkdocs-flake": "mkdocs-flake",
         "nix-github-actions": "nix-github-actions",
         "nix-unit": "nix-unit",
-        "nix2container": "nix2container",
         "nixpkgs": [
           "nixpkgs"
         ],
@@ -477,27 +476,6 @@
       "original": {
         "owner": "nix-community",
         "repo": "nix-unit",
-        "type": "github"
-      }
-    },
-    "nix2container": {
-      "inputs": {
-        "nixpkgs": [
-          "nix-seed",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1787926012,
-        "narHash": "sha256-9doLKz+fpKYyuOfs+1tIwnEuSSPhg6VsGuvkQYWqm3I=",
-        "owner": "roundtablelove",
-        "repo": "nix2container",
-        "rev": "576c5c7268d9473734ec8018b3d4ef7749612832",
-        "type": "github"
-      },
-      "original": {
-        "owner": "roundtablelove",
-        "repo": "nix2container",
         "type": "github"
       }
     },
