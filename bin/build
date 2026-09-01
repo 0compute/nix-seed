@@ -21,14 +21,19 @@ if drv=$(jq -er .default.drv "$manifest" 2>/dev/null); then
   if src=$(jq -er .default.src "$manifest" 2>/dev/null); then
     # hash the checkout (tracked files, approximating the flake source
     # filter) and graft it onto the baked recipe when it drifted; the
-    # identity case realises the baked drv untouched.
+    # identity case realises the baked drv untouched. identity is CONTENT
+    # (nar hash): the seeded src may be a subpath of a larger source
+    # tree, so store paths cannot be compared.
     name=$(jq -er .default.srcName "$manifest")
     prefix=$(git -C "$dir" rev-parse --show-prefix)
     tmp=$(mktemp -d)
     git -C "$dir" archive "HEAD${prefix:+:$prefix}" | tar -x -C "$tmp"
-    new=$(sudo "$(command -v nix)" store add-path --name "$name" "$tmp")
-    [[ $new == "$src" ]] ||
-      drv=$("$(dirname "$0")"/regraft "$drv" "$src" "$new")
+    if [[ $("$(command -v nix)" hash path "$tmp") != $("$(command -v nix)" hash path "$src") ]]; then
+      # store-writing steps run as root: the mounted store's db was
+      # loaded under sudo. explicit PATH assignment survives secure_path.
+      new=$(sudo env "PATH=$PATH" "$(command -v nix)" store add-path --name "$name" "$tmp")
+      drv=$(sudo env "PATH=$PATH" "$(dirname "$0")"/regraft "$drv" "$src" "$new")
+    fi
   fi
   sudo env HOME=/tmp unshare --net \
     "$(command -v nix-store)" --realise "$drv"
