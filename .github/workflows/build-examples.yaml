@@ -5,8 +5,15 @@ on:
   push:
     branches:
       - master
+    # ignore the paths seed-examples watches: a seed-affecting change goes
+    # push -> seed-examples -> workflow_run -> build-examples, so build never
+    # races ahead of its seed. (.seed.lock included, not negated: the per-arch
+    # `chore(seed): lock` commits must NOT trigger a build on a half-written
+    # lock -- the post-seed workflow_run covers them.) non-example changes
+    # (bin/, action.yaml) still build on push.
     paths-ignore:
       - flake.lock
+      - examples/**
       - .github/workflows/seed-examples.yaml
   workflow_run:
     workflows:
