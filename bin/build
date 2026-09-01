@@ -17,6 +17,7 @@ manifest=/nix/.ro-store/.seed/drvs.json
 # seeds carry no flake-input sources. no evaluator also means no libgit2
 # (no safe.directory) and no boehm GC to disable.
 if drv=$(jq -er .default.drv "$manifest" 2>/dev/null); then
+
   if src=$(jq -er .default.src "$manifest" 2>/dev/null); then
     # hash the checkout (tracked files, approximating the flake source
     # filter) and graft it onto the baked recipe when it drifted; the
@@ -25,26 +26,28 @@ if drv=$(jq -er .default.drv "$manifest" 2>/dev/null); then
     prefix=$(git -C "$dir" rev-parse --show-prefix)
     tmp=$(mktemp -d)
     git -C "$dir" archive "HEAD${prefix:+:$prefix}" | tar -x -C "$tmp"
-    new=$("$(command -v nix)" store add-path --name "$name" "$tmp")
+    new=$(sudo "$(command -v nix)" store add-path --name "$name" "$tmp")
     [[ $new == "$src" ]] ||
       drv=$("$(dirname "$0")"/regraft "$drv" "$src" "$new")
   fi
   sudo env HOME=/tmp unshare --net \
     "$(command -v nix-store)" --realise "$drv"
-  exit 0
+
+else
+
+  # sources mode: offline flake evaluation + build.
+  # nix runs as root; /src (the checkout) is owned by the runner user, so
+  # its libgit2 flake fetcher rejects it -> mark it a safe directory.
+  printf '[safe]\n\tdirectory = *\n' | sudo tee -a /etc/gitconfig >/dev/null
+
+  # unshare -n drops all network (only loopback) -> hermetic build.
+  # GC_DONT_GC: skip the boehm GC during evaluation, ~10-25% faster eval;
+  # the process is short-lived so peak memory is irrelevant.
+  sudo \
+    env \
+    HOME=/tmp \
+    GC_DONT_GC=1 \
+    unshare --net \
+    "$(command -v nix)" build --offline --no-link --print-out-paths "$dir"
+
 fi
-
-# sources mode: offline flake evaluation + build.
-# nix runs as root; /src (the checkout) is owned by the runner user, so
-# its libgit2 flake fetcher rejects it -> mark it a safe directory.
-printf '[safe]\n\tdirectory = *\n' | sudo tee -a /etc/gitconfig >/dev/null
-
-# unshare -n drops all network (only loopback) -> hermetic build.
-# GC_DONT_GC: skip the boehm GC during evaluation, ~10-25% faster eval;
-# the process is short-lived so peak memory is irrelevant.
-sudo \
-  env \
-  HOME=/tmp \
-  GC_DONT_GC=1 \
-  unshare --net \
-  "$(command -v nix)" build --offline --no-link --print-out-paths "$dir"
