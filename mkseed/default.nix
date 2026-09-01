@@ -118,6 +118,13 @@ let
             download-attempts = 1
             show-trace = true
             eval-cache = false
+            # upstream default is max-jobs = 1, which serializes independent
+            # derivations; the runner is dedicated, so use every core.
+            max-jobs = auto
+            cores = 0
+            # ephemeral CI store: skipping sqlite fsyncs speeds --load-db
+            # and post-build registration; durability is worthless here.
+            fsync-metadata = false
             ${nixConf}
           '')
         ];
