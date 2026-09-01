@@ -25,9 +25,9 @@ sudo mount -t overlay overlay \
 nixbin=$(dirname "$(ls /nix/store/*/bin/nix | head -1)")
 sudo "$nixbin/nix-store" --load-db </nix/.ro-store/.seed/registration
 
-# expose the seeded toolchain (buildEnv unioned at .seed/bin) on PATH for
-# later job steps. the symlink resolves through the mounted store.
-[[ -z ${GITHUB_PATH:-} ]] || echo /nix/.ro-store/.seed/bin >>"$GITHUB_PATH"
+# expose the seeded toolchain (buildEnv at .seed/env) on PATH for later
+# job steps. the symlink resolves through the mounted store.
+[[ -z ${GITHUB_PATH:-} ]] || echo /nix/.ro-store/.seed/env/bin >>"$GITHUB_PATH"
 
 # nix runs as root; /src (the checkout) is owned by the runner user, so
 # its libgit2 flake fetcher rejects it -> mark it a safe directory.
@@ -39,6 +39,6 @@ printf '[safe]\n\tdirectory = *\n' | sudo tee -a /etc/gitconfig >/dev/null
 sudo env \
   HOME=/tmp \
   GC_DONT_GC=1 \
-  NIX_CONFIG="$(cat /nix/.ro-store/.seed/nix.conf)" \
+  NIX_CONFIG="$(cat /nix/.ro-store/.seed/env/etc/nix.conf)" \
   unshare --net \
   "$nixbin/nix" build --offline --no-link --print-out-paths "$dir"
