@@ -11,16 +11,11 @@ set -eux -o pipefail
 dir=${1:-.}
 out=${2:?artifact output dir required}
 layout=${3:?oci layout cache dir required}
+# full seed digest (sha256:...) for this system, computed once by the
+# action's `seed digest` step; avoids re-reading .seed.lock per system.
+digest=${4:?seed digest required}
 
-lock=$dir/.seed.lock
-system=$(uname -m | sed s/arm64/aarch64/)-$(uname -s | tr '[:upper:]' '[:lower:]')
-repository=$(jq --exit-status --raw-output .repository "$lock")
-digest=$(jq \
-  --exit-status \
-  --raw-output \
-  --arg s "$system" \
-  '.systems[$s] // error("no seed digest for \($s)")' \
-  "$lock")
+repository=$(jq --exit-status --raw-output .repository "$dir/.seed.lock")
 
 blobs=$layout/blobs/sha256
 manifest=$blobs/${digest#sha256:}

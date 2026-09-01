@@ -24,6 +24,9 @@ runs:
         system=$(uname -m | sed s/arm64/aarch64/)-$(uname -s | tr '[:upper:]' '[:lower:]')
         digest=$(jq -er --arg s "$system" '.systems[$s]' \
           "${{ inputs.path }}/.seed.lock")
+        # digest keys the cache (key, minus the sha256: prefix) and is
+        # reused by mount-seed (full digest), so the lock is read once.
+        echo "digest=$digest" >>"$GITHUB_OUTPUT"
         echo "key=${digest#sha256:}" >>"$GITHUB_OUTPUT"
 
     - name: cache pull
@@ -38,7 +41,8 @@ runs:
         REGISTRY_PASS: ${{ inputs.github_token }}
       run: |
         "$GITHUB_ACTION_PATH"/bin/mount-seed ${{ inputs.path }} \
-          "$RUNNER_TEMP/seed" "$RUNNER_TEMP/seed-cache"
+          "$RUNNER_TEMP/seed" "$RUNNER_TEMP/seed-cache" \
+          "${{ steps.seed.outputs.digest }}"
 
     - name: build
       shell: bash
