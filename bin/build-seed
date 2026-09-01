@@ -109,7 +109,8 @@ name=$(nix eval --raw $seed.name)
 tag=$(nix eval --raw $seed.tag)
 system=$(nix eval --impure --raw --expr builtins.currentSystem)
 
-# build the squashfs seed (store.squashfs + registration + nix.conf)
+# build the squashfs seed (store.squashfs; registration + nix.conf are
+# baked inside it under .seed/)
 out=$(nix build --print-build-logs --no-link --print-out-paths $seed)
 echo "Built seed $name:$tag"
 
@@ -128,9 +129,7 @@ oras login "$registry" --username "$REGISTRY_USER" --password-stdin \
 (
   cd "$out"
   oras push "$repository:$tag" \
-    store.squashfs:application/vnd.nix-seed.squashfs \
-    registration:application/vnd.nix-seed.registration \
-    nix.conf:application/vnd.nix-seed.nixconf
+    store.squashfs:application/vnd.nix-seed.squashfs
 )
 digest=$(oras resolve "$repository:$tag")
 # extra tags: retag the same manifest, no re-upload

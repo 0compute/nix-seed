@@ -142,10 +142,12 @@ let
 
       # the seed: a squashfs of the build closure the consumer mounts as
       # /nix/store (store paths sit at the fs root, basename = store
-      # hash-name), plus `registration` to re-populate a fresh nix db
-      # offline (marking the baked paths valid) and `nix.conf`. mounting
-      # is O(1); reads decompress lazily, so there is no per-file
-      # extraction. see DESIGN.md#delivery.
+      # hash-name). `registration` (to re-populate a fresh nix db offline,
+      # marking the baked paths valid) and `nix.conf` are baked under
+      # .seed/ so the squashfs is the seed's only artifact; the consumer
+      # reads them from the read-only mount. mounting is O(1); reads
+      # decompress lazily, so there is no per-file extraction. see
+      # DESIGN.md#delivery.
       seedFs =
         pkgs.runCommand "${name}"
           {
@@ -162,11 +164,15 @@ let
             mkdir $out
             # timestamps come from SOURCE_DATE_EPOCH (set by nix) for a
             # reproducible image; passing -*-time here would conflict.
+            # registration + nix.conf go under .seed/ as pseudo-files so the
+            # squashfs is the only output. mksquashfs clamps pseudo-file
+            # mtimes to SOURCE_DATE_EPOCH too, so the image stays reproducible.
             mksquashfs $(cat ${closure}/store-paths) $out/store.squashfs \
               -keep-as-directory -all-root -no-hardlinks \
-              -comp zstd -Xcompression-level ${toString compressionLevel}
-            cp ${closure}/registration $out/registration
-            cp ${pkgs.writeText "nix.conf" nixConfText} $out/nix.conf
+              -comp zstd -Xcompression-level ${toString compressionLevel} \
+              -p '.seed d 555 0 0' \
+              -p ".seed/registration f 444 0 0 cat ${closure}/registration" \
+              -p ".seed/nix.conf f 444 0 0 cat ${pkgs.writeText "nix.conf" nixConfText}"
           '';
     in
     # nix-seed is Linux only. the consumer mounts the squashfs as
