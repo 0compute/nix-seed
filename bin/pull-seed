@@ -17,19 +17,31 @@ digest=$(jq \
   '.systems[$s] // error("no seed digest for \($s)")' \
   "$lock")
 
-# oras is needed for both the cache-miss fetch and the extract below
-"$GITHUB_ACTION_PATH"/bin/install-oras
+blobs=$layout/blobs/sha256
+manifest=$blobs/${digest#sha256:}
 
 # cache miss: fetch from ghcr into a local oci layout (preserves the
-# exact manifest) for actions/cache to save. keyed by digest upstream,
-# so a hit restores this same layout and skips the network.
-if [[ ! -f $layout/index.json ]]; then
+# exact manifest) for actions/cache to save; oras is only needed here,
+# the hot path below runs on preinstalled tools.
+if [[ ! -f $manifest ]]; then
+  "$GITHUB_ACTION_PATH"/bin/install-oras
   [[ -z ${REGISTRY_USER:-} ]] || oras login "${repository%%/*}" \
     --username "$REGISTRY_USER" --password-stdin <<<"$REGISTRY_PASS"
   oras cp --to-oci-layout "$repository@$digest" "$layout:pull"
 fi
 
-# extract by digest: verifies the layout content against $digest whether
-# it came from ghcr or the cache, so a poisoned cache entry is rejected.
+# verify the manifest against the lock digest, then each blob against
+# the manifest, so a corrupt or poisoned cache entry is rejected. the
+# blobs are then used in place (symlinked, mounted directly): no copy.
+sha256sum --check --quiet <<<"${digest#sha256:}  $manifest"
 mkdir -p "$out"
-oras pull --oci-layout "$layout@$digest" --output "$out"
+jq --raw-output '
+  .layers[]
+  | "\(.digest | ltrimstr("sha256:"))  \(
+      .annotations["org.opencontainers.image.title"]
+        // error("untitled layer"))"' \
+  "$manifest" |
+  while read -r hex name; do
+    sha256sum --check --quiet <<<"$hex  $blobs/$hex"
+    ln -sf "$blobs/$hex" "$out/$name"
+  done

@@ -26,9 +26,12 @@ sudo "$nixbin/nix-store" --load-db <"$out/registration"
 # its libgit2 flake fetcher rejects it -> mark it a safe directory.
 printf '[safe]\n\tdirectory = *\n' | sudo tee -a /etc/gitconfig >/dev/null
 
-# unshare -n drops all network (only loopback) -> hermetic build
+# unshare -n drops all network (only loopback) -> hermetic build.
+# GC_DONT_GC: skip the boehm GC during evaluation, ~10-25% faster eval;
+# the process is short-lived so peak memory is irrelevant.
 sudo env \
   HOME=/tmp \
+  GC_DONT_GC=1 \
   NIX_CONFIG="$(cat "$out/nix.conf")" \
   unshare --net \
   "$nixbin/nix" build --offline --no-link --print-out-paths "$dir"
