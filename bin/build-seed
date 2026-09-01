@@ -127,7 +127,7 @@ oras login "$registry" --username "$REGISTRY_USER" --password-stdin \
 (
   cd "$out"
   oras push "$repository:$tag" \
-    store.squashfs:application/vnd.nix-seed.squashfs \
+    store.erofs:application/vnd.nix-seed.erofs \
     registration:application/vnd.nix-seed.registration \
     nix.conf:application/vnd.nix-seed.nixconf
 )
