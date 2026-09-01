@@ -29,15 +29,15 @@ runs:
       with:
         path: ${{ runner.temp }}/seed-cache
         key: seed-${{ runner.os }}-${{ runner.arch }}-${{ steps.seed.outputs.key }}
-    - name: pull seed
+    - name: mount seed
       shell: bash
       env:
         REGISTRY_USER: ${{ github.actor }}
         REGISTRY_PASS: ${{ inputs.github_token }}
       run: |
-        "$GITHUB_ACTION_PATH"/bin/pull-seed ${{ inputs.path }} \
+        "$GITHUB_ACTION_PATH"/bin/mount-seed ${{ inputs.path }} \
           "$RUNNER_TEMP/seed" "$RUNNER_TEMP/seed-cache"
     - name: build
       shell: bash
       run: |-
-        "$GITHUB_ACTION_PATH"/bin/build ${{ inputs.path }} "$RUNNER_TEMP/seed"
+        "$GITHUB_ACTION_PATH"/bin/build ${{ inputs.path }}

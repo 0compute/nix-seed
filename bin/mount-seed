@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 # shellcheck disable=2086
+# fetch, verify, and mount the squashfs seed as /nix/store: pull the OCI
+# blobs (cache or ghcr), verify them against the lock digest, mount the
+# squashfs read-only under a writable overlay, register the baked closure
+# in a fresh nix db, and put the seeded toolchain on PATH. after this the
+# store is ready for an offline `nix build` (see bin/build).
 
 set -eux -o pipefail
 
@@ -56,3 +61,21 @@ jq --raw-output '
     verify "$hex" "$blobs/$hex"
     ln -sf "$blobs/$hex" "$out/$name"
   done
+
+# read-only baked store (squashfs) unioned with a writable overlay ->
+# /nix/store. no extraction: mount is O(1), reads decompress lazily.
+sudo mkdir -p /nix/.ro-store /nix/.rw/upper /nix/.rw/work /nix/store /nix/var/nix
+sudo mount -t squashfs -o loop,ro "$out/store.squashfs" /nix/.ro-store
+sudo mount -t overlay overlay \
+  -o lowerdir=/nix/.ro-store,upperdir=/nix/.rw/upper,workdir=/nix/.rw/work \
+  /nix/store
+
+# expose the seeded toolchain (buildEnv at .seed/env) on PATH for later
+# job steps. the symlink resolves through the mounted store.
+[[ -z ${GITHUB_PATH:-} ]] || echo /nix/.ro-store/.seed/env/bin >>"$GITHUB_PATH"
+
+# nix comes from the mounted store; register the baked closure as valid.
+# registration is under .seed/ in the squashfs, read from the read-only
+# mount (not /nix/store: it is seed metadata, not a store path).
+nixbin=$(dirname "$(ls /nix/store/*/bin/nix | head -1)")
+sudo "$nixbin/nix-store" --load-db </nix/.ro-store/.seed/registration

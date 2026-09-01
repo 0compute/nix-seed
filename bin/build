@@ -1,33 +1,17 @@
 #!/usr/bin/env bash
 # shellcheck disable=2086
-# build a project offline from a mounted squashfs seed store. nix runs as
-# root (single-user model) inside a network namespace (`unshare -n`), so
-# the build is hermetic with no substituters and no network.
+# build a project offline from the already-mounted squashfs seed store
+# (mounted by bin/mount-seed). nix runs as root (single-user model) inside
+# a network namespace (`unshare -n`), so the build is hermetic with no
+# substituters and no network.
 
 set -eux -o pipefail
 
 dir=${1:-.}
 [[ $dir =~ ^/ ]] || dir=./$dir
-out=${2:?artifact dir required}
 
-# read-only baked store (squashfs) unioned with a writable overlay ->
-# /nix/store. no extraction: mount is O(1), reads decompress lazily.
-sudo mkdir -p /nix/.ro-store /nix/.rw/upper /nix/.rw/work /nix/store /nix/var/nix
-sudo mount -t squashfs -o loop,ro "$out/store.squashfs" /nix/.ro-store
-sudo mount -t overlay overlay \
-  -o lowerdir=/nix/.ro-store,upperdir=/nix/.rw/upper,workdir=/nix/.rw/work \
-  /nix/store
-
-# nix comes from the mounted store; register the baked closure as valid.
-# registration + nix.conf are baked under .seed/ in the squashfs; read them
-# from the read-only mount, not /nix/store (they are seed metadata, not
-# store paths).
+# nix comes from the store mounted by mount-seed.
 nixbin=$(dirname "$(ls /nix/store/*/bin/nix | head -1)")
-sudo "$nixbin/nix-store" --load-db </nix/.ro-store/.seed/registration
-
-# expose the seeded toolchain (buildEnv at .seed/env) on PATH for later
-# job steps. the symlink resolves through the mounted store.
-[[ -z ${GITHUB_PATH:-} ]] || echo /nix/.ro-store/.seed/env/bin >>"$GITHUB_PATH"
 
 # nix runs as root; /src (the checkout) is owned by the runner user, so
 # its libgit2 flake fetcher rejects it -> mark it a safe directory.
