@@ -2,20 +2,14 @@
 
   imports = [ inputs.devshell.flakeModule ];
 
-  perSystem = { pkgs, inputs', ... }: {
+  perSystem = { pkgs, ... }: {
 
     devshells.default = {
-      packages =
-        with pkgs;
-        [
-          cosign
-          dive
-          podman
-        ]
-        ++ (with inputs'.nix2container.packages; [
-          default
-          skopeo-nix2container
-        ]);
+      packages = with pkgs; [
+        cosign
+        oras
+        squashfsTools
+      ];
     };
 
   };

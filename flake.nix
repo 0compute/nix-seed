@@ -73,11 +73,6 @@
       };
     };
 
-    nix2container = {
-      url = "github:roundtablelove/nix2container";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # transitive: mkdocs-flake, treefmt-nix
     poetry2nix = {
       url = "github:nix-community/poetry2nix";
@@ -107,7 +102,7 @@
 
       systems = import inputs.systems;
 
-      flake.lib.mkSeed = import ./mkseed { inherit (inputs) nix2container; };
+      flake.lib.mkSeed = import ./mkseed;
 
     };
 

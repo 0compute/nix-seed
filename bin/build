@@ -1,30 +1,34 @@
 #!/usr/bin/env bash
+# shellcheck disable=2086
+# build a project offline from a mounted squashfs seed store. nix runs as
+# root (single-user model) inside a network namespace (`unshare -n`), so
+# the build is hermetic with no substituters and no network.
 
 set -eux -o pipefail
 
 dir=${1:-.}
 [[ $dir =~ ^/ ]] || dir=./$dir
+out=${2:?artifact dir required}
 
-installable=$dir
-lock=$dir/.seed.lock
+# read-only baked store (squashfs) unioned with a writable overlay ->
+# /nix/store. no extraction: mount is O(1), reads decompress lazily.
+sudo mkdir -p /nix/.ro-store /nix/.rw/upper /nix/.rw/work /nix/store /nix/var/nix
+sudo mount -t squashfs -o loop,ro "$out/store.squashfs" /nix/.ro-store
+sudo mount -t overlay overlay \
+  -o lowerdir=/nix/.ro-store,upperdir=/nix/.rw/upper,workdir=/nix/.rw/work \
+  /nix/store
 
-# TODO: handle no seed case
-seed=$(jq \
-  --exit-status \
-  --raw-output \
-  --arg system "$(uname -m | sed s/arm64/aarch64/)-$(uname -s | tr '[:upper:]' '[:lower:]')" \
-  '"\(.repository)@\(.systems[$system] // error("no seed digest for \($system)"))"' \
-  $lock)
+# nix comes from the mounted store; register the baked closure as valid
+nixdir=$(dirname "$(ls /nix/store/*/bin/nix | head -1)")
+sudo "$nixdir/nix-store" --load-db <"$out/registration"
 
-# rootful to share storage with the rootful pull in pull-seed. the
-# container runs as root while /src is owned by the runner user, so
-# nix's libgit2 flake fetcher rejects it; mark it safe. git is not in
-# the seed, so write the global config directly (HOME=/tmp, a tmpfs).
-sudo podman run \
-  --network none \
-  --tmpfs /tmp \
-  --rm \
-  --interactive \
-  --volume $PWD:/src \
-  $seed \
-  sh -c 'printf "[safe]\n\tdirectory = *\n" >"$HOME/.gitconfig" && exec nix build --offline /src/'"$installable"
+# nix runs as root; /src (the checkout) is owned by the runner user, so
+# its libgit2 flake fetcher rejects it -> mark it a safe directory.
+printf '[safe]\n\tdirectory = *\n' | sudo tee -a /etc/gitconfig >/dev/null
+
+# unshare -n drops all network (only loopback) -> hermetic build
+sudo env \
+  HOME=/tmp \
+  NIX_CONFIG="$(cat "$out/nix.conf")" \
+  unshare --net \
+  "$nixdir/nix" build --offline --no-link --print-out-paths "$dir"

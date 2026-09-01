@@ -1,5 +1,5 @@
 name: Nix Seed
-description: Build Nix Seed images and push to registry
+description: Build the Nix Seed and push it to the registry
 
 inputs:
 
@@ -45,6 +45,11 @@ runs:
         name: ${{ inputs.cachix_name }}
         authToken: ${{ inputs.cachix_auth_token }}
         signingKey: ${{ inputs.cachix_signing_key }}
+
+    - name: Install oras
+      shell: bash
+      run: |
+        "$GITHUB_ACTION_PATH"/../bin/install-oras
 
     - name: Build seed
       shell: bash

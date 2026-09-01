@@ -109,8 +109,8 @@ name=$(nix eval --raw $seed.name)
 tag=$(nix eval --raw $seed.tag)
 system=$(nix eval --impure --raw --expr builtins.currentSystem)
 
-# build image
-nix build --print-build-logs $seed
+# build the squashfs seed (store.squashfs + registration + nix.conf)
+out=$(nix build --print-build-logs --no-link --print-out-paths $seed)
 echo "Built seed $name:$tag"
 
 # {{{ push
@@ -120,22 +120,23 @@ tags+=(
   #  "$(git -C $dir describe --tags --always --dirty)"
 )
 
-# push straight from the nix store (skopeo nix: transport): no engine
-# round-trip, and the manifest digest is deterministic across pushes
-digestfile=$(mktemp)
+# push the seed as an OCI artifact (not an image): plain blobs, no
+# engine, no layer extraction on the consumer.
+oras login "$registry" --username "$REGISTRY_USER" --password-stdin \
+  <<<"$REGISTRY_PASS"
+(
+  cd "$out"
+  oras push "$repository:$tag" \
+    store.squashfs:application/vnd.nix-seed.squashfs \
+    registration:application/vnd.nix-seed.registration \
+    nix.conf:application/vnd.nix-seed.nixconf
+)
+digest=$(oras resolve "$repository:$tag")
+# extra tags: retag the same manifest, no re-upload
 for t in "${tags[@]}"; do
-  nametag="$repository:$t"
-  # zstd: consumers pull-decompress much faster than gzip. level 19
-  # costs push-side time once to shrink every consumer pull
-  nix run $seed.copyTo -- docker://$nametag \
-    --dest-creds "$REGISTRY_USER:$REGISTRY_PASS" \
-    --dest-compress-format zstd \
-    --dest-compress-level 19 \
-    --digestfile "$digestfile"
-  echo "pushed $nametag"
+  [[ $t == "$tag" ]] || oras tag "$repository@$digest" "$t"
 done
-digest=$(<"$digestfile")
-rm "$digestfile"
+echo "pushed $repository@$digest"
 
 # }}}
 

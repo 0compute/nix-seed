@@ -10,25 +10,21 @@ inputs:
   github_token:
     description: GitHub Token
 
-  cachix_name:
-    description: Cachix cache name
-    default: ${{ github.event.repository.name }}
-  cachix_auth_token:
-    description: Cachix auth token
-  cachix_signing_key:
-    description: Cachix signing key
-
 runs:
   using: composite
   steps:
+    - name: install oras
+      shell: bash
+      run: |
+        "$GITHUB_ACTION_PATH"/bin/install-oras
     - name: pull seed
       shell: bash
       env:
         REGISTRY_USER: ${{ github.actor }}
         REGISTRY_PASS: ${{ inputs.github_token }}
       run: |
-        "$GITHUB_ACTION_PATH"/bin/pull-seed ${{ inputs.path }}
+        "$GITHUB_ACTION_PATH"/bin/pull-seed ${{ inputs.path }} "$RUNNER_TEMP/seed"
     - name: build
       shell: bash
-      run: |-
-        "$GITHUB_ACTION_PATH"/bin/build ${{ inputs.path }}
+      run: |
+        "$GITHUB_ACTION_PATH"/bin/build ${{ inputs.path }} "$RUNNER_TEMP/seed"
