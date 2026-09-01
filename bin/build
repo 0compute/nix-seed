@@ -13,7 +13,7 @@ out=${2:?artifact dir required}
 # read-only baked store (squashfs) unioned with a writable overlay ->
 # /nix/store. no extraction: mount is O(1), reads decompress lazily.
 sudo mkdir -p /nix/.ro-store /nix/.rw/upper /nix/.rw/work /nix/store /nix/var/nix
-sudo mount -t erofs -o loop,ro "$out/store.erofs" /nix/.ro-store
+sudo mount -t squashfs -o loop,ro "$out/store.squashfs" /nix/.ro-store
 sudo mount -t overlay overlay \
   -o lowerdir=/nix/.ro-store,upperdir=/nix/.rw/upper,workdir=/nix/.rw/work \
   /nix/store

@@ -140,10 +140,7 @@ let
       seedFs =
         pkgs.runCommand "${name}"
           {
-            nativeBuildInputs = [
-              pkgs.erofs-utils
-              pkgs.gnutar
-            ];
+            nativeBuildInputs = [ pkgs.squashfsTools ];
             passthru = {
               inherit name tag;
               nixConf = nixConfText;
@@ -154,16 +151,11 @@ let
           }
           ''
             mkdir $out
-            # mkfs.erofs packs a tree/tarball, not a path list, so tar the
-            # closure with entries rooted at the store hash-name (tar -C
-            # /nix/store) -> mounting the image AS /nix/store yields the
-            # real paths. timestamps come from SOURCE_DATE_EPOCH (nix).
-            tar -C /nix/store -c --owner=0 --group=0 --numeric-owner \
-              $(sed 's|^/nix/store/||' ${closure}/store-paths) >closure.tar
-            # -C: big compression clusters + tail/fragment packing so the
-            # zstd ratio is competitive with squashfs's 128K blocks.
-            mkfs.erofs -zzstd,level=19 -C1048576 -Eztailpacking,fragments \
-              --all-root --tar=f $out/store.erofs closure.tar
+            # timestamps come from SOURCE_DATE_EPOCH (set by nix) for a
+            # reproducible image; passing -*-time here would conflict.
+            mksquashfs $(cat ${closure}/store-paths) $out/store.squashfs \
+              -keep-as-directory -all-root -no-hardlinks \
+              -comp zstd -Xcompression-level 19
             cp ${closure}/registration $out/registration
             cp ${pkgs.writeText "nix.conf" nixConfText} $out/nix.conf
           '';
