@@ -1,0 +1,39 @@
+name: build-example-rust
+
+on:
+  push:
+    branches:
+      - master
+    # source only: the seed workflow owns flake.lock and .seed.lock
+    paths:
+      - examples/rust/src/**
+      - examples/rust/Cargo.toml
+      - examples/rust/Cargo.lock
+      - examples/rust/flake.nix
+      - .github/workflows/build-example-rust.yaml
+  workflow_run:
+    workflows:
+      - seed-example-rust
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  build:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    strategy:
+      matrix:
+        os:
+          - ubuntu-22.04
+          - ubuntu-22.04-arm
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./
+        with:
+          path: examples/rust
+          github_token: ${{ secrets.GITHUB_TOKEN }}
