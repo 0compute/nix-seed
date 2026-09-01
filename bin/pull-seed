@@ -17,11 +17,13 @@ digest=$(jq \
   '.systems[$s] // error("no seed digest for \($s)")' \
   "$lock")
 
+# oras is needed for both the cache-miss fetch and the extract below
+"$GITHUB_ACTION_PATH"/bin/install-oras
+
 # cache miss: fetch from ghcr into a local oci layout (preserves the
 # exact manifest) for actions/cache to save. keyed by digest upstream,
 # so a hit restores this same layout and skips the network.
 if [[ ! -f $layout/index.json ]]; then
-  "$GITHUB_ACTION_PATH"/bin/install-oras
   [[ -z ${REGISTRY_USER:-} ]] || oras login "${repository%%/*}" \
     --username "$REGISTRY_USER" --password-stdin <<<"$REGISTRY_PASS"
   oras cp --to-oci-layout "$repository@$digest" "$layout:pull"
