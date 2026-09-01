@@ -19,8 +19,8 @@ sudo mount -t overlay overlay \
   /nix/store
 
 # nix comes from the mounted store; register the baked closure as valid
-nixdir=$(dirname "$(ls /nix/store/*/bin/nix | head -1)")
-sudo "$nixdir/nix-store" --load-db <"$out/registration"
+nixbin=$(dirname "$(ls /nix/store/*/bin/nix | head -1)")
+sudo "$nixbin/nix-store" --load-db <"$out/registration"
 
 # nix runs as root; /src (the checkout) is owned by the runner user, so
 # its libgit2 flake fetcher rejects it -> mark it a safe directory.
@@ -31,4 +31,4 @@ sudo env \
   HOME=/tmp \
   NIX_CONFIG="$(cat "$out/nix.conf")" \
   unshare --net \
-  "$nixdir/nix" build --offline --no-link --print-out-paths "$dir"
+  "$nixbin/nix" build --offline --no-link --print-out-paths "$dir"
