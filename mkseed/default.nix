@@ -23,7 +23,7 @@ let
       # curve: ~3x faster to build than 19 for ~1% more size. drop toward
       # 9 to trade image size for a much faster seed build; the consumer
       # restores from the in-datacenter cache where size barely matters.
-      compressionLevel ? 15,
+      compressionLevel ? 9,
       # flake inputs (by name, at any depth) whose source is NOT baked
       # into the seed: nix-seed's own dev/docs/CI tooling, never needed
       # to build a consumer's project. removeAttrs also stops the collect
@@ -116,23 +116,27 @@ let
       #     *evaluation* (nix reads each locked input from the store).
       #   - each output's inputDerivation -> its full build-input closure,
       #     so `nix build` runs offline without rebuilding stdenv/glibc.
-      rootPaths =
-        [ nix ]
-        ++ (
-          let
-            collect =
-              flake:
-              lib.concatMap (i: [ i ] ++ collect i) (
-                lib.attrValues (removeAttrs (flake.inputs or { }) excludeInputs)
-              );
-          in
-          map (i: i.outPath) (collect self)
-        )
-        ++ lib.filter (p: p != null) (
-          map (
-            drv: tryWarn "no build closure for a flake output (threw)" null (drv.inputDerivation or drv)
-          ) selfDrvs
-        );
+      rootPaths = [
+        nix
+      ]
+      ++ (
+        let
+          collect =
+            flake:
+            lib.concatMap (i: [ i ] ++ collect i) (
+              lib.attrValues (removeAttrs (flake.inputs or { }) excludeInputs)
+            );
+        in
+        map (i: i.outPath) (collect self)
+      )
+      ++ lib.filter (p: p != null) (
+        map (
+          drv:
+          tryWarn "no build closure for a flake output (threw)" null (
+            drv.inputDerivation or drv
+          )
+        ) selfDrvs
+      );
 
       closure = pkgs.closureInfo { rootPaths = rootPaths; };
 
