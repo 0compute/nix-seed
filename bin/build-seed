@@ -126,12 +126,16 @@ tags+=(
 "$GITHUB_ACTION_PATH"/../bin/install-oras
 oras login "$registry" --username "$REGISTRY_USER" --password-stdin \
   <<<"$REGISTRY_PASS"
-(
+# capture the digest of *this* push, not `oras resolve "$repository:$tag"`:
+# the per-arch builds run concurrently and share $tag (the git rev), so
+# re-resolving the tag races -- whoever pushes last owns it, and both arches
+# would record that one (wrong-arch) digest, poisoning the lock.
+digest=$(
   cd "$out"
   oras push "$repository:$tag" \
-    store.squashfs:application/vnd.nix-seed.squashfs
+    store.squashfs:application/vnd.nix-seed.squashfs \
+    --format go-template="{{.digest}}"
 )
-digest=$(oras resolve "$repository:$tag")
 # extra tags: retag the same manifest, no re-upload
 for t in "${tags[@]}"; do
   [[ $t == "$tag" ]] || oras tag "$repository@$digest" "$t"
