@@ -122,6 +122,7 @@ tags+=(
 
 # push the seed as an OCI artifact (not an image): plain blobs, no
 # engine, no layer extraction on the consumer.
+"$GITHUB_ACTION_PATH"/../bin/install-oras
 oras login "$registry" --username "$REGISTRY_USER" --password-stdin \
   <<<"$REGISTRY_PASS"
 (

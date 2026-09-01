@@ -24,15 +24,11 @@ runs:
         digest=$(jq -er --arg s "$system" '.systems[$s]' \
           "${{ inputs.path }}/.seed.lock")
         echo "key=${digest#sha256:}" >>"$GITHUB_OUTPUT"
-    - name: cache seed
+    - name: cache pull
       uses: actions/cache@v4
       with:
         path: ${{ runner.temp }}/seed-cache
         key: seed-${{ runner.os }}-${{ runner.arch }}-${{ steps.seed.outputs.key }}
-    - name: install oras
-      shell: bash
-      run: |
-        "$GITHUB_ACTION_PATH"/bin/install-oras
     - name: pull seed
       shell: bash
       env:
@@ -43,5 +39,5 @@ runs:
           "$RUNNER_TEMP/seed" "$RUNNER_TEMP/seed-cache"
     - name: build
       shell: bash
-      run: |
+      run: |-
         "$GITHUB_ACTION_PATH"/bin/build ${{ inputs.path }} "$RUNNER_TEMP/seed"

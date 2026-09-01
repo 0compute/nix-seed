@@ -21,6 +21,7 @@ digest=$(jq \
 # exact manifest) for actions/cache to save. keyed by digest upstream,
 # so a hit restores this same layout and skips the network.
 if [[ ! -f $layout/index.json ]]; then
+  "$GITHUB_ACTION_PATH"/bin/install-oras
   [[ -z ${REGISTRY_USER:-} ]] || oras login "${repository%%/*}" \
     --username "$REGISTRY_USER" --password-stdin <<<"$REGISTRY_PASS"
   oras cp --to-oci-layout "$repository@$digest" "$layout:pull"
