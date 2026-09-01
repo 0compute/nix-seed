@@ -1,6 +1,6 @@
 # comparison: plain `nix build` with nix-community/cache-nix-action
 # restoring/saving /nix/store via the GitHub Actions cache.
-name: build-cache-nix
+name: build-cache-nix-examples
 
 on:
   push:
