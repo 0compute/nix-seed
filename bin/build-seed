@@ -77,6 +77,11 @@ fi
 dir=${1:-.}
 [[ $dir =~ ^/ ]] || dir=./$dir
 
+# variant suffix: attr "seed" -> image .../seed + .seed.lock (unchanged);
+# attr "seed.drvs" -> .../seed-drvs + .seed-drvs.lock, so the sources and
+# drvs pipelines never fight over tags or locks.
+suffix=${seedAttr//./-}
+
 if [[ -z $imageName ]]; then
   command -v gh >/dev/null || {
     echo >&2 "<gh> github command line client required to resolve image name"
@@ -85,7 +90,7 @@ if [[ -z $imageName ]]; then
   repository=$(cd $dir && gh repo view --json nameWithOwner --jq .nameWithOwner)
   # path of $dir relative to the repo root ("" at the root)
   rel=$(git -C $dir rev-parse --show-prefix)
-  imageName=$repository${rel:+/${rel%/}}/seed
+  imageName=$repository${rel:+/${rel%/}}/$suffix
 fi
 # ghcr requires lowercase repository names
 imageName=${imageName,,}
@@ -103,7 +108,7 @@ repository=$registry/$imageName
 # }}}
 
 seed=$dir#$seedAttr
-lock=$dir/.seed.lock
+lock=$dir/.$suffix.lock
 
 name=$(nix eval --raw $seed.name)
 tag=$(nix eval --raw $seed.tag)
@@ -191,7 +196,7 @@ for _ in 1 2 3 4 5; do
     committed=1 # nothing new to record
     break
   fi
-  "${git[@]}" commit --message "chore(seed): lock $system"
+  "${git[@]}" commit --message "chore($suffix): lock $system"
   if "${git[@]}" push origin HEAD:$branch; then
     committed=1
     break

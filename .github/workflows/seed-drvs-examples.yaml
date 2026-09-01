@@ -1,16 +1,16 @@
-name: seed-examples
+name: seed-drvs-examples
 
 on:
   push:
     branches:
       - master
     paths:
-      # any build-affecting change under an example (flake.nix, sources,
-      # flake.lock) must re-seed; exclude .seed.lock so the seeder's own
-      # `chore(seed): lock` commits don't retrigger this workflow.
+      # any build-affecting change under an example must re-seed; exclude
+      # both variants' lock files so the seeders' own `chore(...): lock`
+      # commits don't retrigger this workflow.
       - examples/**
       - '!examples/**/.seed*.lock'
-      - .github/workflows/seed-examples.yaml
+      - .github/workflows/seed-drvs-examples.yaml
   workflow_dispatch:
 
 jobs:
@@ -41,5 +41,9 @@ jobs:
       - uses: ./seed
         with:
           path: examples/${{ matrix.example }}
+          # the zero-eval variant (doc/drv-seeds.md): recipes baked, no
+          # flake-input sources; pushed as .../seed-drvs, locked in
+          # .seed-drvs.lock
+          seed_attr: seed.drvs
           github_token: ${{ secrets.GITHUB_TOKEN }}
           cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}

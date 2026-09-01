@@ -26,13 +26,10 @@
             default = pkgs.writeScriptBin "hello" ''
               ${pkgs.hello}/bin/hello -g "hello nix-seed"
             '';
-            seed =
-              # .drvs: the consumer realises the baked recipes, zero
-              # evaluation; no flake-input sources in the blob.
-              (inputs.nix-seed.lib.mkSeed {
-                inherit pkgs;
-                inherit (inputs) self;
-              }).drvs;
+            seed = inputs.nix-seed.lib.mkSeed {
+              inherit pkgs;
+              inherit (inputs) self;
+            };
           }
         );
 
