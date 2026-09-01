@@ -1,7 +1,9 @@
 # drv-baked seeds: zero-eval consume, runtime src graft
 
-Status: design + spike findings. `mkSeed` has the `bake` parameter;
-`bake = [ "drvs" ]` throws until the recipe collection below is built.
+Status: implemented through rollout step 2. One `mkSeed` call yields
+the sources-mode seed with `.sources`/`.drvs` variant attributes
+(cross-linked passthru); consumers pick by attribute, e.g.
+`(mkSeed { ... }).drvs`.
 
 ## Problem (measured)
 
@@ -30,14 +32,14 @@ No derivation references the nixpkgs source tree.
 Corollary: the project's own `src` is an inputSrc of its drv, so the
 pinned build needs no checkout, no libgit2 safe.directory, no GC_DONT_GC.
 
-## bake modes
+## variants (seed attributes)
 
-- `"sources"` (default, implemented): flake input sources baked;
+- `.sources` (the default result): flake input sources baked;
   consumer runs `nix build ./dir` -- proves offline *evaluation*.
-- `"drvs"` (planned): the target's recipe set baked + a
-  `.seed/drvs.json` manifest; consumer runs `nix-store --realise` --
-  zero eval, no flake-input sources in the blob.
-- both: fast path + an integrity cross-check
+- `.drvs`: the target's recipe set baked + a `.seed/drvs.json`
+  manifest; consumer runs `nix-store --realise` -- zero eval, no
+  flake-input sources in the blob.
+- a future combined variant: fast path + an integrity cross-check
   (`nix path-info --derivation ./dir == .seed/drvs.json.default.drv`),
   turning "the seed matches the repo" from assumption into assertion.
 

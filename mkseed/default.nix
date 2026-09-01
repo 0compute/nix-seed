@@ -26,13 +26,6 @@ let
       # not the whole closure -- buildEnv collides on duplicate paths and
       # the closure (already at /nix/store) is full of build-only deps.
       pathPackages ? [ nix ],
-      # what the seed carries for the consumer (see doc/drv-seeds.md):
-      #   "sources" -- every flake input source; the consumer runs
-      #     `nix build ./dir`, proving the flake *evaluates* offline.
-      #   "drvs" -- the instantiated .drv recipes; the consumer realises
-      #     them with zero evaluation, so no flake-input sources (nixpkgs
-      #     et al.) are baked at all.
-      bake ? [ "sources" ],
       # eval-frozen metadata: files the drv graph was derived from. a
       # consumer src graft is refused when these differ (see
       # doc/drv-seeds.md) because the baked dep drvs would be stale.
@@ -152,10 +145,12 @@ let
       #     flake *evaluation* (nix reads each locked input from the store).
       #   - each output's inputDerivation -> its full build-input closure,
       #     so the build runs offline without rebuilding stdenv/glibc.
-      rootPaths = [
-        nix
-        pathEnv
-      ]
+      rootPathsFor =
+        bake:
+        [
+          nix
+          pathEnv
+        ]
       ++ lib.optionals (lib.elem "sources" bake) (
         let
           collect =
@@ -175,14 +170,13 @@ let
         ) selfDrvs
       );
 
-      closure = pkgs.closureInfo { rootPaths = rootPaths; };
+      closureFor = bake: pkgs.closureInfo { rootPaths = rootPathsFor bake; };
 
       # ---- "drvs" mode: recipe collection (doc/drv-seeds.md) ----
       # collected at EVAL time by reading the .drv files this very eval
       # instantiated -- closureInfo/exportReferencesGraph over a drv
       # demands the full build-time OUTPUT closure (spike finding), so the
       # recipe set is walked here instead and rooted as plain path inputs.
-      drvsMode = lib.elem "drvs" bake;
 
       # store-path lexer over drv ATerm text
       pathRe = "(${builtins.storeDir}/[a-z0-9]{32}-[0-9a-zA-Z+._?=-]+)";
@@ -240,7 +234,8 @@ let
       # metadata: the target's src and the eval-frozen metadata files a
       # graft must refuse to paper over. path STRINGS only -- the files
       # ride via recipeRoots.
-      drvManifest =
+      drvManifestFor =
+        bake:
         let
           target = self.packages.${system}.default or null;
         in
@@ -278,7 +273,19 @@ let
       # build config). the consumer reads them from the read-only mount.
       # mounting is O(1); reads decompress lazily, so there is no per-file
       # extraction. see DESIGN.md#delivery.
-      seedFs =
+      # one seed, two consumer contracts (doc/drv-seeds.md), selected by
+      # attribute rather than argument:
+      #   .sources (the default) -- every flake input source baked; the
+      #     consumer runs `nix build ./dir`, proving offline *evaluation*.
+      #   .drvs -- the instantiated recipes baked instead; the consumer
+      #     realises them with zero evaluation and no nixpkgs in the blob.
+      mkVariant =
+        bake:
+        let
+          drvsMode = lib.elem "drvs" bake;
+          closure = closureFor bake;
+          drvManifest = drvManifestFor bake;
+        in
         pkgs.runCommand "${name}"
           (
             {
@@ -288,6 +295,10 @@ let
                 # marker so a seed harvesting self.packages skips a nested
                 # seed (its inputDerivation would recurse into this closure).
                 isNixSeed = true;
+                # the mode variants, cross-linked so either is reachable
+                # from whichever the consumer flake exposes.
+                sources = sourcesSeed;
+                drvs = drvsSeed;
               };
             }
             // lib.optionalAttrs drvsMode {
@@ -355,6 +366,9 @@ let
                   -p ".seed/drvs.json f 444 0 0 cat ${drvManifest}"''
               }
           '';
+
+      sourcesSeed = mkVariant [ "sources" ];
+      drvsSeed = mkVariant [ "drvs" ];
     in
     # nix-seed is Linux only. the consumer mounts the squashfs as
     # /nix/store and overlays a writable upper for build output; macOS has
@@ -363,6 +377,6 @@ let
     lib.throwIf (!stdenv.hostPlatform.isLinux) ''
       mkSeed: unsupported system "${system}". nix-seed is Linux only;
       see DESIGN.md#constraints and DESIGN.md#macos.
-    '' seedFs;
+    '' sourcesSeed;
 in
 mkSeed
