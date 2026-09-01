@@ -142,8 +142,17 @@ cadence: consumers re-seed on lockfile changes, graft every push.
 
 1. [x] `bake ? [ "sources" ]` scaffold; sources mode verified
    structurally identical (drv diff modulo hash churn).
-2. [ ] recipe collection via eval-time graph walk; flip hello/innocent;
-   verify blob contents + CI realise path end to end.
-3. [ ] src graft behind the metadata guard + identity acceptance test.
+2. [x] recipe collection via eval-time graph walk (requires `--impure`
+   evaluation: the walk readFiles the instantiated drvs, which are
+   content-addressed, so determinism holds). hello/innocent flipped.
+   Measured: blob 118 MB -> 68.5 MB (-42%); 610 recipe files; zero
+   flake-input sources; registration format-verified against
+   closureInfo's records (uniform sha256:base32, parses exactly).
+   Remaining: CI realise path end to end (first push exercises it).
+3. [ ] src graft: guards already baked in the manifest and bin/build
+   refuses src-bearing targets; next is bin/regraft (derivation show -r
+   -> literal src substitution -> appendContext/builtins.derivation
+   re-derivation) + the identity acceptance test (graft of the seeded
+   src must reproduce the baked drvPath bit-for-bit).
 4. [ ] flip remaining examples; optional `both`-mode integrity check in
    build-examples.

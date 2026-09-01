@@ -110,8 +110,10 @@ tag=$(nix eval --raw $seed.tag)
 system=$(nix eval --impure --raw --expr builtins.currentSystem)
 
 # build the squashfs seed (store.squashfs; registration + nix.conf are
-# baked inside it under .seed/)
-out=$(nix build --print-build-logs --no-link --print-out-paths $seed)
+# baked inside it under .seed/). --impure: drvs-mode seeds read back the
+# .drv files the eval instantiated (content-addressed, so still
+# deterministic); pure eval forbids those absolute reads.
+out=$(nix build --impure --print-build-logs --no-link --print-out-paths $seed)
 echo "Built seed $name:$tag"
 
 # {{{ push

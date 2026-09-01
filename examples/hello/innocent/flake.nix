@@ -29,6 +29,9 @@
             seed = inputs.nix-seed.lib.mkSeed {
               inherit pkgs;
               inherit (inputs) self;
+              # drv-baked: the consumer realises the recipes, zero
+              # evaluation; no flake-input sources in the blob.
+              bake = [ "drvs" ];
             };
           }
         );
