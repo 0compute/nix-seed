@@ -19,6 +19,11 @@ let
       tag ? self.rev or self.dirtyRev or null,
       nix ? pkgs.nixVersions.latest,
       nixConf ? "",
+      # squashfs zstd level. 15 is squashfs's default and the knee of the
+      # curve: ~3x faster to build than 19 for ~1% more size. drop toward
+      # 9 to trade image size for a much faster seed build; the consumer
+      # restores from the in-datacenter cache where size barely matters.
+      compressionLevel ? 15,
       # flake inputs (by name, at any depth) whose source is NOT baked
       # into the seed: nix-seed's own dev/docs/CI tooling, never needed
       # to build a consumer's project. removeAttrs also stops the collect
@@ -155,7 +160,7 @@ let
             # reproducible image; passing -*-time here would conflict.
             mksquashfs $(cat ${closure}/store-paths) $out/store.squashfs \
               -keep-as-directory -all-root -no-hardlinks \
-              -comp zstd -Xcompression-level 19
+              -comp zstd -Xcompression-level ${toString compressionLevel}
             cp ${closure}/registration $out/registration
             cp ${pkgs.writeText "nix.conf" nixConfText} $out/nix.conf
           '';
