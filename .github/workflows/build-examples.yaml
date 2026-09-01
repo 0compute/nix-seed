@@ -17,6 +17,7 @@ on:
 
 jobs:
   setup:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     outputs:
       examples: ${{ steps.list.outputs.examples }}
@@ -27,7 +28,6 @@ jobs:
 
   build:
     needs: setup
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     permissions:
       contents: read
       id-token: write
