@@ -1,8 +1,7 @@
 {
   "repository": "ghcr.io/roundtablelove/nix-seed/examples/cpp-boost/seed-drvs",
   "systems": {
-    "aarch64-linux": "sha256:a20a74bc893b5774d5d212a041088d5cd400c8589191eb4b25977d2bf664bf83",
-    "x86_64-linux": "sha256:104aff91a0a6099e8ff2a7f8591e9841a5b46eaa2e9803c1aff1352885c1f217"
+    "aarch64-linux": "sha256:3fb20ab37bf9e8f747f2b2878bfd010fa67ba61d8de8b2768fbe45b558c3a476"
   },
-  "tag": "b424f732ad4f726f7f530828a8364574b91a474e"
+  "tag": "ad5e4f5498f6ef66bade9e2757e1790659f4a993"
 }
