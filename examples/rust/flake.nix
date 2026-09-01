@@ -2,6 +2,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    crane.url = "github:ipetkov/crane";
     nix-seed = {
       url = ./../..;
       inputs.nixpkgs.follows = "nixpkgs";
@@ -13,29 +14,31 @@
       # systems from nixpkgs.lib, not nix-seed: referencing
       # `inputs.nix-seed.inputs` forces nix-seed's whole flake evaluation
       # (mkFlake + every flakeModule), which the seed no longer bakes.
-      inputs.nixpkgs.lib.genAttrs inputs.nixpkgs.lib.systems.flakeExposed
-        (
-          system:
-          let
-            pkgs = inputs.nixpkgs.legacyPackages.${system};
-          in
-          {
+      inputs.nixpkgs.lib.genAttrs inputs.nixpkgs.lib.systems.flakeExposed (
+        system:
+        let
+          pkgs = inputs.nixpkgs.legacyPackages.${system};
+          craneLib = inputs.crane.mkLib pkgs;
 
-            default = pkgs.rustPlatform.buildRustPackage {
-              pname = "rust-app";
-              version = "0.1.0";
-              src = ./.;
-              # in a real project, this would be a hash or a generated file
-              cargoLock.lockFile = ./Cargo.lock;
-            };
+          commonArgs = {
+            src = craneLib.cleanCargoSource ./.;
+            strictDeps = true;
+          };
 
-            seed = inputs.nix-seed.lib.mkSeed {
-              inherit pkgs;
-              inherit (inputs) self;
-            };
+          # dependencies compiled on their own. baked into the seed via
+          # the package's inputDerivation, so the consumer's offline build
+          # recompiles only the crate itself, not serde et al.
+          cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+        in
+        {
+          default = craneLib.buildPackage (commonArgs // { inherit cargoArtifacts; });
 
-          }
-        );
+          seed = inputs.nix-seed.lib.mkSeed {
+            inherit pkgs;
+            inherit (inputs) self;
+          };
+        }
+      );
   };
 
 }
