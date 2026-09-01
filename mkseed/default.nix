@@ -244,6 +244,10 @@ let
                 // lib.optionalAttrs (target ? src) {
                   src = builtins.unsafeDiscardStringContext (toString target.src);
                   srcName = target.src.name or "source";
+                  # graftable only when src derives from the flake tree
+                  # (subpath of self); external srcs (e.g. an upstream
+                  # repo input) must never be replaced by the checkout.
+                  srcLocal = lib.hasPrefix (toString self) (toString target.src);
                 };
           }
         );

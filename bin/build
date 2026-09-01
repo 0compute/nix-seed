@@ -25,10 +25,12 @@ if drv=$(jq -er .default.drv "$manifest" 2>/dev/null); then
     # (nar hash): the seeded src may be a subpath of a larger source
     # tree, so store paths cannot be compared.
     name=$(jq -er .default.srcName "$manifest")
-    prefix=$(git -C "$dir" rev-parse --show-prefix)
     tmp=$(mktemp -d)
-    git -C "$dir" archive "HEAD${prefix:+:$prefix}" | tar -x -C "$tmp"
-    if [[ $("$(command -v nix)" hash path "$tmp") != $("$(command -v nix)" hash path "$src") ]]; then
+    # run from within the flake dir, git archive HEAD archives that
+    # subtree (root-relative HEAD:path forms yield an EMPTY tar, rc 0)
+    git -C "$dir" archive HEAD | tar -x -C "$tmp"
+    if [[ $(jq -r '.default.srcLocal // false' "$manifest") == true ]] &&
+      [[ $("$(command -v nix)" hash path "$tmp") != $("$(command -v nix)" hash path "$src") ]]; then
       # store-writing steps run as root: the mounted store's db was
       # loaded under sudo. explicit PATH assignment survives secure_path.
       new=$(sudo env "PATH=$PATH" "$(command -v nix)" store add-path --name "$name" "$tmp")
