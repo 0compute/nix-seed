@@ -18,18 +18,20 @@
           system:
           let
             pkgs = inputs.nixpkgs.legacyPackages.${system};
-          in
-          rec {
-
             # deliberately non-upstream: a patched dependency can never be
             # substituted from cache.nixos.org, so the caching workflows
-            # have a real local build to amortise
+            # have a real local build to amortise. let-bound, not exported:
+            # a package attr would make mkSeed bake its *build* closure
+            # (cmake, zstd src) into the seed, which the consumer -- who
+            # only links the prebuilt outputs -- never needs.
             expensive = pkgs.zstd.overrideAttrs (previous: {
               pname = "${previous.pname}-nonsubstitutable";
               postPatch = (previous.postPatch or "") + ''
                 echo '/* nix-seed benchmark */' >>lib/zstd.h
               '';
             });
+          in
+          {
 
             default = pkgs.stdenv.mkDerivation {
               pname = "cpp-boost-example";
