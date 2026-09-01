@@ -35,13 +35,27 @@
               }
             );
           in
-          {
+          rec {
 
-            default = python.pkgs.buildPythonPackage (
-              pkgs.lib.recursiveUpdate (project.renderers.buildPythonPackage {
-                inherit python;
-              }) { meta.mainProgram = "hello"; }
-            );
+            # deliberately non-upstream: a patched dependency can never be
+            # substituted from cache.nixos.org, so the caching workflows
+            # have a real local build to amortise
+            expensive = pkgs.zstd.overrideAttrs (previous: {
+              pname = "${previous.pname}-nonsubstitutable";
+              postPatch = (previous.postPatch or "") + ''
+                echo '/* nix-seed benchmark */' >>lib/zstd.h
+              '';
+            });
+
+            default =
+              (python.pkgs.buildPythonPackage (
+                pkgs.lib.recursiveUpdate (project.renderers.buildPythonPackage {
+                  inherit python;
+                }) { meta.mainProgram = "hello"; }
+              )).overrideAttrs
+                (previous: {
+                  buildInputs = (previous.buildInputs or [ ]) ++ [ expensive ];
+                });
 
             seed = inputs.nix-seed.lib.mkSeed {
               inherit pkgs;
