@@ -18,7 +18,8 @@ manifest=/nix/.ro-store/.seed/drvs.json
 # (no safe.directory) and no boehm GC to disable.
 if drv=$(jq -er .default.drv "$manifest" 2>/dev/null); then
 
-  if src=$(jq -er .default.src "$manifest" 2>/dev/null); then
+  if src=$(jq -er .default.src "$manifest" 2>/dev/null) &&
+    [[ $(jq -r '.default.srcLocal // false' "$manifest") == true ]]; then
     # hash the checkout (tracked files, approximating the flake source
     # filter) and graft it onto the baked recipe when it drifted; the
     # identity case realises the baked drv untouched. identity is CONTENT
@@ -29,8 +30,15 @@ if drv=$(jq -er .default.drv "$manifest" 2>/dev/null); then
     # run from within the flake dir, git archive HEAD archives that
     # subtree (root-relative HEAD:path forms yield an EMPTY tar, rc 0)
     git -C "$dir" archive HEAD | tar -x -C "$tmp"
-    if [[ $(jq -r '.default.srcLocal // false' "$manifest") == true ]] &&
-      [[ $("$(command -v nix)" hash path "$tmp") != $("$(command -v nix)" hash path "$src") ]]; then
+    # prefer the seed-recorded lock-filtered hash: no squashfs read, and
+    # the seeder's own .seed*.lock commits do not count as drift. old
+    # seeds lack it -> hash the seeded src unfiltered as before.
+    if want=$(jq -er .default.srcNarHash "$manifest" 2>/dev/null); then
+      rm -f "$tmp"/.seed.lock "$tmp"/.seed-drvs.lock
+    else
+      want=$("$(command -v nix)" hash path "$src")
+    fi
+    if [[ $("$(command -v nix)" hash path "$tmp") != "$want" ]]; then
       # store-writing steps run as root: the mounted store's db was
       # loaded under sudo. explicit PATH assignment survives secure_path.
       new=$(sudo env "PATH=$PATH" "$(command -v nix)" store add-path --name "$name" "$tmp")

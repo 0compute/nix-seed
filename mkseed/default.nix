@@ -190,6 +190,15 @@ let
           )
         );
 
+      # env.src as the drv text records it -- the truth the consumer's
+      # regraft substitutes against ("" when absent)
+      envSrcOf =
+        text:
+        let
+          m = builtins.match ".*\\(\"src\",\"([^\"]*)\"\\).*" text;
+        in
+        if m == null then "" else lib.head m;
+
       # transitive drv-file closure of the harvested outputs
       recipeDrvs = map (n: n.key) (
         builtins.genericClosure {
@@ -242,12 +251,17 @@ let
                   drv = builtins.unsafeDiscardStringContext target.drvPath;
                 }
                 // lib.optionalAttrs (target ? src) {
-                  src = builtins.unsafeDiscardStringContext (toString target.src);
+                  # env.src exactly as the drv text records it, so the
+                  # consumer's regraft substitution matches.
+                  src = envSrcOf (
+                    builtins.readFile (builtins.unsafeDiscardStringContext target.drvPath)
+                  );
                   srcName = target.src.name or "source";
-                  # graftable only when src derives from the flake tree
-                  # (subpath of self); external srcs (e.g. an upstream
-                  # repo input) must never be replaced by the checkout.
-                  srcLocal = lib.hasPrefix (toString self) (toString target.src);
+                  # graftable only when the flake passed a literal path
+                  # (in-tree source); external srcs (an upstream repo
+                  # input, a cleaned copy) are never replaced by the
+                  # checkout.
+                  srcLocal = builtins.isPath target.src;
                 };
           }
         );
@@ -299,6 +313,22 @@ let
               # appendContext path contexts make them plain inputs.
               recipePaths = lib.concatStringsSep " " recipeRoots;
               recipeGraph = builtins.toJSON recipeGraph;
+              # flake-local src of the default target (empty otherwise):
+              # the builder records its lock-filtered narHash in the
+              # manifest so the consumer's drift check needs neither the
+              # squashfs read nor a graft over .seed*.lock churn.
+              graftSrc =
+                let
+                  target = self.packages.${system}.default or null;
+                in
+                if target != null && builtins.isPath (target.src or null) then
+                  # the drv text is the truth for what env.src resolved
+                  # to (a path literal may be baked as a subpath of the
+                  # flake tree OR as its own copied-out store path); the
+                  # referenced tree is a recipe input either way.
+                  envSrcOf (builtins.readFile (builtins.unsafeDiscardStringContext target.drvPath))
+                else
+                  "";
               passAsFile = [
                 "recipePaths"
                 "recipeGraph"
@@ -331,6 +361,18 @@ let
                 while read -r s; do reg "$s"; done \
                   < <(jq -r '.[].inputSrcs[]' "$recipeGraphPath" | sort -u)
               } >recipe-registration
+              # manifest, extended with the lock-filtered narHash of a
+              # flake-local src: the consumer compares its (equally
+              # filtered) checkout against this, so identity holds across
+              # the seeder's own .seed*.lock commits.
+              if [[ -n "$graftSrc" ]]; then
+                cp -r --no-preserve=mode,ownership "$graftSrc" src-filtered
+                rm -f src-filtered/.seed.lock src-filtered/.seed-drvs.lock
+                jq --arg h "$(nix hash path src-filtered)" \
+                  '.default.srcNarHash = $h' ${drvManifest} >drvs.json
+              else
+                cp ${drvManifest} drvs.json
+              fi
             ''}
             # timestamps come from SOURCE_DATE_EPOCH (set by nix) for a
             # reproducible image; passing -*-time here would conflict.
@@ -351,7 +393,7 @@ let
               }" \
               -p ".seed/env s 777 0 0 ${pathEnv}"${
                 lib.optionalString drvsMode '' \
-                  -p ".seed/drvs.json f 444 0 0 cat ${drvManifest}"''
+                  -p ".seed/drvs.json f 444 0 0 cat $PWD/drvs.json"''
               }
           '';
 
