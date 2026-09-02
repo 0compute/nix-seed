@@ -28,19 +28,10 @@ Args:
 EOF
 }
 
-PARSED=$(
-  getopt \
-    --options '' \
-    --long seed-attr:,registry:,image-name:,tag: \
-    -- "$@"
-) || {
-  usage
-  exit 1
-}
-eval set -- "$PARSED"
-
+# hand-rolled rather than getopt(1): only GNU getopt supports --long, and
+# macOS ships the BSD one. this also drops a util-linux dependency.
 tags=()
-while true; do
+while [[ $# -gt 0 ]]; do
   case "$1" in
   --seed-attr)
     seedAttr=$2
@@ -62,9 +53,12 @@ while true; do
     shift
     break
     ;;
-  *)
+  -*)
     usage
     exit 1
+    ;;
+  *)
+    break
     ;;
   esac
 done
@@ -92,8 +86,9 @@ if [[ -z $imageName ]]; then
   rel=$(git -C $dir rev-parse --show-prefix)
   imageName=$repository${rel:+/${rel%/}}/$suffix
 fi
-# ghcr requires lowercase repository names
-imageName=${imageName,,}
+# ghcr requires lowercase repository names. tr, not ${x,,}: macOS runners
+# resolve `shell: bash` to /bin/bash 3.2, which has no case expansion.
+imageName=$(printf '%s' "$imageName" | tr '[:upper:]' '[:lower:]')
 repository=$registry/$imageName
 
 # }}}

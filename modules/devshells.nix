@@ -2,14 +2,17 @@
 
   imports = [ inputs.devshell.flakeModule ];
 
-  perSystem = { pkgs, ... }: {
+  perSystem = { lib, pkgs, ... }: {
 
     devshells.default = {
       packages = with pkgs; [
         cosign
         oras
-        squashfsTools
-      ];
+      ]
+      # squashfs is the linux delivery format; darwin ships a disk image
+      # built with hdiutil, a system binary rather than a nixpkgs one.
+      # see DESIGN.md#delivery.
+      ++ lib.optionals stdenv.hostPlatform.isLinux [ squashfsTools ];
     };
 
   };
