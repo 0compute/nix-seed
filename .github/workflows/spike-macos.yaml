@@ -49,22 +49,35 @@ jobs:
           set -eux
           ex='${{ inputs.example }}'
           # what mkSeed roots: the target's build inputs, nix itself, and
-          # every flake input source (needed to evaluate offline).
+          # the flake input sources needed to evaluate offline.
           inputdrv=$(nix build "./examples/$ex#default.inputDerivation" \
             --no-link --print-out-paths)
-          nixpkg=$(nix build 'nixpkgs#nixVersions.latest' \
+          # ^out: nixVersions.latest has several outputs and prints them
+          # all, man first. we want the one with bin/nix.
+          nixpkg=$(nix build 'nixpkgs#nixVersions.latest^out' \
             --no-link --print-out-paths)
+          test -x "$nixpkg/bin/nix"
+
+          # the flake itself and its DIRECT inputs only. recursing (`..`)
+          # would drag in nix-seed's own dev toolchain -- emanote,
+          # poetry2nix, nix-unit -- which mkSeed excludes via
+          # excludeInputs and which would make the size comparison below
+          # meaningless. building `default` never forces those.
           nix flake archive --json "./examples/$ex" \
-            | jq -r '.. | .path? // empty' | sort -u >flake-srcs.txt
+            | jq -r '.path, (.inputs | to_entries[] | .value.path)' \
+            | sort -u >flake-srcs.txt
+          cat flake-srcs.txt
 
           { nix-store -qR "$inputdrv" "$nixpkg"
             xargs -n1 nix-store -qR <flake-srcs.txt
           } | sort -u >store-paths.txt
           wc -l store-paths.txt
+          test -s store-paths.txt
 
           # registration in the exact format `nix-store --load-db` wants
           xargs nix-store --dump-db <store-paths.txt >registration
           wc -c registration
+          test -s registration
 
           echo "nixpkg=$nixpkg" >>"$GITHUB_OUTPUT"
           xargs du -sh <store-paths.txt | tail -1 || true
