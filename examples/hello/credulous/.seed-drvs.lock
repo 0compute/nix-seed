@@ -1,7 +1,8 @@
 {
   "repository": "ghcr.io/roundtablelove/nix-seed/examples/hello/credulous/seed-drvs",
   "systems": {
-    "aarch64-linux": "sha256:fe97c3c4e0430679f7d2fc4a13d24f47c6b6b368b76abd277812f2687b2dc8f9"
+    "aarch64-linux": "sha256:fe97c3c4e0430679f7d2fc4a13d24f47c6b6b368b76abd277812f2687b2dc8f9",
+    "x86_64-linux": "sha256:c3eb233152d5fc50bdf5aa1ad94e5e0a881df3c0e37c25a73b3cd900d5ff76d0"
   },
   "tag": "e5919ea6c22f02cdbf6727fbc2fafb5c1362bbc3"
 }
