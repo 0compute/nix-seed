@@ -11,6 +11,12 @@ inputs:
     description: Flake package attribute of the seed to consume
     default: seed
 
+  attr:
+    description: >-
+      Flake package attribute to build from the seed. The seed bakes every
+      harvested output, so any packages.<system>.<name> can be named here.
+    default: default
+
   github_token:
     description: GitHub Token
 
@@ -56,4 +62,4 @@ runs:
     - name: build
       shell: bash
       run: |-
-        "$GITHUB_ACTION_PATH"/bin/build ${{ inputs.path }}
+        "$GITHUB_ACTION_PATH"/bin/build ${{ inputs.path }} "${{ inputs.attr }}"

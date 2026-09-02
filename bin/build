@@ -9,6 +9,9 @@ set -eux -o pipefail
 
 dir=${1:-.}
 [[ $dir =~ ^/ ]] || dir=./$dir
+# flake package attribute to build. the seed bakes every harvested
+# output, not just `default`, so any of them can be named here.
+attr=${2:-default}
 
 manifest=/nix/.ro-store/.seed/drvs.json
 
@@ -16,16 +19,27 @@ manifest=/nix/.ro-store/.seed/drvs.json
 # registered, so realise it directly -- zero evaluation, which is why such
 # seeds carry no flake-input sources. no evaluator also means no libgit2
 # (no safe.directory) and no boehm GC to disable.
-if drv=$(jq -er .default.drv "$manifest" 2>/dev/null); then
+if [[ -f $manifest ]]; then
 
-  if src=$(jq -er .default.src "$manifest" 2>/dev/null) &&
-    [[ $(jq -r '.default.srcLocal // false' "$manifest") == true ]]; then
+  # `outputs` is the addressable map; seeds built before it existed carry
+  # only the top-level `default`, so fall back to that for that one name.
+  if ! node=$(jq -ce --arg a "$attr" \
+    '.outputs[$a] // (if $a == "default" then .default else null end)' \
+    "$manifest" 2>/dev/null); then
+    echo "seed: no baked recipe for '$attr'; the seed has:" >&2
+    jq -r '(.outputs // { default: .default }) | keys | join(" ")' "$manifest" >&2
+    exit 1
+  fi
+  drv=$(jq -er .drv <<<"$node")
+
+  if src=$(jq -er .src <<<"$node" 2>/dev/null) &&
+    [[ $(jq -r '.srcLocal // false' <<<"$node") == true ]]; then
     # hash the checkout (tracked files, approximating the flake source
     # filter) and graft it onto the baked recipe when it drifted; the
     # identity case realises the baked drv untouched. identity is CONTENT
     # (nar hash): the seeded src may be a subpath of a larger source
     # tree, so store paths cannot be compared.
-    name=$(jq -er .default.srcName "$manifest")
+    name=$(jq -er .srcName <<<"$node")
     tmp=$(mktemp -d)
     # run from within the flake dir, git archive HEAD archives that
     # subtree (root-relative HEAD:path forms yield an EMPTY tar, rc 0)
@@ -33,7 +47,7 @@ if drv=$(jq -er .default.drv "$manifest" 2>/dev/null); then
     # prefer the seed-recorded lock-filtered hash: no squashfs read, and
     # the seeder's own .seed*.lock commits do not count as drift. old
     # seeds lack it -> hash the seeded src unfiltered as before.
-    if want=$(jq -er .default.srcNarHash "$manifest" 2>/dev/null); then
+    if want=$(jq -er .srcNarHash <<<"$node" 2>/dev/null); then
       rm -f "$tmp"/.seed.lock "$tmp"/.seed-drvs.lock
     else
       want=$("$(command -v nix)" hash path "$src")
@@ -50,7 +64,9 @@ if drv=$(jq -er .default.drv "$manifest" 2>/dev/null); then
 
 else
 
-  # sources mode: offline flake evaluation + build.
+  # sources mode: offline flake evaluation + build. `#$attr` resolves
+  # through packages.<system>, so `default` behaves exactly as a bare
+  # `nix build ./dir` did; every other harvested output is baked too.
   # nix runs as root; /src (the checkout) is owned by the runner user, so
   # its libgit2 flake fetcher rejects it -> mark it a safe directory.
   printf '[safe]\n\tdirectory = *\n' | sudo tee -a /etc/gitconfig >/dev/null
@@ -63,6 +79,6 @@ else
     HOME=/tmp \
     GC_DONT_GC=1 \
     unshare --net \
-    "$(command -v nix)" build --offline --no-link --print-out-paths "$dir"
+    "$(command -v nix)" build --offline --no-link --print-out-paths "$dir#$attr"
 
 fi

@@ -231,38 +231,48 @@ let
         ) recipeGraph
       );
 
-      # entry point for the consumer's zero-eval realise path, plus graft
-      # metadata: the target's src and the eval-frozen metadata files a
-      # graft must refuse to paper over. path STRINGS only -- the files
-      # ride via recipeRoots.
+      # every harvested package, by attribute name. the recipe closure
+      # already bakes all of them (recipeDrvs starts from selfDrvs, not
+      # from `default`), so the manifest is the only thing standing
+      # between the consumer and a non-default output. same filters as
+      # the harvest, so a seed never advertises what it did not bake.
+      targetPackages = lib.filterAttrs (
+        name: drv: selfFilterName name && keepDrv drv
+      ) (self.packages.${system} or { });
+
+      # per-output recipe pointer plus graft metadata: the target's src
+      # and the eval-frozen metadata files a graft must refuse to paper
+      # over. path STRINGS only -- the files ride via recipeRoots.
+      metaFor =
+        target:
+        {
+          drv = builtins.unsafeDiscardStringContext target.drvPath;
+        }
+        // lib.optionalAttrs (target ? src) {
+          # env.src exactly as the drv text records it, so the
+          # consumer's regraft substitution matches.
+          src = envSrcOf (
+            builtins.readFile (builtins.unsafeDiscardStringContext target.drvPath)
+          );
+          srcName = target.src.name or "source";
+          # graftable only when the flake passed a literal path
+          # (in-tree source); external srcs (an upstream repo
+          # input, a cleaned copy) are never replaced by the
+          # checkout.
+          srcLocal = builtins.isPath target.src;
+        };
+
+      # entry point for the consumer's zero-eval realise path. `default`
+      # stays at the top level: seeds built before `outputs` existed
+      # carry only that, and bin/build reads it as the fallback.
       drvManifestFor =
         bake:
-        let
-          target = self.packages.${system}.default or null;
-        in
         pkgs.writeText "drvs.json" (
           builtins.toJSON {
             inherit bake;
             default =
-              if target == null then
-                null
-              else
-                {
-                  drv = builtins.unsafeDiscardStringContext target.drvPath;
-                }
-                // lib.optionalAttrs (target ? src) {
-                  # env.src exactly as the drv text records it, so the
-                  # consumer's regraft substitution matches.
-                  src = envSrcOf (
-                    builtins.readFile (builtins.unsafeDiscardStringContext target.drvPath)
-                  );
-                  srcName = target.src.name or "source";
-                  # graftable only when the flake passed a literal path
-                  # (in-tree source); external srcs (an upstream repo
-                  # input, a cleaned copy) are never replaced by the
-                  # checkout.
-                  srcLocal = builtins.isPath target.src;
-                };
+              if targetPackages ? default then metaFor targetPackages.default else null;
+            outputs = lib.mapAttrs (_name: metaFor) targetPackages;
           }
         );
 
@@ -313,22 +323,6 @@ let
               # appendContext path contexts make them plain inputs.
               recipePaths = lib.concatStringsSep " " recipeRoots;
               recipeGraph = builtins.toJSON recipeGraph;
-              # flake-local src of the default target (empty otherwise):
-              # the builder records its lock-filtered narHash in the
-              # manifest so the consumer's drift check needs neither the
-              # squashfs read nor a graft over .seed*.lock churn.
-              graftSrc =
-                let
-                  target = self.packages.${system}.default or null;
-                in
-                if target != null && builtins.isPath (target.src or null) then
-                  # the drv text is the truth for what env.src resolved
-                  # to (a path literal may be baked as a subpath of the
-                  # flake tree OR as its own copied-out store path); the
-                  # referenced tree is a recipe input either way.
-                  envSrcOf (builtins.readFile (builtins.unsafeDiscardStringContext target.drvPath))
-                else
-                  "";
               passAsFile = [
                 "recipePaths"
                 "recipeGraph"
@@ -361,18 +355,34 @@ let
                 while read -r s; do reg "$s"; done \
                   < <(jq -r '.[].inputSrcs[]' "$recipeGraphPath" | sort -u)
               } >recipe-registration
-              # manifest, extended with the lock-filtered narHash of a
+              # manifest, extended with the lock-filtered narHash of every
               # flake-local src: the consumer compares its (equally
               # filtered) checkout against this, so identity holds across
-              # the seeder's own .seed*.lock commits.
-              if [[ -n "$graftSrc" ]]; then
-                cp -r --no-preserve=mode,ownership "$graftSrc" src-filtered
+              # the seeder's own .seed*.lock commits. hashed once per
+              # DISTINCT src -- the outputs of one flake normally share
+              # one. each tree is readable here because it is an inputSrc
+              # of its own recipe, hence already an input of this seed.
+              # the src list comes from the immutable manifest, not from
+              # the copy being rewritten in the loop.
+              cp ${drvManifest} drvs.json
+              while read -r srctree; do
+                [[ -n $srctree ]] || continue
+                rm -rf src-filtered
+                cp -r --no-preserve=mode,ownership "$srctree" src-filtered
                 rm -f src-filtered/.seed.lock src-filtered/.seed-drvs.lock
-                jq --arg h "$(nix hash path src-filtered)" \
-                  '.default.srcNarHash = $h' ${drvManifest} >drvs.json
-              else
-                cp ${drvManifest} drvs.json
-              fi
+                jq --arg s "$srctree" --arg h "$(nix hash path src-filtered)" '
+                  (.outputs |= with_entries(
+                    if .value.srcLocal == true and .value.src == $s then
+                      .value.srcNarHash = $h
+                    else . end))
+                  | (if .default.srcLocal == true and .default.src == $s then
+                      .default.srcNarHash = $h
+                    else . end)
+                ' drvs.json >drvs.json.next
+                mv drvs.json.next drvs.json
+              done < <(jq -r '
+                [ .outputs[] | select(.srcLocal == true) | .src ] | unique[]
+              ' ${drvManifest})
             ''}
             # timestamps come from SOURCE_DATE_EPOCH (set by nix) for a
             # reproducible image; passing -*-time here would conflict.

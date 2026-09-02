@@ -89,14 +89,26 @@ at valid outputs).
 ```json
 // .seed/drvs.json
 { "bake": ["drvs"],
-  "default": { "drv": "/nix/store/xxx.drv",
-               "src": "/nix/store/yyy-source",   // absent if no src
-               "srcName": "source" } }
+  "default": { "drv": "/nix/store/xxx.drv",       // = outputs.default
+               "src": "/nix/store/yyy-source",    // absent if no src
+               "srcName": "source",
+               "srcLocal": true,                  // graftable?
+               "srcNarHash": "sha256-..." },      // lock-filtered
+  "outputs": { "default": { ... }, "docs": { ... } } }
 ```
 
-`bin/build` already implements the consumer side: manifest present ->
-realise (refusing src-bearing targets until the graft lands); absent ->
-today's eval path.
+`outputs` is every harvested `packages.<system>` attribute, keyed by
+name. The recipe closure always baked all of them (`recipeDrvs` starts
+from `selfDrvs`, not from `default`), so this map is the only thing that
+made non-default outputs reachable. `default` stays at the top level so
+seeds built before `outputs` existed still resolve; `bin/build` falls
+back to it for that one name.
+
+`bin/build DIR [ATTR]` implements the consumer side: manifest present ->
+select `outputs[ATTR]`, graft if the checkout drifted, realise; absent ->
+the eval path, where `ATTR` becomes the flake fragment (`DIR#ATTR`), so
+both modes address outputs the same way. Naming an attribute the seed
+does not carry fails with the list of the ones it does.
 
 ## Runtime src graft (the "updated src" answer)
 
