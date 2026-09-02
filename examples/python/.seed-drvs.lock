@@ -1,8 +1,7 @@
 {
   "repository": "ghcr.io/roundtablelove/nix-seed/examples/python/seed-drvs",
   "systems": {
-    "aarch64-linux": "sha256:dca3cd9e86003e4caae1dc1167625663fd4e30c9468fd85636077a54b34a1fac",
-    "x86_64-linux": "sha256:e8362e5e7873ef8230b9ffb9a0c57cff005b506a6172dcbe340c0cae21537822"
+    "aarch64-linux": "sha256:48ce601ccc3209146278a63d7aef3a9bf598357f59f032e9e904de591ee85e65"
   },
-  "tag": "3c3f04f1f2d95ee093e6af48452851cbda91c9a9"
+  "tag": "eb043dd9c97dbfec7839bbd8baa78bb4830e8c3e"
 }
