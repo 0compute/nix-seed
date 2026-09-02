@@ -47,9 +47,9 @@
           # wall < cpu because the collector marks in parallel, so a 2-core
           # runner lands nearer the cpu number.
           # scale serviceCount to move it -- but memory scales with it too:
-          # peak RSS is 1.0GB, and 1.6GB on the sources path, which runs
-          # under GC_DONT_GC (bin/build) and so never collects. that is the
-          # figure to keep clear of the runner's 7GB.
+          # peak RSS is 1.0GB with the collector running, and 1.6GB under
+          # GC_DONT_GC, should a consumer set it. that is the figure to
+          # keep clear of the runner's 7GB.
           serviceCount = 6000;
           settingCount = 40;
           policyLayers = 10;

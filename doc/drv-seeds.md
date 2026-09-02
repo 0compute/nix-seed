@@ -68,8 +68,10 @@ worth carrying in a tool other projects adopt.
 
 - `examples/eval-heavy`, which measures the evaluation floor every
   consumer pays.
-- `bin/build`'s attribute selector (`bin/build DIR [ATTR]`), which came
-  out of making non-default outputs addressable and is useful on its own.
+- Nothing of the consumer side: `bin/build` itself was removed shortly
+  afterwards, so its attribute selector went with it. Consumers now name
+  the attribute in their own `nix build` invocation, which is what the
+  selector was approximating.
 - The seed attribute -> image/lock naming in `bin/build-seed`, which is
   generic rather than variant-specific.
 

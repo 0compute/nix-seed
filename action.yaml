@@ -1,5 +1,7 @@
-name: Nix Seed Build
-description: Builder for Nix Seed
+name: Nix Seed
+description: >-
+  Mount a Nix Seed as /nix/store and put the seeded nix on PATH. Setup
+  only: run your own `nix build` in a later step.
 
 inputs:
 
@@ -10,12 +12,6 @@ inputs:
   seed_attr:
     description: Flake package attribute of the seed to consume
     default: seed
-
-  attr:
-    description: >-
-      Flake package attribute to build from the seed. The seed bakes every
-      harvested output, so any packages.<system>.<name> can be named here.
-    default: default
 
   github_token:
     description: GitHub Token
@@ -58,8 +54,3 @@ runs:
           "$RUNNER_TEMP/seed" "$RUNNER_TEMP/seed-cache" \
           "${{ steps.seed.outputs.digest }}" \
           "${{ steps.seed.outputs.lock }}"
-
-    - name: build
-      shell: bash
-      run: |-
-        "$GITHUB_ACTION_PATH"/bin/build ${{ inputs.path }} "${{ inputs.attr }}"

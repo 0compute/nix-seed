@@ -10,8 +10,8 @@ on:
     # races ahead of its seed. (.seed.lock included, not negated: the per-arch
     # `chore(seed): lock` commits must NOT trigger a build on a half-written
     # lock -- the post-seed workflow_run covers them.) consumer-side
-    # changes (bin/build, bin/mount-seed, action.yaml) cannot change a
-    # seed's contents, so they still build directly on push.
+    # changes (bin/mount-seed, action.yaml) cannot change a seed's
+    # contents, so they still build directly on push.
     paths-ignore:
       - flake.lock
       - examples/**
@@ -53,7 +53,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
+
+      # setup only: mounts the seed as /nix/store, hands it to the runner
+      # user and puts the seeded nix on PATH.
       - uses: ./
         with:
           path: examples/${{ matrix.example }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      # an ordinary nix build, run by the consumer. no sudo and no
+      # namespace: the baked nix.conf has no substituters, so the build
+      # reaches nothing but the mounted closure. `unshare --net` here
+      # would turn that from configured into enforced.
+      - name: build
+        run: nix build ./examples/${{ matrix.example }} --no-link --print-out-paths

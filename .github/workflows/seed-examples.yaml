@@ -15,7 +15,7 @@ on:
       # seed action + build-seed decide what gets pushed and locked. a
       # change here leaves every published seed stale while the build
       # workflows keep consuming it, so re-seed. consumer-side code
-      # (bin/build, bin/mount-seed, action.yaml) is deliberately absent:
+      # (bin/mount-seed, action.yaml) is deliberately absent:
       # it cannot change a seed's contents, and builds test it on push.
       - mkseed/**
       - flake.nix

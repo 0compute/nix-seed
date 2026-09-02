@@ -4,7 +4,11 @@
 # blobs (cache or ghcr), verify them against the lock digest, mount the
 # squashfs read-only under a writable overlay, register the baked closure
 # in a fresh nix db, and put the seeded toolchain on PATH. after this the
-# store is ready for an offline `nix build` (see bin/build).
+# store is ready for the caller's own `nix build`: the seeded nix is on
+# PATH, the store belongs to the caller, and the baked nix.conf has no
+# substituters, so a build reaches nothing but the mounted closure. that
+# is configuration, not confinement -- wrap the build in `unshare --net`
+# if the offline property has to be enforced rather than configured.
 
 set -eux -o pipefail
 
@@ -67,6 +71,16 @@ sudo mount -t overlay overlay \
   -o lowerdir=/nix/.ro-store,upperdir=/nix/.rw/upper,workdir=/nix/.rw/work \
   /nix/store
 
+# hand the store to the caller. nix then runs unprivileged for the rest
+# of the job: no sudo in the consumer's build, no root-owned artifacts in
+# the workspace, and no dubious-ownership fight between root's libgit2
+# and a checkout the runner user owns.
+# chowning the merged mount point copies the root directory up into the
+# overlay with the new ownership -- the baked paths underneath stay
+# root-owned and read-only, which is all a store needs them to be.
+sudo chown "$(id -u):$(id -g)" /nix/store /nix/.rw/upper /nix/.rw/work
+sudo chown -R "$(id -u):$(id -g)" /nix/var
+
 # expose the seeded toolchain (buildEnv at .seed/env) on PATH for later
 # job steps. the symlink resolves through the mounted store.
 seedenv=/nix/.ro-store/.seed/env
@@ -82,4 +96,6 @@ sudo ln -sf $seedenv/etc/nix/nix.conf /etc/nix/nix.conf
 # nix comes from the mounted store; register the baked closure as valid.
 # registration is under .seed/ in the squashfs, read from the read-only
 # mount (not /nix/store: it is seed metadata, not a store path).
-sudo "$envbin/nix-store" --load-db </nix/.ro-store/.seed/registration
+# unprivileged now that /nix/var belongs to the caller, so the db it
+# creates is owned by the user who will go on to build against it.
+"$envbin/nix-store" --load-db </nix/.ro-store/.seed/registration

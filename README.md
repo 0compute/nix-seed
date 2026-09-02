@@ -302,11 +302,18 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
+      # setup only: mounts the seed as /nix/store, hands it to the runner
+      # user, and puts the seeded nix on PATH
       - uses: roundtablelove/nix-seed@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           cachix_cache: <name>
           cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # your build, however you like it. no sudo, no wrapper: the baked
+      # nix.conf carries no substituters, so this reaches nothing but the
+      # mounted closure. add `unshare --net` to enforce that rather than
+      # configure it.
+      - run: nix build --print-build-logs
 ```
 
 ## Production Configuration
