@@ -109,30 +109,41 @@ If no entry exists for a system, [the seed is built](#building-the-seed), the
 resulting entry is recorded in a new commit containing the updated `.seed.lock`,
 and the normal build proceeds.
 
-Build runs inside the seed container as:
+### Delivery
+
+The seed is a single squashfs image, pushed as one OCI layer with media type
+`application/vnd.nix-seed.squashfs`. Store paths sit at the image root, so the
+image *is* `/nix/store` once mounted. Two pieces of metadata ride inside it
+under `.seed/`, as squashfs pseudo-files, which is what makes the image the
+seed's only artefact: `registration`, the `nix-store --load-db` dump that marks
+the baked paths valid in a fresh database, and `env`, a symlink to a `buildEnv`
+providing `bin/` for `PATH` and `etc/nix/nix.conf` for the build configuration.
+
+The consumer pulls the blob, verifies it against the digest in `.seed.lock`, and
+mounts it as a pair:
 
 ```sh
-out=$(mktemp -d)
-docker run \
-  --network none \
-  --tmpfs /tmp \
-  --volume $out:/out \
-  --volume ${{ github.workspace }}:/src \
-  ghcr.io/${{ github.repository }}.seed:$SEED_DIGEST \
-  nix build --print-build-logs /src
-```
-
-The container's entrypoint overlays /out on /nix/store:
-
-```sh
-mkdir -p /tmp/work /tmp/merged
+mount -t squashfs -o loop,ro store.squashfs /nix/.ro-store
 mount -t overlay overlay \
-    -o lowerdir=/nix/store,upperdir=/out,workdir=/tmp/work \
-    /tmp/merged
-mount --bind /mnt/merged /nix/store
+  -o lowerdir=/nix/.ro-store,upperdir=/nix/.rw/upper,workdir=/nix/.rw/work \
+  /nix/store
 ```
 
-Post-build, the new paths are available in $out.
+The lower layer is read-only and compressed, decompressed per block on demand.
+The upper layer takes everything the build writes. Nothing is extracted and no
+container is involved: the build runs directly on the runner, against the
+seeded Nix on `PATH`.
+
+**Mount, never extract.** This is the property the whole design rests on, and
+the one any port must preserve. Mounting is constant time regardless of closure
+size, while extraction is bound by file count — and these are closures of tens
+of thousands of files, 65-728 MB compressed. Extraction is the difference
+between the [\<10s goal](#goals) and missing it.
+
+Offline-ness is *configured*, not confined: the baked `nix.conf` carries no
+substituters and sets `substitute = false`, so a build reaches nothing but the
+mounted closure. A consumer who needs that enforced rather than configured
+wraps the build in `unshare --net`.
 
 After each build, an [in-toto] statement is generated describing inputs and
 build metadata, signed via [OIDC]/[KMS] using [cosign], logged to [Rekor], and
@@ -196,16 +207,17 @@ is verified by Nix evaluation; mismatches fail by design.
 
 Nix Seed is Linux only: `x86_64-linux` and `aarch64-linux`.
 
-The seed is an OCI image the build runs *inside*. That requires a container
-runtime to pull and mount it, and an overlay filesystem to capture the store
-paths the build produces. macOS provides neither. GitHub-hosted macOS runners
-cannot run containers at all - they are themselves VMs, and Apple's
-Virtualization framework does not offer nested virtualization on arm64.
+The blocker is [delivery](#delivery), and it is narrow. The seed is mounted as
+a pair: a squashfs image on a loop device, unioned with an overlayfs upper that
+takes the build's output. macOS has neither of those filesystems. It is not
+that macOS cannot run the build - it is that nothing there mounts this
+artefact.
 
-Nor would a runtime help. A Linux container cannot produce `*-darwin` store
-paths, and Darwin builds requiring Apple SDKs must run on a macOS host
+Nor is a Linux host a way around it. A Linux machine cannot produce `*-darwin`
+store paths, and Darwin builds requiring Apple SDKs must run on a macOS host
 regardless: a runner with a differing SDK version produces a differing NAR
-digest and fails deterministically.
+digest and fails deterministically. Darwin seeds must be built on Darwin
+whatever the delivery mechanism turns out to be.
 
 Supporting macOS therefore means replacing the delivery mechanism, not porting
 this one. See [macOS](#macos) under Future Work. Until it lands, every builder
@@ -951,29 +963,74 @@ Both refs resolve identically.
 
 ### macOS
 
-macOS support is deferred; see [Constraints](#constraints) for why the current
-delivery mechanism does not port. The options are:
+macOS support is deferred; see [Constraints](#constraints) for what blocks it.
+The bar is a real mount: a port that extracts the closure is not worth
+shipping, because [mount, never extract](#delivery) is the property that makes
+a seed faster than the caches it replaces. That bar decides between the
+options.
 
-1. **OCI as transport only.** Keep the image and the registry, drop the runtime.
-   Pull the layer blobs over the distribution API and extract them onto the
-   host's `/nix`, then build with the host's Nix. Preserves one artefact, one
-   registry and one trust anchor across both platforms. Costs the container's
-   isolation, and pays tar extraction - file-count bound on APFS, and the main
-   risk to the [\<10s goal](#goals).
-1. **Read-only disk image.** Ship the store as a compressed disk image attached
-   at `/nix`. `hdiutil attach` is constant time and a compressed image
-   decompresses blocks on demand, so nothing is extracted; `-shadow` supplies
-   the missing copy-on-write layer. Loses cross-version deduplication, which
-   buys nothing on a cold ephemeral runner in any case.
-1. **Closure archive.** Drop OCI on Darwin. Publish the closure as a single
-   archive, extract it to a local `file://` binary cache, and build with that as
-   the only [substituter]. One request rather than thousands of [narinfo] round
-   trips, signatures preserved, and paths materialise on demand. The simplest
-   option, and the slowest.
-1. **macOS VMs.** [Tart] distributes macOS VM images through OCI registries and
-   runs them on Apple's Virtualization framework: the same distribution model,
-   with real isolation and a real Darwin guest. Requires a host that permits
-   VMs, so self-hosted builders only.
+**The mechanism: a read-only disk image with a shadow file.** macOS has a
+native analogue of the Linux pair, one half for one half:
+
+| Linux | macOS |
+| --- | --- |
+| squashfs, compressed, read-only | UDIF `.dmg`, compressed, read-only |
+| `mount -t squashfs -o loop,ro` | `hdiutil attach` |
+| overlayfs upper | `hdiutil attach -shadow` |
+
+`hdiutil attach` is constant time and a compressed image decompresses blocks on
+demand, so nothing is extracted. `-shadow` diverts writes to a separate sparse
+file, leaving the base image untouched - copy-on-write at the block layer
+rather than the file layer, which is the missing upper. Both halves ship with
+the OS: no kernel extension, no macFUSE, nothing requiring an approval dialog
+on a hosted runner.
+
+Rejected, and why:
+
+- **OCI as transport only** - pull the blobs, extract onto the host's `/nix`.
+  Keeps one artefact and one registry, but pays tar extraction, which is
+  file-count bound on APFS. Fails the mount bar.
+- **Closure archive** - publish the closure as one archive, extract to a local
+  `file://` binary cache and build against it. The simplest option and the
+  slowest. Fails the mount bar.
+- **macOS VMs** - [Tart] distributes macOS VM images through OCI registries and
+  runs them on Apple's Virtualization framework: the same distribution model,
+  real isolation, a real Darwin guest. It needs a host that permits VMs, and
+  GitHub-hosted macOS runners are themselves VMs on hardware whose
+  Virtualization framework does not offer nested virtualization on arm64. So
+  it answers self-hosted builders only, not hosted CI.
+
+#### What a spike must prove
+
+The recommendation above is a design, not a result. Nothing should be promised
+to consumers until a spike on a real hosted runner settles these:
+
+1. **The mountpoint.** Since Catalina the root volume is sealed, so
+   `sudo mkdir /nix` is not available. The Nix installers materialise `/nix`
+   via `/etc/synthetic.conf` and `apfs.util -B`, avoiding a reboot; a port
+   inherits that dance, and must cope with runner images that already carry a
+   Nix at `/nix`.
+1. **Case sensitivity.** The store requires it and APFS defaults to
+   case-insensitive, so the image must be created case-sensitive or two store
+   paths differing only in case collide.
+1. **Writability through the shadow** - that Nix will load a database and
+   realise into the attached volume, not merely that it mounts.
+1. **Ownership.** Attaching with `-owners off` presents files as owned by the
+   mounting user, which suits the model the consumer now uses. But the Linux
+   side gets its cheap `chown` from an overlayfs copy-up of the merged root,
+   and `hdiutil` has no analogue; the Darwin path needs its own answer.
+1. **Where the image is built.** `hdiutil` needs `diskarbitrationd` and so
+   cannot run inside the Darwin Nix sandbox. Unlike `mksquashfs`, image
+   assembly cannot be a `runCommand`: it has to happen outside the derivation,
+   in the seeding script. This is the largest structural consequence of the
+   choice.
+1. **Size.** UDZO/ULFO/ULMO against squashfs with zstd. Blob size drives
+   restore time, which is most of a warm job.
+
+Darwin seeds must be built on Darwin (see [Constraints](#constraints)), so
+seeding grows a macOS leg. Apple Silicon is the primary target; the runner
+matrix should be whatever macOS labels CI offers when the work is scheduled,
+rather than a label pinned here that has since been retired.
 
 Whichever is chosen, the trust anchor is the
 [closure manifest](#closure-manifest), which is independent of the delivery

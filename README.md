@@ -27,15 +27,16 @@ ______________________________________________________________________
 
 Linux only: `x86_64-linux` and `aarch64-linux`.
 
-The seed is an OCI image that the build runs *inside*. That needs a container
-runtime to pull and mount it, and an overlay filesystem to capture the store
-paths the build produces. macOS provides neither. GitHub-hosted macOS runners
-cannot run containers at all - they are themselves VMs, and Apple's
-Virtualization framework does not offer nested virtualization on arm64 - and a
-Linux container could not produce `*-darwin` store paths in any case.
+The seed is a squashfs image, mounted on a loop device and unioned with an
+overlayfs upper that takes the build's output. macOS has neither filesystem.
+The build itself would run there perfectly well; nothing on macOS mounts the
+artefact.
 
-macOS support therefore needs a different delivery mechanism, not a port of this
-one. See [Future Work](./DESIGN.md#macos).
+A port needs a different delivery mechanism, not a port of this one - and a
+Linux host is no way around it, since it cannot produce `*-darwin` store paths.
+The likely answer is a compressed disk image attached with `hdiutil` and a
+`-shadow` file for the writable layer, which is the native analogue of the
+squashfs and overlay pair. See [Future Work](./DESIGN.md#macos).
 
 ______________________________________________________________________
 
