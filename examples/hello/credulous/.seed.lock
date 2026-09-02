@@ -1,8 +1,7 @@
 {
   "repository": "ghcr.io/roundtablelove/nix-seed/examples/hello/credulous/seed",
   "systems": {
-    "aarch64-linux": "sha256:308280ae9af21ddb83b17c3d0804cbbd1be63c0b48c3e5aed66c1383aecb9ca1",
-    "x86_64-linux": "sha256:8ec7ff0f12af337b273134f1d6c33b9c7b453978b6681f59aeeea024ac1d7ebc"
+    "x86_64-linux": "sha256:694754506bc3d465d0c3f2c4d099ed7556dcb76cac85c66eacba74c2a19c636f"
   },
-  "tag": "3c3f04f1f2d95ee093e6af48452851cbda91c9a9"
+  "tag": "eb043dd9c97dbfec7839bbd8baa78bb4830e8c3e"
 }
