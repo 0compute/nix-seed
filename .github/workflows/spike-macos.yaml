@@ -63,8 +63,12 @@ jobs:
           # poetry2nix, nix-unit -- which mkSeed excludes via
           # excludeInputs and which would make the size comparison below
           # meaningless. building `default` never forces those.
+          # drop nulls: an input without a store path (a path: input, say)
+          # serialises as null and xargs would feed the literal string to
+          # nix-store, whose failure a pipeline then swallows.
           nix flake archive --json "./examples/$ex" \
-            | jq -r '.path, (.inputs | to_entries[] | .value.path)' \
+            | jq -r '[.path, (.inputs | to_entries[] | .value.path)]
+                     | map(select(. != null)) | .[]' \
             | sort -u >flake-srcs.txt
           cat flake-srcs.txt
 
@@ -171,9 +175,12 @@ jobs:
         run: |
           set -eux
           printf 'nix\n' | sudo tee -a /etc/synthetic.conf
-          sudo /System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util -B \
-            || echo "apfs.util -B returned $?"
+          util=/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util
+          # -t "stitches and creates synthetic objects on root volume
+          # group" (macOS 26). Older releases spell it -B; try both.
+          sudo "$util" -t || sudo "$util" -B || echo "apfs.util returned $?"
           sleep 2
+          # the whole approach rests on this: no /nix, no mountpoint.
           ls -ld /nix
 
       # Q2/Q3: attach constant-time, with the shadow as the writable
