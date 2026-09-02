@@ -10,6 +10,17 @@ on:
       # commits don't retrigger this workflow.
       - examples/**
       - '!examples/**/.seed*.lock'
+      # what the seed is made of, and what makes it: mkseed builds the
+      # squashfs, flake.nix wires `lib.mkSeed = import ./mkseed`, and the
+      # seed action + build-seed decide what gets pushed and locked. a
+      # change here leaves every published seed stale while the build
+      # workflows keep consuming it, so re-seed. consumer-side code
+      # (bin/build, bin/mount-seed, action.yaml) is deliberately absent:
+      # it cannot change a seed's contents, and builds test it on push.
+      - mkseed/**
+      - flake.nix
+      - seed/action.yaml
+      - bin/build-seed
       - .github/workflows/seed-drvs-examples.yaml
   workflow_dispatch:
 

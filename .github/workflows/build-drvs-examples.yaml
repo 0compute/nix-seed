@@ -12,6 +12,10 @@ on:
     paths-ignore:
       - flake.lock
       - examples/**
+      - mkseed/**
+      - flake.nix
+      - seed/action.yaml
+      - bin/build-seed
       - .github/workflows/seed-drvs-examples.yaml
   workflow_run:
     workflows:
