@@ -1,0 +1,7 @@
+{
+  "repository": "ghcr.io/roundtablelove/nix-seed/examples/eval-heavy/seed-drvs",
+  "systems": {
+    "aarch64-linux": "sha256:4c9eef30f7f4ab22d25819c3ef3ec1c0ffefc5c23d194d2b6b0e3d2ee7606f9d"
+  },
+  "tag": "3c3f04f1f2d95ee093e6af48452851cbda91c9a9"
+}
