@@ -1,7 +1,8 @@
 {
   "repository": "ghcr.io/roundtablelove/nix-seed/examples/rust/seed-drvs",
   "systems": {
-    "aarch64-linux": "sha256:14b82d14ef867114c7506dec438e9cf47a4aa2581d4b8150ad37d745316b2b50"
+    "aarch64-linux": "sha256:14b82d14ef867114c7506dec438e9cf47a4aa2581d4b8150ad37d745316b2b50",
+    "x86_64-linux": "sha256:7d59099e4848745bb9bf379e8d521e6a822b4e754f7c6a9c48e1773e099300fe"
   },
   "tag": "e5919ea6c22f02cdbf6727fbc2fafb5c1362bbc3"
 }
