@@ -143,6 +143,41 @@ lockfile changes, graft every push.
 | python warm job | 16 s | ~9-11 s |
 | ripgrep warm job | 58 s | ~55 s (compile-bound) |
 
+## Where drvs actually pays (measured)
+
+The five original examples benchmark within noise of sources mode
+(build-drvs vs build-examples, n>=5, both arches). drvs removes only
+*evaluation*, which those flakes keep to 1-4s, while their dominant
+term -- a deliberately non-substitutable compile -- is untouched by any
+dependency-level cache. Amdahl, not a defect.
+
+What it does buy there is size:
+
+| | sources | drvs |
+|---|---|---|
+| hello blob | 118 MB | 65 MB |
+| cpp-boost blob | 253 MB | 205 MB |
+| python blob | 728 MB | 683 MB |
+| ripgrep blob | 694 MB | 646 MB |
+
+against a slower mount: the recipe closure is far more registration
+records than the output closure (eval-heavy: 151 -> 1340), paid back
+at `--load-db`.
+
+There is no fat left to trim either. Auditing the 724 MB cpp-boost
+drvs seed by output suffix found 575 MB of plain dependency outputs
+and 147 MB of `-dev` (genuinely compiled against), against ~0.5 MB of
+prunable `-man`: the blob *is* dependency outputs, which both variants
+need.
+
+So the saving is proportional to evaluation, and none of those
+examples evaluates much. `examples/eval-heavy` is the regime where it
+is: ~300k type-checked module-system definitions (the code path NixOS,
+home-manager and flake-parts configurations spend their seconds in),
+5.6s wall / 8s cpu on one fast core, in front of a `runCommand` that
+builds instantly. sources mode pays that on every consumer build; drvs
+mode pays it once, in the seeder.
+
 ## Rollout
 
 1. [x] `bake ? [ "sources" ]` scaffold; sources mode verified
