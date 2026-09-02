@@ -1,0 +1,132 @@
+# exercise the graft's DRIFT path (doc/drv-seeds.md).
+#
+# The other workflows only ever hit the graft's identity case: the
+# seeders re-run on any examples/** push, so by the time a build runs its
+# checkout matches the seeded src and no graft fires. A real consumer is
+# the opposite -- it seeds when dependencies change and then grafts on
+# every commit -- so the path that matters most in production was the one
+# path CI never took.
+#
+# This mutates a source file, commits it (bin/build reads the checkout
+# with `git archive HEAD`, so a dirty worktree is invisible to it), and
+# proves the graft realised the NEW source: the store path must change,
+# regraft must be what changed it, and a run-unique token must appear in
+# the built output.
+name: graft-drift
+
+on:
+  push:
+    branches:
+      - master
+    # same seed-affecting paths the drvs builder ignores: such a change
+    # goes push -> seed-drvs-examples -> workflow_run -> here, so this
+    # never grafts against a stale seed.
+    paths-ignore:
+      - flake.lock
+      - examples/**
+      - mkseed/**
+      - flake.nix
+      - seed/action.yaml
+      - bin/build-seed
+      - .github/workflows/seed-drvs-examples.yaml
+  workflow_run:
+    workflows:
+      - seed-drvs-examples
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  drift:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # only examples whose src is a literal path: crane's cleaned
+        # source (rust, rust-ripgrep) is a derivation, so srcLocal is
+        # false and no graft is attempted; eval-heavy and hello have no
+        # src at all.
+        example:
+          - cpp-boost
+          - python
+        os:
+          - ubuntu-22.04
+          - ubuntu-22.04-arm
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # mount the drvs seed and build the untouched checkout. this is the
+      # identity case: grafting the seeded src reproduces the baked drv,
+      # so nothing should be regrafted at all.
+      - uses: ./
+        with:
+          path: examples/${{ matrix.example }}
+          seed_attr: seed.drvs
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: baseline (identity -- must not graft)
+        id: base
+        shell: bash
+        run: |
+          set -o pipefail
+          out=$("$PWD"/bin/build examples/${{ matrix.example }} 2>base.log | tail -1)
+          echo "baseline out: $out"
+          [[ -n $out ]] || { echo "FAIL: no output path"; exit 1; }
+          if grep -q '/regraft' base.log; then
+            echo "FAIL: the untouched checkout grafted; either the seed is"
+            echo "stale or the .seed*.lock filtering in bin/build is wrong"
+            exit 1
+          fi
+          echo "out=$out" >>"$GITHUB_OUTPUT"
+
+      # a committed change: local to the runner, never pushed.
+      - name: drift a source file
+        id: drift
+        shell: bash
+        run: |
+          token="drift-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          case "${{ matrix.example }}" in
+            cpp-boost)
+              sed -i "s/Nix Seed/Nix Seed $token/" examples/cpp-boost/main.cpp ;;
+            python)
+              sed -i "s/hello world/hello world $token/" examples/python/hello.py ;;
+          esac
+          git config user.email 'ci@nix-seed.invalid'
+          git config user.name 'nix-seed graft-drift'
+          git commit -aqm "test: drift probe $token"
+          echo "token=$token" >>"$GITHUB_OUTPUT"
+          echo "probe token: $token"
+
+      - name: build the drifted checkout (must graft)
+        shell: bash
+        run: |
+          set -o pipefail
+          out=$("$PWD"/bin/build examples/${{ matrix.example }} 2>drift.log | tail -1)
+          echo "drifted out: $out"
+          base='${{ steps.base.outputs.out }}'
+          token='${{ steps.drift.outputs.token }}'
+
+          [[ -n $out ]] || { echo "FAIL: no output path"; exit 1; }
+          if [[ $out == "$base" ]]; then
+            echo "FAIL: drifted checkout realised the baseline path"
+            echo "  $base"
+            echo "the graft did not take effect"
+            exit 1
+          fi
+          if ! grep -q '/regraft' drift.log; then
+            echo "FAIL: output changed but regraft never ran"
+            exit 1
+          fi
+          # the decisive check: the realisation must contain the new
+          # source, not merely hash differently.
+          if ! grep -rqa "$token" "$out"; then
+            echo "FAIL: '$token' absent from $out -- the graft produced a"
+            echo "distinct derivation that did not build the edited source"
+            exit 1
+          fi
+          echo "OK: graft realised the edited source ($out)"

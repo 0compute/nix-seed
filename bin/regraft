@@ -15,10 +15,20 @@ new=${3:?new src store path required}
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
-# v4 schema lists inputs.srcs as store BASENAMES, so swap those too
+# v4 schema lists inputs.srcs as store BASENAMES, so swap those too.
+# the schema version is asserted, not assumed: this graft reads
+# `.derivations`, `inputs.drvs` and basename-valued `inputs.srcs`, all of
+# which moved at the v3 -> v4 change. a future shape must fail here,
+# loudly, rather than be misparsed into a plausible-looking derivation.
 nix derivation show "$drv" | jq --arg old "$old" --arg new "$new" \
+  --argjson want 4 \
   --arg oldb "$(basename "$old")" --arg newb "$(basename "$new")" '
-  .derivations | to_entries[0].value
+  if (.version? // 0) != $want then
+    error("regraft: `nix derivation show` schema v\(.version? // "?"), " +
+          "expected v\($want); the graft reads .derivations and " +
+          "basename-valued inputs.srcs from that shape (doc/drv-seeds.md)")
+  else . end
+  | .derivations | to_entries[0].value
   | walk(if type == "string" then (split($old) | join($new)) else . end)
   | .inputs.srcs |= map(if . == $oldb then $newb else . end)
 ' >"$tmp/drv.json"
