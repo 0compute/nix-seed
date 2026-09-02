@@ -5,14 +5,13 @@
   # evaluation trivial. here the derivation is a one-line runCommand and
   # the cost is entirely in the evaluator.
   #
-  # this is the case that separates the two seed variants (doc/drv-seeds.md):
-  #   .sources -- bakes the flake inputs, so the consumer evaluates this
-  #     module set on every build, offline but in full.
-  #   .drvs -- bakes the instantiated recipe, so the consumer realises it
-  #     with zero evaluation. the module set is evaluated once, by the
-  #     seeder, and never again.
-  # every other example pays ~1-4s of eval, far below its compile time, so
-  # the variants benchmark within noise of each other. this one does not.
+  # a seed cannot remove this cost: the consumer re-evaluates the flake on
+  # every build, offline but in full, so eval time is a floor under every
+  # job. it is measured here because it is the one part of a consumer's
+  # build that nix-seed does not help with -- real flakes span 2s (a rust
+  # binary) to ~18s (a large module set), and this example sits near the
+  # top of that range deliberately. see doc/drv-seeds.md for the variant
+  # that did remove it, and why it was dropped anyway.
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";

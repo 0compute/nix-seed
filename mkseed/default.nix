@@ -133,17 +133,16 @@ let
       # every store path the seed must contain, as closureInfo rootPaths:
       #   - nix itself: the consumer runs it from the mounted store.
       #   - pathEnv: the buildEnv exposed at .seed/env (bin/ + etc/nix.conf).
-      #   - "sources": every flake input source, recursively -> offline
-      #     flake *evaluation* (nix reads each locked input from the store).
+      #   - every flake input source, recursively -> offline flake
+      #     *evaluation* (nix reads each locked input from the store).
       #   - each output's inputDerivation -> its full build-input closure,
       #     so the build runs offline without rebuilding stdenv/glibc.
-      rootPathsFor =
-        bake:
+      rootPaths =
         [
           nix
           pathEnv
         ]
-      ++ lib.optionals (lib.elem "sources" bake) (
+      ++ (
         let
           collect =
             flake:
@@ -162,119 +161,7 @@ let
         ) selfDrvs
       );
 
-      closureFor = bake: pkgs.closureInfo { rootPaths = rootPathsFor bake; };
-
-      # ---- "drvs" mode: recipe collection (doc/drv-seeds.md) ----
-      # collected at EVAL time by reading the .drv files this very eval
-      # instantiated -- closureInfo/exportReferencesGraph over a drv
-      # demands the full build-time OUTPUT closure (spike finding), so the
-      # recipe set is walked here instead and rooted as plain path inputs.
-
-      # store-path lexer over drv ATerm text
-      pathRe = "(${builtins.storeDir}/[a-z0-9]{32}-[0-9a-zA-Z+._?=-]+)";
-      pathsIn =
-        text:
-        lib.unique (
-          lib.concatMap (m: lib.optional (lib.isList m) (lib.head m)) (
-            builtins.split pathRe text
-          )
-        );
-      # inputSrcs = the third bracket group of Derive(...): after the
-      # second "],[", up to the next "],\"". env comes last, so any
-      # "],[" inside env values cannot shift these two boundaries.
-      srcsOf =
-        text:
-        pathsIn (
-          lib.head (
-            builtins.split "],\"" (lib.elemAt (builtins.split "],\\[" text) 4)
-          )
-        );
-
-      # env.src as the drv text records it -- the truth the consumer's
-      # regraft substitutes against ("" when absent)
-      envSrcOf =
-        text:
-        let
-          m = builtins.match ".*\\(\"src\",\"([^\"]*)\"\\).*" text;
-        in
-        if m == null then "" else lib.head m;
-
-      # transitive drv-file closure of the harvested outputs
-      recipeDrvs = map (n: n.key) (
-        builtins.genericClosure {
-          startSet = map (drv: {
-            key = builtins.unsafeDiscardStringContext drv.drvPath;
-          }) selfDrvs;
-          operator =
-            n:
-            map (p: { key = p; }) (
-              lib.filter (lib.hasSuffix ".drv") (pathsIn (builtins.readFile n.key))
-            );
-        }
-      );
-      # per-drv reference lists: exactly what the consumer db must record
-      recipeGraph = map (
-        d:
-        let
-          text = builtins.readFile d;
-        in
-        {
-          drv = d;
-          inputDrvs = lib.filter (lib.hasSuffix ".drv") (pathsIn text);
-          inputSrcs = srcsOf text;
-        }
-      ) recipeDrvs;
-      # every recipe file as a plain path input of the seed derivation
-      recipeRoots = lib.unique (
-        lib.concatMap (
-          n: map (p: builtins.appendContext p { ${p} = { path = true; }; }) ([ n.drv ] ++ n.inputSrcs)
-        ) recipeGraph
-      );
-
-      # every harvested package, by attribute name. the recipe closure
-      # already bakes all of them (recipeDrvs starts from selfDrvs, not
-      # from `default`), so the manifest is the only thing standing
-      # between the consumer and a non-default output. same filters as
-      # the harvest, so a seed never advertises what it did not bake.
-      targetPackages = lib.filterAttrs (
-        name: drv: selfFilterName name && keepDrv drv
-      ) (self.packages.${system} or { });
-
-      # per-output recipe pointer plus graft metadata: the target's src
-      # and the eval-frozen metadata files a graft must refuse to paper
-      # over. path STRINGS only -- the files ride via recipeRoots.
-      metaFor =
-        target:
-        {
-          drv = builtins.unsafeDiscardStringContext target.drvPath;
-        }
-        // lib.optionalAttrs (target ? src) {
-          # env.src exactly as the drv text records it, so the
-          # consumer's regraft substitution matches.
-          src = envSrcOf (
-            builtins.readFile (builtins.unsafeDiscardStringContext target.drvPath)
-          );
-          srcName = target.src.name or "source";
-          # graftable only when the flake passed a literal path
-          # (in-tree source); external srcs (an upstream repo
-          # input, a cleaned copy) are never replaced by the
-          # checkout.
-          srcLocal = builtins.isPath target.src;
-        };
-
-      # entry point for the consumer's zero-eval realise path. `default`
-      # stays at the top level: seeds built before `outputs` existed
-      # carry only that, and bin/build reads it as the fallback.
-      drvManifestFor =
-        bake:
-        pkgs.writeText "drvs.json" (
-          builtins.toJSON {
-            inherit bake;
-            default =
-              if targetPackages ? default then metaFor targetPackages.default else null;
-            outputs = lib.mapAttrs (_name: metaFor) targetPackages;
-          }
-        );
+      closure = pkgs.closureInfo { inherit rootPaths; };
 
       # the seed: a squashfs of the build closure the consumer mounts as
       # /nix/store (store paths sit at the fs root, basename = store
@@ -285,130 +172,33 @@ let
       # build config). the consumer reads them from the read-only mount.
       # mounting is O(1); reads decompress lazily, so there is no per-file
       # extraction. see DESIGN.md#delivery.
-      # one seed, two consumer contracts (doc/drv-seeds.md), selected by
-      # attribute rather than argument:
-      #   .sources (the default) -- every flake input source baked; the
-      #     consumer runs `nix build ./dir`, proving offline *evaluation*.
-      #   .drvs -- the instantiated recipes baked instead; the consumer
-      #     realises them with zero evaluation and no nixpkgs in the blob.
-      mkVariant =
-        bake:
-        let
-          drvsMode = lib.elem "drvs" bake;
-          closure = closureFor bake;
-          drvManifest = drvManifestFor bake;
-        in
-        pkgs.runCommand "${name}"
-          (
-            {
-              nativeBuildInputs = [ pkgs.squashfsTools ];
-              passthru = {
-                inherit name tag pathEnv;
-                # marker so a seed harvesting self.packages skips a nested
-                # seed (its inputDerivation would recurse into this closure).
-                isNixSeed = true;
-                # the mode variants, cross-linked so either is reachable
-                # from whichever the consumer flake exposes.
-                sources = sourcesSeed;
-                drvs = drvsSeed;
-              };
-            }
-            // lib.optionalAttrs drvsMode {
-              nativeBuildInputs = [
-                pkgs.squashfsTools
-                pkgs.jq
-                nix
-              ];
-              # every recipe file (drvs + inputSrcs), space-joined; the
-              # appendContext path contexts make them plain inputs.
-              recipePaths = lib.concatStringsSep " " recipeRoots;
-              recipeGraph = builtins.toJSON recipeGraph;
-              passAsFile = [
-                "recipePaths"
-                "recipeGraph"
-              ];
-              NIX_CONFIG = "experimental-features = nix-command";
-            }
-          )
-          ''
-            mkdir $out
-            ${lib.optionalString drvsMode ''
-              # registration for the recipe files, mirroring closureInfo's
-              # record layout: path, narHash (SRI), narSize, deriver
-              # (empty), nrefs, refs. drvs carry their true reference
-              # lists (walked at eval); srcs are leaves.
-              reg() {
-                local p=$1
-                shift
-                printf '%s\n' "$p" \
-                  "sha256:$(nix-hash --type sha256 --base32 "$p")" \
-                  "$(nix-store --dump "$p" | wc -c)" "" "$#"
-                (($# == 0)) || printf '%s\n' "$@"
-              }
-              {
-                cat ${closure}/registration
-                while read -r node; do
-                  d=$(jq -r .drv <<<"$node")
-                  mapfile -t refs < <(jq -r '.inputDrvs[],.inputSrcs[]' <<<"$node")
-                  reg "$d" "''${refs[@]}"
-                done < <(jq -c '.[]' "$recipeGraphPath")
-                while read -r s; do reg "$s"; done \
-                  < <(jq -r '.[].inputSrcs[]' "$recipeGraphPath" | sort -u)
-              } >recipe-registration
-              # manifest, extended with the lock-filtered narHash of every
-              # flake-local src: the consumer compares its (equally
-              # filtered) checkout against this, so identity holds across
-              # the seeder's own .seed*.lock commits. hashed once per
-              # DISTINCT src -- the outputs of one flake normally share
-              # one. each tree is readable here because it is an inputSrc
-              # of its own recipe, hence already an input of this seed.
-              # the src list comes from the immutable manifest, not from
-              # the copy being rewritten in the loop.
-              cp ${drvManifest} drvs.json
-              while read -r srctree; do
-                [[ -n $srctree ]] || continue
-                rm -rf src-filtered
-                cp -r --no-preserve=mode,ownership "$srctree" src-filtered
-                rm -f src-filtered/.seed.lock src-filtered/.seed-drvs.lock
-                jq --arg s "$srctree" --arg h "$(nix hash path src-filtered)" '
-                  (.outputs |= with_entries(
-                    if .value.srcLocal == true and .value.src == $s then
-                      .value.srcNarHash = $h
-                    else . end))
-                  | (if .default.srcLocal == true and .default.src == $s then
-                      .default.srcNarHash = $h
-                    else . end)
-                ' drvs.json >drvs.json.next
-                mv drvs.json.next drvs.json
-              done < <(jq -r '
-                [ .outputs[] | select(.srcLocal == true) | .src ] | unique[]
-              ' ${drvManifest})
-            ''}
-            # timestamps come from SOURCE_DATE_EPOCH (set by nix) for a
-            # reproducible image; passing -*-time here would conflict.
-            # registration + env go under .seed/ as pseudo-entries so the
-            # squashfs is the only output. mksquashfs clamps pseudo mtimes to
-            # SOURCE_DATE_EPOCH too, so the image stays reproducible.
-            # .seed/env -> the baked buildEnv, resolved through the mounted
-            # store; the consumer adds /nix/.ro-store/.seed/env/bin to PATH
-            # and reads /nix/.ro-store/.seed/env/etc/nix.conf.
-            mksquashfs $(cat ${closure}/store-paths)${
-              lib.optionalString drvsMode " $(cat $recipePathsPath)"
-            } $out/store.squashfs \
-              -keep-as-directory -all-root -no-hardlinks \
-              -comp zstd -Xcompression-level ${toString compressionLevel} \
-              -p '.seed d 555 0 0' \
-              -p ".seed/registration f 444 0 0 cat ${
-                if drvsMode then "$PWD/recipe-registration" else "${closure}/registration"
-              }" \
-              -p ".seed/env s 777 0 0 ${pathEnv}"${
-                lib.optionalString drvsMode '' \
-                  -p ".seed/drvs.json f 444 0 0 cat $PWD/drvs.json"''
-              }
-          '';
-
-      sourcesSeed = mkVariant [ "sources" ];
-      drvsSeed = mkVariant [ "drvs" ];
+      seed = pkgs.runCommand "${name}"
+        {
+          nativeBuildInputs = [ pkgs.squashfsTools ];
+          passthru = {
+            inherit name tag pathEnv;
+            # marker so a seed harvesting self.packages skips a nested
+            # seed (its inputDerivation would recurse into this closure).
+            isNixSeed = true;
+          };
+        }
+        ''
+          mkdir $out
+          # timestamps come from SOURCE_DATE_EPOCH (set by nix) for a
+          # reproducible image; passing -*-time here would conflict.
+          # registration + env go under .seed/ as pseudo-entries so the
+          # squashfs is the only output. mksquashfs clamps pseudo mtimes to
+          # SOURCE_DATE_EPOCH too, so the image stays reproducible.
+          # .seed/env -> the baked buildEnv, resolved through the mounted
+          # store; the consumer adds /nix/.ro-store/.seed/env/bin to PATH
+          # and reads /nix/.ro-store/.seed/env/etc/nix.conf.
+          mksquashfs $(cat ${closure}/store-paths) $out/store.squashfs \
+            -keep-as-directory -all-root -no-hardlinks \
+            -comp zstd -Xcompression-level ${toString compressionLevel} \
+            -p '.seed d 555 0 0' \
+            -p ".seed/registration f 444 0 0 cat ${closure}/registration" \
+            -p ".seed/env s 777 0 0 ${pathEnv}"
+        '';
     in
     # nix-seed is Linux only. the consumer mounts the squashfs as
     # /nix/store and overlays a writable upper for build output; macOS has
@@ -417,6 +207,6 @@ let
     lib.throwIf (!stdenv.hostPlatform.isLinux) ''
       mkSeed: unsupported system "${system}". nix-seed is Linux only;
       see DESIGN.md#constraints and DESIGN.md#macos.
-    '' sourcesSeed;
+    '' seed;
 in
 mkSeed

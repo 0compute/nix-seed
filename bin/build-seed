@@ -77,9 +77,9 @@ fi
 dir=${1:-.}
 [[ $dir =~ ^/ ]] || dir=./$dir
 
-# variant suffix: attr "seed" -> image .../seed + .seed.lock (unchanged);
-# attr "seed.drvs" -> .../seed-drvs + .seed-drvs.lock, so the sources and
-# drvs pipelines never fight over tags or locks.
+# the seed attribute names its image and lock: attr "seed" -> image
+# .../seed + .seed.lock. dots become dashes so a nested attribute is
+# still a legal image name and filename.
 suffix=${seedAttr//./-}
 
 if [[ -z $imageName ]]; then
@@ -115,10 +115,9 @@ tag=$(nix eval --raw $seed.tag)
 system=$(nix eval --impure --raw --expr builtins.currentSystem)
 
 # build the squashfs seed (store.squashfs; registration + nix.conf are
-# baked inside it under .seed/). --impure: drvs-mode seeds read back the
-# .drv files the eval instantiated (content-addressed, so still
-# deterministic); pure eval forbids those absolute reads.
-out=$(nix build --impure --print-build-logs --no-link --print-out-paths $seed)
+# baked inside it under .seed/). a pure evaluation: the seed is built
+# from the flake's own inputs and nothing else.
+out=$(nix build --print-build-logs --no-link --print-out-paths $seed)
 echo "Built seed $name:$tag"
 
 # {{{ push

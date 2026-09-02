@@ -32,8 +32,8 @@ runs:
       shell: bash
       run: |
         system=$(uname -m | sed s/arm64/aarch64/)-$(uname -s | tr '[:upper:]' '[:lower:]')
-        # variant lock file: attr "seed" -> .seed.lock, "seed.drvs" ->
-        # .seed-drvs.lock (mirrors bin/build-seed)
+        # lock file for this seed attribute: "seed" -> .seed.lock, dots
+        # becoming dashes (mirrors bin/build-seed)
         suffix=${{ inputs.seed_attr }}
         lock=${{ inputs.path }}/.${suffix//./-}.lock
         digest=$(jq -er --arg s "$system" '.systems[$s]' "$lock")

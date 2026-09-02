@@ -14,7 +14,7 @@ layout=${3:?oci layout cache dir required}
 # full seed digest (sha256:...) for this system, computed once by the
 # action's `seed digest` step; avoids re-reading .seed.lock per system.
 digest=${4:?seed digest required}
-# variant lock file (.seed.lock or .seed-drvs.lock)
+# lock file naming the seed image and its per-system digests
 lock=${5:-$dir/.seed.lock}
 
 repository=$(jq --exit-status --raw-output .repository "$lock")
@@ -74,8 +74,8 @@ envbin=$seedenv/bin
 [[ -z ${GITHUB_PATH:-} ]] || echo $envbin >>"$GITHUB_PATH"
 
 # link in seed nix.conf BEFORE touching the db: it sets
-# fsync-metadata = false, which load-db must see (drvs seeds register
-# the whole recipe closure -- fsync per record dominates otherwise).
+# fsync-metadata = false, which load-db must see: a fsync per registered
+# record otherwise dominates the mount.
 sudo mkdir -p /etc/nix
 sudo ln -sf $seedenv/etc/nix/nix.conf /etc/nix/nix.conf
 
