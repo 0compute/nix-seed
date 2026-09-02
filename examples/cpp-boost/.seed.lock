@@ -1,6 +1,7 @@
 {
   "repository": "ghcr.io/roundtablelove/nix-seed/examples/cpp-boost/seed",
   "systems": {
+    "aarch64-linux": "sha256:b6513df9ae493fbd97c14c94b71b1065521af70c96310704b5643bea7d8338cd",
     "x86_64-linux": "sha256:d17f22e0495b60883d4f56e93ebde62bab40432188ec958becadbee4eb1b7cd5"
   },
   "tag": "eb043dd9c97dbfec7839bbd8baa78bb4830e8c3e"
