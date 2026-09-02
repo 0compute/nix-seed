@@ -10,8 +10,8 @@
 # This mutates a source file, commits it (bin/build reads the checkout
 # with `git archive HEAD`, so a dirty worktree is invisible to it), and
 # proves the graft realised the NEW source: the store path must change,
-# regraft must be what changed it, and a run-unique token must appear in
-# the built output.
+# regraft must be what changed it, and the built artifact must carry the
+# run-unique token.
 name: graft-drift
 
 on:
@@ -39,6 +39,7 @@ on:
 jobs:
   drift:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    name: drift (${{ matrix.example.path }}, ${{ matrix.os }})
     permissions:
       contents: read
       id-token: write
@@ -51,8 +52,24 @@ jobs:
         # false and no graft is attempted; eval-heavy and hello have no
         # src at all.
         example:
-          - cpp-boost
-          - python
+          - path: cpp-boost
+            file: main.cpp
+            literal: Nix Seed
+            prog: cpp-boost-example
+            # RUN the artifact rather than grepping it: the compiler
+            # splits a string literal across .rodata (observed on x86:
+            # "Nix Seed drift-l" + "rift-local-probe"; arm kept it
+            # contiguous), so the token need not appear as contiguous
+            # bytes even when the build is perfectly correct.
+            verify: run
+          - path: python
+            file: hello.py
+            literal: hello world
+            prog: hello
+            # the edited module is installed verbatim, so finding the
+            # token in the output proves the build consumed the new src
+            # -- without depending on importing torch at test time.
+            verify: grep
         os:
           - ubuntu-22.04
           - ubuntu-22.04-arm
@@ -65,7 +82,7 @@ jobs:
       # so nothing should be regrafted at all.
       - uses: ./
         with:
-          path: examples/${{ matrix.example }}
+          path: examples/${{ matrix.example.path }}
           seed_attr: seed.drvs
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -74,12 +91,13 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          out=$("$PWD"/bin/build examples/${{ matrix.example }} 2>base.log | tail -1)
+          out=$("$PWD"/bin/build examples/${{ matrix.example.path }} 2>base.log | tail -1)
           echo "baseline out: $out"
-          [[ -n $out ]] || { echo "FAIL: no output path"; exit 1; }
+          [[ -n $out ]] || { echo "FAIL: no output path"; tail -30 base.log; exit 1; }
           if grep -q '/regraft' base.log; then
             echo "FAIL: the untouched checkout grafted; either the seed is"
             echo "stale or the .seed*.lock filtering in bin/build is wrong"
+            tail -30 base.log
             exit 1
           fi
           echo "out=$out" >>"$GITHUB_OUTPUT"
@@ -90,12 +108,9 @@ jobs:
         shell: bash
         run: |
           token="drift-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-          case "${{ matrix.example }}" in
-            cpp-boost)
-              sed -i "s/Nix Seed/Nix Seed $token/" examples/cpp-boost/main.cpp ;;
-            python)
-              sed -i "s/hello world/hello world $token/" examples/python/hello.py ;;
-          esac
+          f=examples/${{ matrix.example.path }}/${{ matrix.example.file }}
+          sed -i "s/${{ matrix.example.literal }}/${{ matrix.example.literal }} $token/" "$f"
+          git diff --stat -- "$f"
           git config user.email 'ci@nix-seed.invalid'
           git config user.name 'nix-seed graft-drift'
           git commit -aqm "test: drift probe $token"
@@ -106,27 +121,30 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          out=$("$PWD"/bin/build examples/${{ matrix.example }} 2>drift.log | tail -1)
+          out=$("$PWD"/bin/build examples/${{ matrix.example.path }} 2>drift.log | tail -1)
           echo "drifted out: $out"
           base='${{ steps.base.outputs.out }}'
           token='${{ steps.drift.outputs.token }}'
 
-          [[ -n $out ]] || { echo "FAIL: no output path"; exit 1; }
-          if [[ $out == "$base" ]]; then
-            echo "FAIL: drifted checkout realised the baseline path"
-            echo "  $base"
-            echo "the graft did not take effect"
-            exit 1
-          fi
-          if ! grep -q '/regraft' drift.log; then
-            echo "FAIL: output changed but regraft never ran"
-            exit 1
-          fi
-          # the decisive check: the realisation must contain the new
+          fail() { echo "FAIL: $*"; echo '--- build log (tail)'; tail -30 drift.log; exit 1; }
+
+          [[ -n $out ]] || fail "no output path"
+          [[ $out != "$base" ]] || fail "drifted checkout realised the baseline path $base; the graft did not take effect"
+          grep -q '/regraft' drift.log || fail "output changed but regraft never ran"
+
+          # the decisive check: the realisation must reflect the edited
           # source, not merely hash differently.
-          if ! grep -rqa "$token" "$out"; then
-            echo "FAIL: '$token' absent from $out -- the graft produced a"
-            echo "distinct derivation that did not build the edited source"
-            exit 1
-          fi
-          echo "OK: graft realised the edited source ($out)"
+          case '${{ matrix.example.verify }}' in
+            run)
+              got=$("$out/bin/${{ matrix.example.prog }}") \
+                || fail "built artifact did not run"
+              echo "artifact output: $got"
+              grep -q -- "$token" <<<"$got" \
+                || fail "artifact ran but did not print '$token'"
+              ;;
+            grep)
+              grep -rqa -- "$token" "$out" \
+                || fail "'$token' absent from $out"
+              ;;
+          esac
+          echo "OK: the graft realised the edited source ($out)"
