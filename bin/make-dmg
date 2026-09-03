@@ -26,7 +26,7 @@ out=${2:?output .dmg path required}
 # The cost lands at seed time: lzma is slow to compress, and seeding is
 # already the slow half on darwin. Set SEED_DMG_FORMAT=ULFO to trade
 # back -- smaller seed jobs, larger blobs for every consumer.
-format=${SEED_DMG_FORMAT:-ULMO}
+format=${SEED_DMG_FORMAT:-ULFO}
 
 work=$(mktemp -d)
 mnt=$work/mnt
