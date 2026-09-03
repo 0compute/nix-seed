@@ -143,7 +143,66 @@ between the [\<10s goal](#goals) and missing it.
 Offline-ness is *configured*, not confined: the baked `nix.conf` carries no
 substituters and sets `substitute = false`, so a build reaches nothing but the
 mounted closure. A consumer who needs that enforced rather than configured
-wraps the build in `unshare --net`.
+wraps the build in `unshare --net` - which macOS has no equivalent of, so
+there the property is configured only.
+
+### macOS
+
+macOS has no loop-mounted squashfs and no overlayfs, but it has the same
+read-only-plus-writable pair under different names, and both halves ship with
+the OS - no kernel extension, no macFUSE, nothing requiring an approval dialog
+on a hosted runner:
+
+| Linux | macOS |
+| --- | --- |
+| squashfs, compressed, read-only | UDIF `.dmg`, compressed, read-only |
+| `mount -t squashfs -o loop,ro` | `hdiutil attach` |
+| overlayfs upper | `hdiutil attach -shadow` |
+
+`-shadow` diverts writes to a sparse file beside the image, leaving the base
+untouched: copy-on-write at the block layer rather than the file layer. So
+nothing is extracted on either platform, which is the property that had to
+survive the port.
+
+Four things differ, and each is a consequence of the platform rather than a
+choice:
+
+- **The mountpoint must be conjured.** Since Catalina the root volume is
+  sealed, so `/nix` cannot simply be created. A `/etc/synthetic.conf` entry
+  plus `apfs.util -t` materialises it without a reboot. That call reports
+  failure even when it succeeds, so the consumer tests for the directory
+  rather than trusting the exit status, and the flag is spelled `-B` before
+  macOS 26.
+- **The filesystem must be case-sensitive.** APFS defaults to insensitive, and
+  a store holds paths differing only in case.
+- **Ownership comes from the mount, not a `chown`.** Linux gets a cheap chown
+  from an overlayfs copy-up of the merged root; `hdiutil` has no analogue, so
+  the image is attached `-owners off`, which presents it as the mounting
+  user's. Nix then runs unprivileged exactly as on Linux.
+- **The image is built outside the sandbox.** `hdiutil` needs
+  `diskarbitrationd`, so unlike `mksquashfs` it cannot run in a `runCommand`.
+  On Darwin `mkSeed` therefore emits the image's *inputs* - the same
+  `closureInfo` output - and `bin/make-dmg` assembles them in the seeding
+  script. What the image contains is still decided by evaluation; only the
+  packaging escapes.
+
+Measured on `macos-latest` (macOS 26, Apple Silicon), for the same closure the
+compressed image is *smaller* than the Linux squashfs: 80 MB with ULMO and
+98 MB with ULFO, against 118 MB for squashfs with zstd. Attaching costs about
+4.4s against roughly 0.3s for a loop mount - constant in closure size, but not
+free.
+
+Darwin seeds are built on Darwin (see [Constraints](#constraints)), so seeding
+has a macOS leg rather than a cross-compilation step. The artefact a consumer
+fetches follows from the system it is for: `*-linux` gets `store.squashfs`,
+`*-darwin` gets `store.dmg`, and `.seed.lock` needs no discriminator because
+its keys already say which system each digest belongs to.
+
+Rejected on the way, both for extracting rather than mounting: pulling the
+blobs and unpacking them onto the host's `/nix`, and publishing the closure as
+an archive to a local `file://` binary cache. [Tart] would give a real Darwin
+guest with real isolation, but needs a host that permits VMs, so it answers
+self-hosted builders rather than hosted CI.
 
 After each build, an [in-toto] statement is generated describing inputs and
 build metadata, signed via [OIDC]/[KMS] using [cosign], logged to [Rekor], and
@@ -205,23 +264,27 @@ is verified by Nix evaluation; mismatches fail by design.
 
 ### Constraints
 
-Nix Seed is Linux only: `x86_64-linux` and `aarch64-linux`.
+Nix Seed supports `x86_64-linux`, `aarch64-linux` and `aarch64-darwin`.
 
-The blocker is [delivery](#delivery), and it is narrow. The seed is mounted as
-a pair: a squashfs image on a loop device, unioned with an overlayfs upper that
-takes the build's output. macOS has neither of those filesystems. It is not
-that macOS cannot run the build - it is that nothing there mounts this
-artefact.
+Each platform gets the [delivery](#delivery) mechanism it has. Linux mounts a
+squashfs on a loop device under an overlayfs upper. macOS attaches a compressed
+disk image with a shadow file, which is the same read-only-plus-writable pair
+in the tools that platform provides; see [macOS](#macos).
 
-Nor is a Linux host a way around it. A Linux machine cannot produce `*-darwin`
-store paths, and Darwin builds requiring Apple SDKs must run on a macOS host
-regardless: a runner with a differing SDK version produces a differing NAR
-digest and fails deterministically. Darwin seeds must be built on Darwin
-whatever the delivery mechanism turns out to be.
+`x86_64-darwin` is absent because `lib.systems.flakeExposed` no longer lists
+it, so Apple Silicon is the only Darwin target the examples enumerate. Nothing
+in the mechanism precludes it.
 
-Supporting macOS therefore means replacing the delivery mechanism, not porting
-this one. See [macOS](#macos) under Future Work. Until it lands, every builder
-in a quorum runs Linux; see
+A Linux host is not a way to produce Darwin seeds. A Linux machine cannot
+produce `*-darwin` store paths, and Darwin builds requiring Apple SDKs must run
+on a macOS host regardless: a runner with a differing SDK version produces a
+differing NAR digest and fails deterministically. Darwin seeds are therefore
+built on Darwin, which is why seeding has a macOS leg rather than a
+cross-compilation step.
+
+Every other platform throws at `mkSeed` rather than producing a seed nothing
+can mount. Because both families are now supported, a quorum need not be
+single-kernel; see
 [Correlated Failure Domains](#correlated-failure-domains).
 
 ## Trust Model
@@ -272,16 +335,20 @@ forge a majority. Unanimous (M-of-M) is the strongest guarantee. See
 
 #### Correlated Failure Domains
 
-Independence is bounded by what the builder set holds in common. Nix Seed is
-[Linux only](#constraints), so every builder in a quorum runs the same kernel
-and, on SaaS runners, a small number of near-identical runner images. A
-kernel-level compromise, or a subverted runner image shared across providers, is
-a correlated failure that no value of N detects: every builder produces the same
-wrong output, and quorum is reached on it.
+Independence is bounded by what the builder set holds in common. Where every
+builder in a quorum runs the same kernel and, on SaaS runners, a small number of
+near-identical runner images, a kernel-level compromise or a subverted runner
+image shared across providers is a correlated failure that no value of N
+detects: every builder produces the same wrong output, and quorum is reached on
+it.
 
 Organisational, jurisdictional and infrastructural independence do not address
-this. Operating system diversity is the missing axis, and it is blocked on
-[macOS support](#macos).
+this; operating system diversity is the axis that does. With
+[macOS](#macos) supported, a quorum can now span Linux and Darwin, so the
+kernel is no longer necessarily shared - but only if the configured builder set
+actually spans both. A quorum of Linux runners has the same correlated domain
+it always did. See [`seedCfg.builders`](modules/builders.nix), which already
+carries Darwin runners for several providers.
 
 **Timing:** in [Credulous](#credulous) with N-of-M and a deadline, a party
 controlling M-N builders can delay attestation to ensure the deciding N-th vote
@@ -960,81 +1027,6 @@ expect it - `uses: org/repo@v1` is the pattern every GHA user has memorised.
 Both refs resolve identically.
 
 ## Future Work / Out of Scope
-
-### macOS
-
-macOS support is deferred; see [Constraints](#constraints) for what blocks it.
-The bar is a real mount: a port that extracts the closure is not worth
-shipping, because [mount, never extract](#delivery) is the property that makes
-a seed faster than the caches it replaces. That bar decides between the
-options.
-
-**The mechanism: a read-only disk image with a shadow file.** macOS has a
-native analogue of the Linux pair, one half for one half:
-
-| Linux | macOS |
-| --- | --- |
-| squashfs, compressed, read-only | UDIF `.dmg`, compressed, read-only |
-| `mount -t squashfs -o loop,ro` | `hdiutil attach` |
-| overlayfs upper | `hdiutil attach -shadow` |
-
-`hdiutil attach` is constant time and a compressed image decompresses blocks on
-demand, so nothing is extracted. `-shadow` diverts writes to a separate sparse
-file, leaving the base image untouched - copy-on-write at the block layer
-rather than the file layer, which is the missing upper. Both halves ship with
-the OS: no kernel extension, no macFUSE, nothing requiring an approval dialog
-on a hosted runner.
-
-Rejected, and why:
-
-- **OCI as transport only** - pull the blobs, extract onto the host's `/nix`.
-  Keeps one artefact and one registry, but pays tar extraction, which is
-  file-count bound on APFS. Fails the mount bar.
-- **Closure archive** - publish the closure as one archive, extract to a local
-  `file://` binary cache and build against it. The simplest option and the
-  slowest. Fails the mount bar.
-- **macOS VMs** - [Tart] distributes macOS VM images through OCI registries and
-  runs them on Apple's Virtualization framework: the same distribution model,
-  real isolation, a real Darwin guest. It needs a host that permits VMs, and
-  GitHub-hosted macOS runners are themselves VMs on hardware whose
-  Virtualization framework does not offer nested virtualization on arm64. So
-  it answers self-hosted builders only, not hosted CI.
-
-#### What a spike must prove
-
-The recommendation above is a design, not a result. Nothing should be promised
-to consumers until a spike on a real hosted runner settles these:
-
-1. **The mountpoint.** Since Catalina the root volume is sealed, so
-   `sudo mkdir /nix` is not available. The Nix installers materialise `/nix`
-   via `/etc/synthetic.conf` and `apfs.util -B`, avoiding a reboot; a port
-   inherits that dance, and must cope with runner images that already carry a
-   Nix at `/nix`.
-1. **Case sensitivity.** The store requires it and APFS defaults to
-   case-insensitive, so the image must be created case-sensitive or two store
-   paths differing only in case collide.
-1. **Writability through the shadow** - that Nix will load a database and
-   realise into the attached volume, not merely that it mounts.
-1. **Ownership.** Attaching with `-owners off` presents files as owned by the
-   mounting user, which suits the model the consumer now uses. But the Linux
-   side gets its cheap `chown` from an overlayfs copy-up of the merged root,
-   and `hdiutil` has no analogue; the Darwin path needs its own answer.
-1. **Where the image is built.** `hdiutil` needs `diskarbitrationd` and so
-   cannot run inside the Darwin Nix sandbox. Unlike `mksquashfs`, image
-   assembly cannot be a `runCommand`: it has to happen outside the derivation,
-   in the seeding script. This is the largest structural consequence of the
-   choice.
-1. **Size.** UDZO/ULFO/ULMO against squashfs with zstd. Blob size drives
-   restore time, which is most of a warm job.
-
-Darwin seeds must be built on Darwin (see [Constraints](#constraints)), so
-seeding grows a macOS leg. Apple Silicon is the primary target; the runner
-matrix should be whatever macOS labels CI offers when the work is scheduled,
-rather than a label pinned here that has since been retired.
-
-Whichever is chosen, the trust anchor is the
-[closure manifest](#closure-manifest), which is independent of the delivery
-mechanism.
 
 ### Federated Builders
 

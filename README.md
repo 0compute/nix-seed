@@ -25,18 +25,17 @@ ______________________________________________________________________
 
 ## Platform Support
 
-Linux only: `x86_64-linux` and `aarch64-linux`.
+`x86_64-linux`, `aarch64-linux` and `aarch64-darwin`.
 
-The seed is a squashfs image, mounted on a loop device and unioned with an
-overlayfs upper that takes the build's output. macOS has neither filesystem.
-The build itself would run there perfectly well; nothing on macOS mounts the
-artefact.
+Each platform mounts the seed with the tools it has. Linux uses a squashfs on a
+loop device under an overlayfs upper; macOS attaches a compressed disk image
+with a `-shadow` file as the writable layer. Neither extracts anything, which
+is the point. See [macOS](./DESIGN.md#macos).
 
-A port needs a different delivery mechanism, not a port of this one - and a
-Linux host is no way around it, since it cannot produce `*-darwin` store paths.
-The likely answer is a compressed disk image attached with `hdiutil` and a
-`-shadow` file for the writable layer, which is the native analogue of the
-squashfs and overlay pair. See [Future Work](./DESIGN.md#macos).
+Darwin seeds are built on macOS runners, because a Linux host cannot produce
+`*-darwin` store paths and the Apple SDK version decides the NAR digest.
+`x86_64-darwin` is absent only because `lib.systems.flakeExposed` no longer
+lists it.
 
 ______________________________________________________________________
 
