@@ -50,9 +50,7 @@ jobs:
         os:
           - ubuntu-22.04
           - ubuntu-22.04-arm
-          # macos-latest joins once seed-examples has written an
-          # aarch64-darwin digest into every example's .seed.lock;
-          # without one the digest lookup fails before anything mounts.
+          - macos-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
