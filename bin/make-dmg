@@ -17,12 +17,16 @@ set -eu -o pipefail
 stage=${1:?staging directory required}
 out=${2:?output .dmg path required}
 
-# ULFO (lzfse) is the default because it is what the spike proved end to
-# end. ULMO (lzma) came out ~18% smaller again (80M against 98M for the
-# same closure, versus 118M for the linux squashfs) but its attach cost
-# was never measured; set SEED_DMG_FORMAT=ULMO to trade attach time for
-# transfer size.
-format=${SEED_DMG_FORMAT:-ULFO}
+# ULMO (lzma) is the default because transfer, not decompression, is the
+# measured bottleneck: GitHub's macOS runners restore an actions/cache
+# entry at roughly 50 MB/s against roughly 234 MB/s on linux, so bytes
+# not sent are worth more here than cycles not spent. On one fixed
+# closure the formats came out ULMO 80M, ULFO 98M, UDZO 128M, against
+# 118M for the linux squashfs with zstd.
+# The cost lands at seed time: lzma is slow to compress, and seeding is
+# already the slow half on darwin. Set SEED_DMG_FORMAT=ULFO to trade
+# back -- smaller seed jobs, larger blobs for every consumer.
+format=${SEED_DMG_FORMAT:-ULMO}
 
 work=$(mktemp -d)
 mnt=$work/mnt

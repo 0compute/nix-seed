@@ -19,6 +19,7 @@ on:
       - flake.nix
       - seed/action.yaml
       - bin/build-seed
+      - bin/make-dmg
       - .github/workflows/seed-examples.yaml
   workflow_run:
     workflows:
