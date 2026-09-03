@@ -172,15 +172,29 @@ let
       # build config). the consumer reads them from the read-only mount.
       # mounting is O(1); reads decompress lazily, so there is no per-file
       # extraction. see DESIGN.md#delivery.
-      seed = pkgs.runCommand "${name}"
+      # what the consumer will fetch, per platform. bin/build-seed reads
+      # both from passthru rather than hard-coding a filename.
+      inherit (stdenv.hostPlatform) isDarwin;
+      format = if isDarwin then "dmg" else "squashfs";
+      artifact = "store.${format}";
+
+      passthru = {
+        inherit
+          name
+          tag
+          pathEnv
+          format
+          artifact
+          ;
+        # marker so a seed harvesting self.packages skips a nested seed
+        # (its inputDerivation would recurse into this closure).
+        isNixSeed = true;
+      };
+
+      linuxSeed = pkgs.runCommand "${name}"
         {
+          inherit passthru;
           nativeBuildInputs = [ pkgs.squashfsTools ];
-          passthru = {
-            inherit name tag pathEnv;
-            # marker so a seed harvesting self.packages skips a nested
-            # seed (its inputDerivation would recurse into this closure).
-            isNixSeed = true;
-          };
         }
         ''
           mkdir $out
@@ -192,21 +206,36 @@ let
           # .seed/env -> the baked buildEnv, resolved through the mounted
           # store; the consumer adds /nix/.ro-store/.seed/env/bin to PATH
           # and reads /nix/.ro-store/.seed/env/etc/nix.conf.
-          mksquashfs $(cat ${closure}/store-paths) $out/store.squashfs \
+          mksquashfs $(cat ${closure}/store-paths) $out/${artifact} \
             -keep-as-directory -all-root -no-hardlinks \
             -comp zstd -Xcompression-level ${toString compressionLevel} \
             -p '.seed d 555 0 0' \
             -p ".seed/registration f 444 0 0 cat ${closure}/registration" \
             -p ".seed/env s 777 0 0 ${pathEnv}"
         '';
+
+      # darwin: the image is a .dmg assembled by hdiutil, which needs
+      # diskarbitrationd and so cannot run inside the nix sandbox. this
+      # derivation therefore produces the image's *inputs*, and
+      # bin/build-seed calls bin/make-dmg on them outside the sandbox.
+      # everything here still comes from closureInfo, so what goes into
+      # the image is determined by the evaluation exactly as on linux --
+      # only the packaging step escapes. see DESIGN.md#macos.
+      darwinSeed = pkgs.runCommand "${name}" { inherit passthru; } ''
+        mkdir $out
+        cp ${closure}/store-paths $out/store-paths
+        cp ${closure}/registration $out/registration
+        # total-nar-size sizes the sparse image make-dmg creates
+        cp ${closure}/total-nar-size $out/nar-size
+        ln -s ${pathEnv} $out/env
+      '';
     in
-    # nix-seed is Linux only. the consumer mounts the squashfs as
-    # /nix/store and overlays a writable upper for build output; macOS has
-    # neither loop-mounts nor overlayfs. fail here rather than producing a
-    # seed nothing can run. see DESIGN.md#constraints.
-    lib.throwIf (!stdenv.hostPlatform.isLinux) ''
-      mkSeed: unsupported system "${system}". nix-seed is Linux only;
-      see DESIGN.md#constraints and DESIGN.md#macos.
-    '' seed;
+    # every other platform: the consumer has no way to mount the artifact,
+    # so fail here rather than producing a seed nothing can run.
+    # see DESIGN.md#constraints.
+    lib.throwIf (!stdenv.hostPlatform.isLinux && !isDarwin) ''
+      mkSeed: unsupported system "${system}". nix-seed supports linux and
+      darwin; see DESIGN.md#constraints and DESIGN.md#macos.
+    '' (if isDarwin then darwinSeed else linuxSeed);
 in
 mkSeed

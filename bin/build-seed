@@ -108,12 +108,25 @@ lock=$dir/.$suffix.lock
 name=$(nix eval --raw $seed.name)
 tag=$(nix eval --raw $seed.tag)
 system=$(nix eval --impure --raw --expr builtins.currentSystem)
+# the artifact and its format come from the seed itself rather than being
+# hard-coded: linux ships store.squashfs, darwin store.dmg.
+format=$(nix eval --raw $seed.format)
+artifact=$(nix eval --raw $seed.artifact)
 
-# build the squashfs seed (store.squashfs; registration + nix.conf are
-# baked inside it under .seed/). a pure evaluation: the seed is built
-# from the flake's own inputs and nothing else.
+# build the seed (registration + nix.conf are baked inside it under
+# .seed/). a pure evaluation: the seed is built from the flake's own
+# inputs and nothing else.
 out=$(nix build --print-build-logs --no-link --print-out-paths $seed)
-echo "Built seed $name:$tag"
+echo "Built seed $name:$tag ($format)"
+
+# on darwin the derivation yields the image's *inputs*, not the image:
+# hdiutil needs diskarbitrationd and cannot run in the nix sandbox, so
+# the packaging step happens here. see DESIGN.md#macos.
+if [[ $format == dmg ]]; then
+  image=$(mktemp -d)/image
+  "$(dirname "$0")"/make-dmg "$out" "$image/$artifact"
+  out=$image
+fi
 
 # {{{ push
 
@@ -134,7 +147,7 @@ oras login "$registry" --username "$REGISTRY_USER" --password-stdin \
 digest=$(
   cd "$out"
   oras push "$repository:$tag" \
-    store.squashfs:application/vnd.nix-seed.squashfs \
+    "$artifact:application/vnd.nix-seed.$format" \
     --format go-template="{{.digest}}"
 )
 # extra tags: retag the same manifest, no re-upload
@@ -180,9 +193,11 @@ git=(git -C $dir)
 branch=${GITHUB_REF_NAME:-$("${git[@]}" branch --show-current)}
 
 # parallel per-system builds race on the push: rebuild the lock on top
-# of the freshly pulled state each attempt
+# of the freshly pulled state each attempt. the loser retries, so the
+# bound must exceed the number of systems seeded concurrently -- three
+# now that darwin joined the matrix, times the examples sharing a lock.
 committed=
-for _ in 1 2 3 4 5; do
+for _ in $(seq 1 10); do
   "${git[@]}" pull --rebase origin $branch
   update_lock
   "${git[@]}" add ".$suffix.lock"

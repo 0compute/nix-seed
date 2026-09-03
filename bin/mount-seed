@@ -63,27 +63,62 @@ jq --raw-output '
     ln -sf "$blobs/$hex" "$out/$name"
   done
 
-# read-only baked store (squashfs) unioned with a writable overlay ->
-# /nix/store. no extraction: mount is O(1), reads decompress lazily.
-sudo mkdir -p /nix/.ro-store /nix/.rw/upper /nix/.rw/work /nix/store /nix/var/nix
-sudo mount -t squashfs -o loop,ro "$out/store.squashfs" /nix/.ro-store
-sudo mount -t overlay overlay \
-  -o lowerdir=/nix/.ro-store,upperdir=/nix/.rw/upper,workdir=/nix/.rw/work \
-  /nix/store
+# mount the baked store read-only under a writable layer, so the build
+# can add to it without ever rewriting it. no extraction either way:
+# mounting is O(1) in closure size and blocks decompress on demand.
+# the two platforms spell that the same way with different tools, and
+# `.seed/` therefore lands in a different place on each.
+# see DESIGN.md#delivery and DESIGN.md#macos.
+if [[ $(uname -s) == Darwin ]]; then
 
-# hand the store to the caller. nix then runs unprivileged for the rest
-# of the job: no sudo in the consumer's build, no root-owned artifacts in
-# the workspace, and no dubious-ownership fight between root's libgit2
-# and a checkout the runner user owns.
-# chowning the merged mount point copies the root directory up into the
-# overlay with the new ownership -- the baked paths underneath stay
-# root-owned and read-only, which is all a store needs them to be.
-sudo chown "$(id -u):$(id -g)" /nix/store /nix/.rw/upper /nix/.rw/work
-sudo chown -R "$(id -u):$(id -g)" /nix/var
+  # /nix cannot simply be created: the root volume is sealed. a
+  # synthetic.conf entry plus `apfs.util -t` materialises it as an empty
+  # directory to mount over, with no reboot. (-t is macOS 26's spelling;
+  # older releases use -B.)
+  if [[ ! -d /nix ]]; then
+    printf 'nix\n' | sudo tee -a /etc/synthetic.conf >/dev/null
+    util=/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util
+    sudo "$util" -t || sudo "$util" -B
+  fi
+
+  # -shadow is the writable layer: the base image stays read-only and
+  # every write lands in a sparse file beside it. copy-on-write at the
+  # block layer, which is what macOS has instead of overlayfs.
+  # -owners off presents the volume as owned by the mounting user, so
+  # nix runs unprivileged for the rest of the job exactly as on linux.
+  sudo hdiutil attach "$out/store.dmg" \
+    -shadow "${RUNNER_TEMP:-/tmp}/seed.shadow" \
+    -mountpoint /nix \
+    -owners off -nobrowse -noautoopen -noverify
+
+  seedmeta=/nix/.seed
+
+else
+
+  sudo mkdir -p /nix/.ro-store /nix/.rw/upper /nix/.rw/work /nix/store /nix/var/nix
+  sudo mount -t squashfs -o loop,ro "$out/store.squashfs" /nix/.ro-store
+  sudo mount -t overlay overlay \
+    -o lowerdir=/nix/.ro-store,upperdir=/nix/.rw/upper,workdir=/nix/.rw/work \
+    /nix/store
+
+  # hand the store to the caller. nix then runs unprivileged for the rest
+  # of the job: no sudo in the consumer's build, no root-owned artifacts in
+  # the workspace, and no dubious-ownership fight between root's libgit2
+  # and a checkout the runner user owns.
+  # chowning the merged mount point copies the root directory up into the
+  # overlay with the new ownership -- the baked paths underneath stay
+  # root-owned and read-only, which is all a store needs them to be.
+  # (darwin gets the same effect from -owners off, above.)
+  sudo chown "$(id -u):$(id -g)" /nix/store /nix/.rw/upper /nix/.rw/work
+  sudo chown -R "$(id -u):$(id -g)" /nix/var
+
+  seedmeta=/nix/.ro-store/.seed
+
+fi
 
 # expose the seeded toolchain (buildEnv at .seed/env) on PATH for later
 # job steps. the symlink resolves through the mounted store.
-seedenv=/nix/.ro-store/.seed/env
+seedenv=$seedmeta/env
 envbin=$seedenv/bin
 [[ -z ${GITHUB_PATH:-} ]] || echo $envbin >>"$GITHUB_PATH"
 
@@ -94,8 +129,8 @@ sudo mkdir -p /etc/nix
 sudo ln -sf $seedenv/etc/nix/nix.conf /etc/nix/nix.conf
 
 # nix comes from the mounted store; register the baked closure as valid.
-# registration is under .seed/ in the squashfs, read from the read-only
-# mount (not /nix/store: it is seed metadata, not a store path).
-# unprivileged now that /nix/var belongs to the caller, so the db it
+# registration lives under .seed/ in the image, alongside the store
+# rather than inside it: it is seed metadata, not a store path.
+# unprivileged now that the store belongs to the caller, so the db it
 # creates is owned by the user who will go on to build against it.
-"$envbin/nix-store" --load-db </nix/.ro-store/.seed/registration
+"$envbin/nix-store" --load-db <"$seedmeta/registration"

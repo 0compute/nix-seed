@@ -46,6 +46,10 @@ jobs:
         os:
           - ubuntu-22.04
           - ubuntu-22.04-arm
+          # darwin seeds must be built on darwin: a linux host cannot
+          # produce *-darwin store paths, and the Apple SDK version
+          # decides the NAR digest. see DESIGN.md#constraints.
+          - macos-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7

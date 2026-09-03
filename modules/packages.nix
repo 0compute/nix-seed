@@ -31,13 +31,16 @@
             tag = self.rev or self.dirtyRev or null;
           };
         in
-        # nix-seed is Linux only (DESIGN.md#constraints). expose no seed
-        # elsewhere so the flake still evaluates on darwin, keeping the
-        # devshell and docs usable for contributors on a Mac.
-        lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
-          default = seed;
-          inherit seed;
-        };
+        # linux and darwin have delivery mechanisms; nothing else does, and
+        # mkSeed throws there (DESIGN.md#constraints). guarding here keeps
+        # the flake evaluating on those systems, so the devshell and docs
+        # stay usable.
+        lib.optionalAttrs
+          (pkgs.stdenv.hostPlatform.isLinux || pkgs.stdenv.hostPlatform.isDarwin)
+          {
+            default = seed;
+            inherit seed;
+          };
 
     };
 

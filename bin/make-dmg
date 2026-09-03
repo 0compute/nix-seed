@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# darwin only. Assemble a seed disk image from the staging tree mkSeed
+# produced (store-paths, registration, env, nar-size).
+#
+# This exists outside the nix sandbox because hdiutil needs
+# diskarbitrationd, which the sandbox does not provide. Everything the
+# image *contains* is still determined by evaluation -- closureInfo
+# decides the path list -- so only the packaging escapes. See
+# DESIGN.md#macos.
+#
+# The image is the whole of /nix, not just the store: the consumer
+# attaches it at /nix with a shadow file, so one mount and one
+# copy-on-write layer cover both the store and the database.
+
+set -eu -o pipefail
+
+stage=${1:?staging directory required}
+out=${2:?output .dmg path required}
+
+# ULFO (lzfse) is the default because it is what the spike proved end to
+# end. ULMO (lzma) came out ~18% smaller again (80M against 98M for the
+# same closure, versus 118M for the linux squashfs) but its attach cost
+# was never measured; set SEED_DMG_FORMAT=ULMO to trade attach time for
+# transfer size.
+format=${SEED_DMG_FORMAT:-ULFO}
+
+work=$(mktemp -d)
+mnt=$work/mnt
+cleanup() {
+  # detach before removing, or the sparse image stays attached and the
+  # next run collides on the volume name
+  hdiutil detach "$mnt" -force >/dev/null 2>&1 || true
+  rm -rf "$work"
+}
+trap cleanup EXIT
+
+# size the sparse image from the closure's total nar size, with headroom
+# for filesystem overhead. sparse means unused blocks cost nothing, so
+# being generous here is free.
+narsize=$(cat "$stage/nar-size")
+megs=$((narsize * 3 / 2000000 + 512))
+
+# a case-sensitive filesystem is mandatory: the store holds paths that
+# differ only in case, and APFS defaults to case-insensitive.
+hdiutil create -size "${megs}m" -fs 'Case-sensitive APFS' \
+  -volname NixSeed -type SPARSE -o "$work/rw"
+hdiutil attach "$work/rw.sparseimage" -mountpoint "$mnt" \
+  -owners off -nobrowse -noautoopen
+
+mkdir -p "$mnt/store" "$mnt/var/nix" "$mnt/.seed"
+
+# ditto preserves modes and symlinks; store paths land under store/ by
+# basename, so the volume mounted at /nix *is* /nix/store.
+while read -r p; do
+  [[ -n $p ]] || continue
+  ditto "$p" "$mnt/store/${p##*/}"
+done <"$stage/store-paths"
+
+cp "$stage/registration" "$mnt/.seed/registration"
+# an absolute symlink into the store, resolved once the image is
+# attached at /nix -- the same contract as the squashfs pseudo-entry.
+ln -s "$(readlink "$stage/env")" "$mnt/.seed/env"
+
+hdiutil detach "$mnt"
+
+mkdir -p "$(dirname "$out")"
+rm -f "$out"
+hdiutil convert "$work/rw.sparseimage" -format "$format" -o "$out"
+# hdiutil appends .dmg when the output has no extension it recognises
+[[ -f $out ]] || mv "$out.dmg" "$out"
+
+echo >&2 "built $out ($format, $(du -h "$out" | cut -f1))"
