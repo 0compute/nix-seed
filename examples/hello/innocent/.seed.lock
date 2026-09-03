@@ -1,8 +1,7 @@
 {
   "repository": "ghcr.io/roundtablelove/nix-seed/examples/hello/innocent/seed",
   "systems": {
-    "aarch64-linux": "sha256:f26c46349992bde5c190b48881f4a6aba57e0a703167cf45ed22a02c993cb66c",
-    "x86_64-linux": "sha256:7752c2e1ed13bb7ae644d28f9ee746982a191a2679d9e016ffb0811ca3369a56"
+    "x86_64-linux": "sha256:1e724303d905024a1fdd9e79fce899e537b48d0cfdaf5bf2f0d103da4e3beb87"
   },
-  "tag": "0e8c3bae9b4cfde144e560a0b5079de528a1922b"
+  "tag": "1a7fa0a8bc3b3d507cbde70c440bf22f2782fa31"
 }
