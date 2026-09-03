@@ -58,8 +58,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # setup only: mounts the seed as /nix/store, hands it to the runner
-      # user and puts the seeded nix on PATH.
       - uses: ./
         with:
           path: examples/${{ matrix.example }}
@@ -70,4 +68,4 @@ jobs:
       # reaches nothing but the mounted closure. `unshare --net` here
       # would turn that from configured into enforced.
       - name: build
-        run: nix build ./examples/${{ matrix.example }} --no-link --print-out-paths
+        run: nix build ./examples/${{ matrix.example }} --print-out-paths
