@@ -200,7 +200,7 @@ committed=
 for _ in $(seq 1 10); do
   "${git[@]}" pull --rebase origin $branch
   update_lock
-  "${git[@]}" add ".$suffix.lock"
+  "${git[@]}" add -f ".$suffix.lock"
   if "${git[@]}" diff --cached --quiet; then
     committed=1 # nothing new to record
     break
