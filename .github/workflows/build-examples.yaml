@@ -45,6 +45,8 @@ jobs:
       id-token: write
       packages: read
     strategy:
+      # one platform failing should not hide the others' results
+      fail-fast: false
       matrix:
         example: ${{ fromJSON(needs.setup.outputs.examples) }}
         os:
