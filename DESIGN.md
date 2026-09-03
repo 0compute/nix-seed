@@ -197,16 +197,27 @@ image is smaller for the trivial examples and larger for toolchain-heavy ones -
 97 MB against 112 MB for `hello`, but 408 MB against 252 MB for `cpp-boost`.
 Isolating the codec on one fixed closure gave ULMO 80 MB, ULFO 98 MB and UDZO
 128 MB against squashfs-with-zstd's 118 MB, so lzma is the only format that
-beats zstd outright. `bin/make-dmg` ships ULFO, which the spike proved end to
-end; `SEED_DMG_FORMAT=ULMO` trades attach and read speed for transfer size.
+beats zstd outright, and across all seven examples lzma blobs came out ~27%
+smaller than lzfse.
 
-That trade matters more on Darwin than the codec numbers suggest, because
-**the restore is the dominant cost, not the mount**. GitHub's macOS runners
+**Smaller blobs did not make consumers faster, though**, which is worth
+recording because the opposite is the natural guess. GitHub's macOS runners
 restore an `actions/cache` entry at roughly 50 MB/s against roughly 234 MB/s on
-Linux - a fifth of the bandwidth, for blobs that are often larger. For
-`cpp-boost` that is 8.5s of download against 1.1s, which is most of why a warm
-Darwin job runs two to four times longer than the Linux equivalent. The mount
-mechanism is not the bottleneck; getting the bytes onto the runner is.
+Linux, so a fifth of the bandwidth for comparable bytes, and the restore
+happens inside the same step as the mount. That step is where a warm Darwin job
+loses most of its time: 41s of `python`'s 62s, against 11s of 23s on Linux.
+
+But compressing harder does not shorten it. At five samples per example the
+step was unchanged between lzma and lzfse - median deltas from -3s to +3s, mean
+under a second - while lzma cost 50-200s more per Darwin seed. `python` is the
+clearest case: its lzfse blob is 237 MB *larger* and its step is 5s *faster*.
+The step is therefore not purely transfer-bound; decompression on read gives
+back what the smaller transfer saves. `bin/make-dmg` ships lzfse for that
+reason, and `SEED_DMG_FORMAT=ULMO` is there for when cache or registry storage
+is the binding constraint rather than time.
+
+What does account for the rest of that step is not yet established. It is not
+image size, and the attach itself is about 4.4s.
 
 Darwin seeds are built on Darwin (see [Constraints](#constraints)), so seeding
 has a macOS leg rather than a cross-compilation step. The artefact a consumer
