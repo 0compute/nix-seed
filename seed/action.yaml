@@ -66,8 +66,6 @@ runs:
     # warm the consumer cache with the same key the build action restores
     - name: Cache seed
       uses: actions/cache/save@v6
-      env:
-        ZSTD_CLEVEL: 1
       with:
         path: ${{ runner.temp }}/seed-cache
         key: seed-${{ runner.os }}-${{ runner.arch }}-${{ steps.seed.outputs.key }}

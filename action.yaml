@@ -41,8 +41,6 @@ runs:
 
     - name: cache pull
       uses: actions/cache@v6
-      env:
-        ZSTD_CLEVEL: 1
       with:
         path: ${{ runner.temp }}/seed-cache
         key: seed-${{ runner.os }}-${{ runner.arch }}-${{ steps.seed.outputs.key }}
