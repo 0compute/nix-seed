@@ -42,6 +42,11 @@
           command = ''python -m bench.graph_jobs "$@"'';
           help = "graph job wall clock from bench/workflows.csv";
         }
+        {
+          name = "bench-graph-self";
+          command = ''python -m bench.graph_self "$@"'';
+          help = "graph build-examples step times from bench/workflows.csv";
+        }
       ];
     };
 
