@@ -155,7 +155,7 @@ on a hosted runner:
 
 | Linux | macOS |
 | --- | --- |
-| squashfs, compressed, read-only | UDIF `.dmg`, compressed, read-only |
+| squashfs, compressed, read-only | UDIF `.dmg`, uncompressed, read-only |
 | `mount -t squashfs -o loop,ro` | `hdiutil attach` |
 | overlayfs upper | `hdiutil attach -shadow` |
 
@@ -186,44 +186,44 @@ choice:
   script. What the image contains is still decided by evaluation; only the
   packaging escapes.
 
-Measured on `macos-latest` (macOS 26, Apple Silicon). Attaching costs about
-4.4s against roughly 0.3s for a loop mount - constant in closure size, but not
-free.
+Measured on `macos-15` (Apple Silicon), five rounds per example. The image is
+shipped **uncompressed** (UDRO) inside a zstd stream, which the consumer decodes
+once before `hdiutil attach`. The first design attached a compressed (lzfse,
+ULFO) image directly, and the reversal is the most important Darwin finding:
 
-Blob size does *not* generalise from one example, and the honest comparison is
-awkward because the two platforms bake different closures: a C++ project pulls
-clang and the Apple SDK on Darwin where it pulls gcc and glibc on Linux. The
-image is smaller for the trivial examples and larger for toolchain-heavy ones -
-97 MB against 112 MB for `hello`, but 408 MB against 252 MB for `cpp-boost`.
-Isolating the codec on one fixed closure gave ULMO 80 MB, ULFO 98 MB and UDZO
-128 MB against squashfs-with-zstd's 118 MB, so lzma is the only format that
-beats zstd outright, and across all seven examples lzma blobs came out ~27%
-smaller than lzfse.
+- **Attaching a compressed image is not constant-time.** `hdiutil attach`
+  reads the volume's metadata while mounting, and on a compressed UDIF image
+  every read decompresses a chunk. `rust`'s lzfse image took 22-28s to attach
+  in every round against 6-11s for `python`'s *larger* one: the cost tracks
+  inodes, not bytes. `-noverify` and `-noautofsck` change nothing. Uncompressed,
+  the same images attach in 1-2s and 4-5s.
+- **So is everything that reads the store afterwards.** Evaluating nixpkgs off
+  the mounted image is a random-read workload. On lzfse the same flake took
+  4-39s (`python`) and 3-22s (`rust`) run to run; uncompressed it sits in a
+  1.5s band at the bottom of that range.
+- **The transfer does not get bigger.** The `actions/cache` entry is
+  zstd-compressed by the action, and zstd over raw blocks beats lzfse: `rust`
+  692 -> 646 MB, `python` 861 -> 769 MB. Pushed raw to the registry, though,
+  the image is 3-3.8 GB and the seed's push step went from ~35s to ~200s. So
+  `bin/make-dmg` wraps it in zstd for transport and `bin/mount-seed` decodes it
+  once before attaching, the same shape as Linux: compressed at rest, plain
+  blocks under the mount.
 
-**Smaller blobs did not make consumers faster, though**, which is worth
-recording because the opposite is the natural guess. GitHub's macOS runners
-restore an `actions/cache` entry at roughly 50 MB/s against roughly 234 MB/s on
-Linux, so a fifth of the bandwidth for comparable bytes, and the restore
-happens inside the same step as the mount. That step is where a warm Darwin job
-loses most of its time: 41s of `python`'s 62s, against 11s of 23s on Linux.
+Net effect per warm `macos-15` job: `rust` 72s -> 29-47s, `python` 66s ->
+42-49s, `eval-heavy` 30s -> 22-29s. Linux never had the problem: squashfs
+decompresses lazily per block in the kernel with the page cache in front of it.
 
-But compressing harder does not shorten it. At five samples per example the
-step was unchanged between lzma and lzfse - median deltas from -3s to +3s, mean
-under a second - while lzma cost 50-200s more per Darwin seed. `python` is the
-clearest case: its lzfse blob is 237 MB *larger* and its step is 5s *faster*.
-The step is therefore not purely transfer-bound; decompression on read gives
-back what the smaller transfer saves. `bin/make-dmg` ships lzfse for that
-reason, and `SEED_DMG_FORMAT=ULMO` is there for when cache or registry storage
-is the binding constraint rather than time.
-
-What does account for the rest of that step is not yet established. It is not
-image size, and the attach itself is about 4.4s.
+An earlier codec comparison (lzma against lzfse: ~27% smaller blobs, consumers
+no faster, seeds 50-200s slower) pointed the same way - decompression on read
+was giving back what the smaller transfer saved - but the attach measured about
+4.4s on a trivial closure at the time, so the cost was attributed to the
+transfer rather than the codec.
 
 Darwin seeds are built on Darwin (see [Constraints](#constraints)), so seeding
 has a macOS leg rather than a cross-compilation step. The artefact a consumer
 fetches follows from the system it is for: `*-linux` gets `store.squashfs`,
-`*-darwin` gets `store.dmg`, and `.seed.lock` needs no discriminator because
-its keys already say which system each digest belongs to.
+`*-darwin` gets `store.dmg.zst`, and `.seed.lock` needs no discriminator
+because its keys already say which system each digest belongs to.
 
 Rejected on the way, both for extracting rather than mounting: pulling the
 blobs and unpacking them onto the host's `/nix`, and publishing the closure as
