@@ -156,14 +156,6 @@ for t in "${tags[@]}"; do
 done
 echo "pushed $repository@$digest"
 
-# warm the consumer cache: copy the just-pushed manifest (byte-identical,
-# same digest) into an oci layout for actions/cache to save, and emit the
-# digest so the seed action keys the cache by it.
-if [[ -n ${SEED_CACHE:-} ]]; then
-  oras cp --to-oci-layout "$repository@$digest" "$SEED_CACHE:pull"
-  echo "key=${digest#sha256:}" >>"${GITHUB_OUTPUT:-/dev/null}"
-fi
-
 # }}}
 
 # {{{ update seed lock

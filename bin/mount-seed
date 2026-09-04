@@ -1,46 +1,56 @@
 #!/usr/bin/env bash
 # shellcheck disable=2086
-# fetch, verify, and mount the squashfs seed as /nix/store: pull the OCI
-# blobs (cache or ghcr), verify them against the lock digest, mount the
-# squashfs read-only under a writable overlay, register the baked closure
+# fetch, verify, and mount the seed as /nix/store: pull the OCI blobs
+# straight from the registry, verify them against the lock digest, mount
+# the image read-only under a writable layer, register the baked closure
 # in a fresh nix db, and put the seeded toolchain on PATH. after this the
 # store is ready for the caller's own `nix build`: the seeded nix is on
 # PATH, the store belongs to the caller, and the baked nix.conf has no
 # substituters, so a build reaches nothing but the mounted closure. that
 # is configuration, not confinement -- wrap the build in `unshare --net`
 # if the offline property has to be enforced rather than configured.
+# everything here runs on tools preinstalled on the runner: curl, jq,
+# openssl, zstd.
 
 set -eux -o pipefail
 
 dir=${1:-.}
 out=${2:?artifact output dir required}
-layout=${3:?oci layout cache dir required}
 # full seed digest (sha256:...) for this system, computed once by the
 # action's `seed digest` step; avoids re-reading .seed.lock per system.
-digest=${4:?seed digest required}
+digest=${3:?seed digest required}
 # lock file naming the seed image and its per-system digests
-lock=${5:-$dir/.seed.lock}
+lock=${4:-$dir/.seed.lock}
 
 repository=$(jq --exit-status --raw-output .repository "$lock")
+registry=${repository%%/*}
+path=${repository#*/}
 
-blobs=$layout/blobs/sha256
-manifest=$blobs/${digest#sha256:}
+mkdir -p "$out"
 
-# cache miss: fetch from ghcr into a local oci layout (preserves the
-# exact manifest) for actions/cache to save; oras is only needed here,
-# the hot path below runs on preinstalled tools.
-if [[ ! -f $manifest ]]; then
-  "$GITHUB_ACTION_PATH"/bin/install-oras
-  [[ -z ${REGISTRY_USER:-} ]] || oras login "${repository%%/*}" \
-    --username "$REGISTRY_USER" --password-stdin <<<"$REGISTRY_PASS"
-  oras cp --to-oci-layout "$repository@$digest" "$layout:pull"
-fi
+# a pull token, kept out of the trace and passed to curl as a config
+# file so it never appears on a command line. REGISTRY_USER/PASS are
+# optional: public packages get an anonymous token.
+conf=$out/curl.conf
+{
+  set +x
+  token=$(
+    curl -sS -G ${REGISTRY_USER:+-u "$REGISTRY_USER:$REGISTRY_PASS"} \
+      --data-urlencode "scope=repository:$path:pull" \
+      "https://$registry/token?service=$registry" \
+      | jq --exit-status --raw-output .token
+  )
+  (
+    umask 077
+    printf 'header = "Authorization: Bearer %s"\n' "$token" >"$conf"
+  )
+  set -x
+} 2>/dev/null
 
 # verify the manifest against the lock digest, then each blob against
-# the manifest, so a corrupt or poisoned cache entry is rejected. the
-# blobs are then used in place (symlinked, mounted directly): no copy.
-# openssl: hardware sha256 (~2GB/s); the runner's coreutils sha256sum
-# is scalar (~250MB/s) and would dominate the hot path.
+# the manifest, so a corrupt or poisoned blob is rejected before it is
+# mounted. openssl: hardware sha256 (~2GB/s); the runner's coreutils
+# sha256sum is scalar (~250MB/s) and would dominate the hot path.
 verify() {
   local got
   got=$(openssl dgst -sha256 -r "$2")
@@ -50,18 +60,45 @@ verify() {
   }
 }
 
+manifest=$out/manifest.json
+curl -sS -K "$conf" \
+  -H 'Accept: application/vnd.oci.image.manifest.v1+json' \
+  -o "$manifest" "https://$registry/v2/$path/manifests/$digest"
 verify "${digest#sha256:}" "$manifest"
-mkdir -p "$out"
+
+# each blob in four parallel range requests. the blob endpoint redirects
+# to blob storage behind a CDN, which honours ranges (the registry itself
+# does not) and needs no token. measured against actions/cache on the
+# rust seed (654 MB linux, 579 MB darwin, 18 samples each): 1.5s against
+# 4-14s on ubuntu-arm, 4s against 4-12s on macos-15. four streams also
+# hide a cold CDN edge, where a single stream takes 7-21s; more streams
+# gain nothing. no cache save on the seed side, no 10 GB cap, no
+# eviction. the parts are concatenated in order (single-digit suffixes).
+streams=4
 jq --raw-output '
   .layers[]
-  | "\(.digest | ltrimstr("sha256:"))  \(
+  | "\(.digest | ltrimstr("sha256:")) \(.size) \(
       .annotations["org.opencontainers.image.title"]
         // error("untitled layer"))"' \
   "$manifest" |
-  while read -r hex name; do
-    verify "$hex" "$blobs/$hex"
-    ln -sf "$blobs/$hex" "$out/$name"
+  while read -r hex size name; do
+    location=$(curl -sS -K "$conf" -o /dev/null -w '%{redirect_url}' \
+      "https://$registry/v2/$path/blobs/sha256:$hex")
+    chunk=$(((size + streams - 1) / streams))
+    args=()
+    for ((i = 0; i < streams; i++)); do
+      first=$((i * chunk))
+      last=$(((i + 1) * chunk - 1))
+      ((last < size)) || last=$((size - 1))
+      ((i == 0)) || args+=(--next)
+      args+=("$location" --range "$first-$last" --output "$out/$name.$i")
+    done
+    curl -sS --parallel --parallel-max $streams "${args[@]}"
+    cat "$out/$name".[0-9] >"$out/$name"
+    rm "$out/$name".[0-9]
+    verify "$hex" "$out/$name"
   done
+rm "$conf"
 
 # mount the baked store read-only under a writable layer, so the build
 # can add to it without ever rewriting it. no extraction either way:

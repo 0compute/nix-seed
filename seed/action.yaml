@@ -54,18 +54,9 @@ runs:
         GH_TOKEN: ${{ inputs.github_token }}
         REGISTRY_USER: ${{ github.actor }}
         REGISTRY_PASS: ${{ inputs.github_token }}
-        # build-seed copies the pushed manifest here for the cache save
-        SEED_CACHE: ${{ runner.temp }}/seed-cache
       run: |-
         set -x
         "$GITHUB_ACTION_PATH"/../bin/build-seed \
           --seed-attr ${{ inputs.seed_attr }} \
           --registry ${{ inputs.registry }} \
           ${{ inputs.path }}
-
-    # warm the consumer cache with the same key the build action restores
-    - name: Cache seed
-      uses: actions/cache/save@v6
-      with:
-        path: ${{ runner.temp }}/seed-cache
-        key: seed-${{ runner.os }}-${{ runner.arch }}-${{ steps.seed.outputs.key }}

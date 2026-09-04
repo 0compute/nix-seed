@@ -20,9 +20,9 @@ runs:
   using: composite
   steps:
 
-    # the seed digest keys the image cache: same digest -> same bytes, so
-    # the entry is immutable and restored in-datacenter instead of pulled
-    # from ghcr. ghcr stays the durable, verifiable source of truth.
+    # the lock names the registry image and this system's digest; the
+    # blob is pulled straight from the registry (four parallel range
+    # requests, see bin/mount-seed) and verified against that digest.
     - name: seed digest
       id: seed
       shell: bash
@@ -33,17 +33,9 @@ runs:
         suffix=${{ inputs.seed_attr }}
         lock=${{ inputs.path }}/.${suffix//./-}.lock
         digest=$(jq -er --arg s "$system" '.systems[$s]' "$lock")
-        # digest keys the cache (key, minus the sha256: prefix) and is
-        # reused by mount-seed (full digest), so the lock is read once.
         echo "lock=$lock" >>"$GITHUB_OUTPUT"
         echo "digest=$digest" >>"$GITHUB_OUTPUT"
-        echo "key=${digest#sha256:}" >>"$GITHUB_OUTPUT"
 
-    - name: cache pull
-      uses: actions/cache@v6
-      with:
-        path: ${{ runner.temp }}/seed-cache
-        key: seed-${{ runner.os }}-${{ runner.arch }}-${{ steps.seed.outputs.key }}
     - name: mount seed
       shell: bash
       env:
@@ -51,6 +43,6 @@ runs:
         REGISTRY_PASS: ${{ inputs.github_token }}
       run: |-
         "$GITHUB_ACTION_PATH"/bin/mount-seed ${{ inputs.path }} \
-          "$RUNNER_TEMP/seed" "$RUNNER_TEMP/seed-cache" \
+          "$RUNNER_TEMP/seed" \
           "${{ steps.seed.outputs.digest }}" \
           "${{ steps.seed.outputs.lock }}"

@@ -119,8 +119,12 @@ seed's only artefact: `registration`, the `nix-store --load-db` dump that marks
 the baked paths valid in a fresh database, and `env`, a symlink to a `buildEnv`
 providing `bin/` for `PATH` and `etc/nix/nix.conf` for the build configuration.
 
-The consumer pulls the blob, verifies it against the digest in `.seed.lock`, and
-mounts it as a pair:
+The consumer pulls the blob straight from the registry with four parallel range
+requests (the blob endpoint redirects to CDN-fronted storage that honours
+ranges; measured at 1.5s for 654 MB on `ubuntu-22.04-arm` and 4s for 579 MB on
+`macos-15`, against 4-14s for an `actions/cache` restore of the same bytes, and
+with no save step, size cap or eviction), verifies it against the digest in
+`.seed.lock`, and mounts it as a pair:
 
 ```sh
 mount -t squashfs -o loop,ro store.squashfs /nix/.ro-store
@@ -201,13 +205,12 @@ ULFO) image directly, and the reversal is the most important Darwin finding:
   the mounted image is a random-read workload. On lzfse the same flake took
   4-39s (`python`) and 3-22s (`rust`) run to run; uncompressed it sits in a
   1.5s band at the bottom of that range.
-- **The transfer does not get bigger.** The `actions/cache` entry is
-  zstd-compressed by the action, and zstd over raw blocks beats lzfse: `rust`
-  692 -> 646 MB, `python` 861 -> 769 MB. Pushed raw to the registry, though,
-  the image is 3-3.8 GB and the seed's push step went from ~35s to ~200s. So
-  `bin/make-dmg` wraps it in zstd for transport and `bin/mount-seed` decodes it
-  once before attaching, the same shape as Linux: compressed at rest, plain
-  blocks under the mount.
+- **The transfer does not get bigger.** zstd over raw blocks beats lzfse:
+  `rust` 704 -> 593 MB, `python` 864 -> 673 MB. Pushed raw to the registry,
+  though, the image is 3-3.8 GB and the seed's push step went from ~35s to
+  ~200s. So `bin/make-dmg` wraps it in zstd for transport and `bin/mount-seed`
+  decodes it once before attaching, the same shape as Linux: compressed at
+  rest, plain blocks under the mount.
 
 Net effect per warm `macos-15` job: `rust` 72s -> 29-47s, `python` 66s ->
 42-49s, `eval-heavy` 30s -> 22-29s. Linux never had the problem: squashfs
