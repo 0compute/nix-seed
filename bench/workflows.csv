@@ -36991,3 +36991,730 @@ run_id,workflow,event,created_at,head_sha,job_id,example,os,conclusion,step,seco
 33923500084,build-cache-nix-examples,workflow_dispatch,2026-09-04T21:58:39Z,1db1a910112e4cf715c59671d024a4a35e272768,101186847841,rust,macos-15,success,Post Run nix-community/cache-nix-action@v7,1.0
 33923500084,build-cache-nix-examples,workflow_dispatch,2026-09-04T21:58:39Z,1db1a910112e4cf715c59671d024a4a35e272768,101186847841,rust,macos-15,success,Post Run actions/checkout@v7,1.0
 33923500084,build-cache-nix-examples,workflow_dispatch,2026-09-04T21:58:39Z,1db1a910112e4cf715c59671d024a4a35e272768,101186847841,rust,macos-15,success,Complete job,2.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,,,,,run,158.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852173,rust,ubuntu-22.04-arm,success,job,46.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852173,rust,ubuntu-22.04-arm,success,Set up job,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852173,rust,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852173,rust,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852173,rust,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/rust,40.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852173,rust,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852173,rust,ubuntu-22.04-arm,success,Complete job,0.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852188,rust,macos-15,success,job,92.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852188,rust,macos-15,success,Set up job,2.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852188,rust,macos-15,success,Run actions/checkout@v7,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852188,rust,macos-15,success,Run nixbuild/nix-quick-install-action@v35,10.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852188,rust,macos-15,success,Run nix build --print-build-logs ./examples/rust,75.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852188,rust,macos-15,success,Post Run actions/checkout@v7,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852188,rust,macos-15,success,Complete job,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852208,python,ubuntu-22.04-arm,success,job,58.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852208,python,ubuntu-22.04-arm,success,Set up job,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852208,python,ubuntu-22.04-arm,success,Run actions/checkout@v7,2.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852208,python,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852208,python,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/python,51.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852208,python,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852208,python,ubuntu-22.04-arm,success,Complete job,0.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852218,eval-heavy,macos-15,success,job,36.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852218,eval-heavy,macos-15,success,Set up job,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852218,eval-heavy,macos-15,success,Run actions/checkout@v7,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852218,eval-heavy,macos-15,success,Run nixbuild/nix-quick-install-action@v35,7.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852218,eval-heavy,macos-15,success,Run nix build --print-build-logs ./examples/eval-heavy,22.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852218,eval-heavy,macos-15,success,Post Run actions/checkout@v7,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852218,eval-heavy,macos-15,success,Complete job,0.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852226,python,macos-15,success,job,85.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852226,python,macos-15,success,Set up job,2.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852226,python,macos-15,success,Run actions/checkout@v7,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852226,python,macos-15,success,Run nixbuild/nix-quick-install-action@v35,10.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852226,python,macos-15,success,Run nix build --print-build-logs ./examples/python,70.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852226,python,macos-15,success,Post Run actions/checkout@v7,0.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852226,python,macos-15,success,Complete job,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852253,eval-heavy,ubuntu-22.04-arm,success,job,19.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852253,eval-heavy,ubuntu-22.04-arm,success,Set up job,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852253,eval-heavy,ubuntu-22.04-arm,success,Run actions/checkout@v7,2.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852253,eval-heavy,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852253,eval-heavy,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/eval-heavy,11.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852253,eval-heavy,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33923502129,build-raw-examples,workflow_dispatch,2026-09-04T21:58:40Z,1db1a910112e4cf715c59671d024a4a35e272768,101186852253,eval-heavy,ubuntu-22.04-arm,success,Complete job,0.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,,,,,run,61.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514429,eval-heavy,ubuntu-22.04-arm,success,job,14.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514429,eval-heavy,ubuntu-22.04-arm,success,Set up job,1.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514429,eval-heavy,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514429,eval-heavy,ubuntu-22.04-arm,success,Run ./,4.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514429,eval-heavy,ubuntu-22.04-arm,success,build,4.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514429,eval-heavy,ubuntu-22.04-arm,success,Post Run ./,1.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514429,eval-heavy,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514429,eval-heavy,ubuntu-22.04-arm,success,Complete job,0.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514429,eval-heavy,ubuntu-22.04-arm,success,seed digest,0.162
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514429,eval-heavy,ubuntu-22.04-arm,success,cache pull,2.176
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514429,eval-heavy,ubuntu-22.04-arm,success,mount seed,0.341
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514429,eval-heavy,ubuntu-22.04-arm,success,post cache pull,0.108
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514437,python,ubuntu-22.04-arm,success,job,17.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514437,python,ubuntu-22.04-arm,success,Set up job,2.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514437,python,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514437,python,ubuntu-22.04-arm,success,Run ./,6.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514437,python,ubuntu-22.04-arm,success,build,6.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514437,python,ubuntu-22.04-arm,success,Post Run ./,0.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514437,python,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514437,python,ubuntu-22.04-arm,success,Complete job,0.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514437,python,ubuntu-22.04-arm,success,seed digest,0.042
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514437,python,ubuntu-22.04-arm,success,cache pull,5.077
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514437,python,ubuntu-22.04-arm,success,mount seed,0.729
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514437,python,ubuntu-22.04-arm,success,post cache pull,0.11
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514444,rust,macos-15,success,job,34.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514444,rust,macos-15,success,Set up job,1.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514444,rust,macos-15,success,Run actions/checkout@v7,3.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514444,rust,macos-15,success,Run ./,18.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514444,rust,macos-15,success,build,8.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514444,rust,macos-15,success,Post Run ./,1.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514444,rust,macos-15,success,Post Run actions/checkout@v7,0.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514444,rust,macos-15,success,Complete job,1.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514444,rust,macos-15,success,seed digest,0.077
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514444,rust,macos-15,success,cache pull,8.713
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514444,rust,macos-15,success,mount seed,8.858
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514444,rust,macos-15,success,post cache pull,0.666
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514450,eval-heavy,macos-15,success,job,22.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514450,eval-heavy,macos-15,success,Set up job,1.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514450,eval-heavy,macos-15,success,Run actions/checkout@v7,2.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514450,eval-heavy,macos-15,success,Run ./,6.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514450,eval-heavy,macos-15,success,build,9.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514450,eval-heavy,macos-15,success,Post Run ./,1.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514450,eval-heavy,macos-15,success,Post Run actions/checkout@v7,0.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514450,eval-heavy,macos-15,success,Complete job,1.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514450,eval-heavy,macos-15,success,seed digest,0.072
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514450,eval-heavy,macos-15,success,cache pull,2.276
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514450,eval-heavy,macos-15,success,mount seed,3.152
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514450,eval-heavy,macos-15,success,post cache pull,0.525
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514458,rust,ubuntu-22.04-arm,success,job,17.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514458,rust,ubuntu-22.04-arm,success,Set up job,1.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514458,rust,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514458,rust,ubuntu-22.04-arm,success,Run ./,8.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514458,rust,ubuntu-22.04-arm,success,build,3.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514458,rust,ubuntu-22.04-arm,success,Post Run ./,0.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514458,rust,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514458,rust,ubuntu-22.04-arm,success,Complete job,0.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514458,rust,ubuntu-22.04-arm,success,seed digest,0.049
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514458,rust,ubuntu-22.04-arm,success,cache pull,7.32
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514458,rust,ubuntu-22.04-arm,success,mount seed,0.706
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514458,rust,ubuntu-22.04-arm,success,post cache pull,0.113
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514515,python,macos-15,success,job,43.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514515,python,macos-15,success,Set up job,1.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514515,python,macos-15,success,Run actions/checkout@v7,2.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514515,python,macos-15,success,Run ./,22.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514515,python,macos-15,success,build,11.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514515,python,macos-15,success,Post Run ./,4.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514515,python,macos-15,success,Post Run actions/checkout@v7,1.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514515,python,macos-15,success,Complete job,0.0
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514515,python,macos-15,success,seed digest,0.069
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514515,python,macos-15,success,cache pull,6.722
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514515,python,macos-15,success,mount seed,14.797
+33923715134,build-examples,workflow_dispatch,2026-09-04T22:01:34Z,1db1a910112e4cf715c59671d024a4a35e272768,101187514515,python,macos-15,success,post cache pull,3.466
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,,,,,run,189.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521798,eval-heavy,macos-15,success,job,51.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521798,eval-heavy,macos-15,success,Set up job,2.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521798,eval-heavy,macos-15,success,Run actions/checkout@v7,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521798,eval-heavy,macos-15,success,Run nixbuild/nix-quick-install-action@v35,10.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521798,eval-heavy,macos-15,success,Run nix-community/cache-nix-action@v7,30.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521798,eval-heavy,macos-15,success,Run nix build --print-build-logs ./examples/eval-heavy,5.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521798,eval-heavy,macos-15,success,Post Run nix-community/cache-nix-action@v7,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521798,eval-heavy,macos-15,success,Post Run actions/checkout@v7,0.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521798,eval-heavy,macos-15,success,Complete job,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521835,eval-heavy,ubuntu-22.04-arm,success,job,22.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521835,eval-heavy,ubuntu-22.04-arm,success,Set up job,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521835,eval-heavy,ubuntu-22.04-arm,success,Run actions/checkout@v7,2.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521835,eval-heavy,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521835,eval-heavy,ubuntu-22.04-arm,success,Run nix-community/cache-nix-action@v7,9.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521835,eval-heavy,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/eval-heavy,5.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521835,eval-heavy,ubuntu-22.04-arm,success,Post Run nix-community/cache-nix-action@v7,0.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521835,eval-heavy,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521835,eval-heavy,ubuntu-22.04-arm,success,Complete job,0.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521848,rust,ubuntu-22.04-arm,success,job,34.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521848,rust,ubuntu-22.04-arm,success,Set up job,2.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521848,rust,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521848,rust,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,2.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521848,rust,ubuntu-22.04-arm,success,Run nix-community/cache-nix-action@v7,25.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521848,rust,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/rust,0.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521848,rust,ubuntu-22.04-arm,success,Post Run nix-community/cache-nix-action@v7,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521848,rust,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521848,rust,ubuntu-22.04-arm,success,Complete job,0.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521863,python,ubuntu-22.04-arm,success,job,27.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521863,python,ubuntu-22.04-arm,success,Set up job,2.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521863,python,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521863,python,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521863,python,ubuntu-22.04-arm,success,Run nix-community/cache-nix-action@v7,19.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521863,python,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/python,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521863,python,ubuntu-22.04-arm,success,Post Run nix-community/cache-nix-action@v7,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521863,python,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521863,python,ubuntu-22.04-arm,success,Complete job,0.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521871,python,macos-15,success,job,131.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521871,python,macos-15,success,Set up job,3.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521871,python,macos-15,success,Run actions/checkout@v7,2.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521871,python,macos-15,success,Run nixbuild/nix-quick-install-action@v35,7.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521871,python,macos-15,success,Run nix-community/cache-nix-action@v7,110.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521871,python,macos-15,success,Run nix build --print-build-logs ./examples/python,4.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521871,python,macos-15,success,Post Run nix-community/cache-nix-action@v7,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521871,python,macos-15,success,Post Run actions/checkout@v7,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521871,python,macos-15,success,Complete job,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521888,rust,macos-15,success,job,54.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521888,rust,macos-15,success,Set up job,3.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521888,rust,macos-15,success,Run actions/checkout@v7,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521888,rust,macos-15,success,Run nixbuild/nix-quick-install-action@v35,4.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521888,rust,macos-15,success,Run nix-community/cache-nix-action@v7,42.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521888,rust,macos-15,success,Run nix build --print-build-logs ./examples/rust,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521888,rust,macos-15,success,Post Run nix-community/cache-nix-action@v7,0.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521888,rust,macos-15,success,Post Run actions/checkout@v7,1.0
+33923716901,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:01:36Z,1db1a910112e4cf715c59671d024a4a35e272768,101187521888,rust,macos-15,success,Complete job,0.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,,,,,run,129.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520019,rust,ubuntu-22.04-arm,success,job,46.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520019,rust,ubuntu-22.04-arm,success,Set up job,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520019,rust,ubuntu-22.04-arm,success,Run actions/checkout@v7,0.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520019,rust,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520019,rust,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/rust,40.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520019,rust,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520019,rust,ubuntu-22.04-arm,success,Complete job,0.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520023,python,ubuntu-22.04-arm,success,job,59.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520023,python,ubuntu-22.04-arm,success,Set up job,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520023,python,ubuntu-22.04-arm,success,Run actions/checkout@v7,2.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520023,python,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,0.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520023,python,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/python,53.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520023,python,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520023,python,ubuntu-22.04-arm,success,Complete job,0.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520058,eval-heavy,ubuntu-22.04-arm,success,job,19.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520058,eval-heavy,ubuntu-22.04-arm,success,Set up job,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520058,eval-heavy,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520058,eval-heavy,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520058,eval-heavy,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/eval-heavy,12.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520058,eval-heavy,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520058,eval-heavy,ubuntu-22.04-arm,success,Complete job,0.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520081,rust,macos-15,success,job,69.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520081,rust,macos-15,success,Set up job,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520081,rust,macos-15,success,Run actions/checkout@v7,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520081,rust,macos-15,success,Run nixbuild/nix-quick-install-action@v35,3.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520081,rust,macos-15,success,Run nix build --print-build-logs ./examples/rust,59.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520081,rust,macos-15,success,Post Run actions/checkout@v7,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520081,rust,macos-15,success,Complete job,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520115,python,macos-15,success,job,87.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520115,python,macos-15,success,Set up job,2.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520115,python,macos-15,success,Run actions/checkout@v7,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520115,python,macos-15,success,Run nixbuild/nix-quick-install-action@v35,4.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520115,python,macos-15,success,Run nix build --print-build-logs ./examples/python,77.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520115,python,macos-15,success,Post Run actions/checkout@v7,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520115,python,macos-15,success,Complete job,0.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520152,eval-heavy,macos-15,success,job,34.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520152,eval-heavy,macos-15,success,Set up job,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520152,eval-heavy,macos-15,success,Run actions/checkout@v7,2.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520152,eval-heavy,macos-15,success,Run nixbuild/nix-quick-install-action@v35,3.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520152,eval-heavy,macos-15,success,Run nix build --print-build-logs ./examples/eval-heavy,24.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520152,eval-heavy,macos-15,success,Post Run actions/checkout@v7,1.0
+33923719052,build-raw-examples,workflow_dispatch,2026-09-04T22:01:38Z,1db1a910112e4cf715c59671d024a4a35e272768,101187520152,eval-heavy,macos-15,success,Complete job,1.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,,,,,run,81.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415658,eval-heavy,macos-15,success,job,16.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415658,eval-heavy,macos-15,success,Set up job,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415658,eval-heavy,macos-15,success,Run actions/checkout@v7,1.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415658,eval-heavy,macos-15,success,Run ./,4.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415658,eval-heavy,macos-15,success,build,6.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415658,eval-heavy,macos-15,success,Post Run ./,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415658,eval-heavy,macos-15,success,Post Run actions/checkout@v7,1.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415658,eval-heavy,macos-15,success,Complete job,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415658,eval-heavy,macos-15,success,seed digest,0.064
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415658,eval-heavy,macos-15,success,cache pull,1.779
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415658,eval-heavy,macos-15,success,mount seed,1.968
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415658,eval-heavy,macos-15,success,post cache pull,0.529
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415721,eval-heavy,ubuntu-22.04-arm,success,job,17.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415721,eval-heavy,ubuntu-22.04-arm,success,Set up job,1.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415721,eval-heavy,ubuntu-22.04-arm,success,Run actions/checkout@v7,2.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415721,eval-heavy,ubuntu-22.04-arm,success,Run ./,5.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415721,eval-heavy,ubuntu-22.04-arm,success,build,5.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415721,eval-heavy,ubuntu-22.04-arm,success,Post Run ./,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415721,eval-heavy,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415721,eval-heavy,ubuntu-22.04-arm,success,Complete job,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415721,eval-heavy,ubuntu-22.04-arm,success,seed digest,0.041
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415721,eval-heavy,ubuntu-22.04-arm,success,cache pull,2.916
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415721,eval-heavy,ubuntu-22.04-arm,success,mount seed,0.331
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415721,eval-heavy,ubuntu-22.04-arm,success,post cache pull,0.108
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415755,rust,ubuntu-22.04-arm,success,job,19.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415755,rust,ubuntu-22.04-arm,success,Set up job,2.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415755,rust,ubuntu-22.04-arm,success,Run actions/checkout@v7,2.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415755,rust,ubuntu-22.04-arm,success,Run ./,8.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415755,rust,ubuntu-22.04-arm,success,build,3.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415755,rust,ubuntu-22.04-arm,success,Post Run ./,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415755,rust,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415755,rust,ubuntu-22.04-arm,success,Complete job,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415755,rust,ubuntu-22.04-arm,success,seed digest,0.043
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415755,rust,ubuntu-22.04-arm,success,cache pull,7.579
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415755,rust,ubuntu-22.04-arm,success,mount seed,0.707
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415755,rust,ubuntu-22.04-arm,success,post cache pull,0.11
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415764,rust,macos-15,success,job,29.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415764,rust,macos-15,success,Set up job,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415764,rust,macos-15,success,Run actions/checkout@v7,1.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415764,rust,macos-15,success,Run ./,15.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415764,rust,macos-15,success,build,6.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415764,rust,macos-15,success,Post Run ./,1.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415764,rust,macos-15,success,Post Run actions/checkout@v7,1.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415764,rust,macos-15,success,Complete job,1.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415764,rust,macos-15,success,seed digest,0.052
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415764,rust,macos-15,success,cache pull,8.055
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415764,rust,macos-15,success,mount seed,6.761
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415764,rust,macos-15,success,post cache pull,0.563
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415772,python,macos-15,success,job,46.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415772,python,macos-15,success,Set up job,1.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415772,python,macos-15,success,Run actions/checkout@v7,1.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415772,python,macos-15,success,Run ./,28.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415772,python,macos-15,success,build,8.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415772,python,macos-15,success,Post Run ./,4.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415772,python,macos-15,success,Post Run actions/checkout@v7,1.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415772,python,macos-15,success,Complete job,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415772,python,macos-15,success,seed digest,0.045
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415772,python,macos-15,success,cache pull,14.881
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415772,python,macos-15,success,mount seed,13.071
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415772,python,macos-15,success,post cache pull,3.92
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415810,python,ubuntu-22.04-arm,success,job,18.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415810,python,ubuntu-22.04-arm,success,Set up job,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415810,python,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415810,python,ubuntu-22.04-arm,success,Run ./,8.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415810,python,ubuntu-22.04-arm,success,build,6.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415810,python,ubuntu-22.04-arm,success,Post Run ./,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415810,python,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415810,python,ubuntu-22.04-arm,success,Complete job,0.0
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415810,python,ubuntu-22.04-arm,success,seed digest,0.047
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415810,python,ubuntu-22.04-arm,success,cache pull,6.809
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415810,python,ubuntu-22.04-arm,success,mount seed,0.715
+33924007723,build-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415810,python,ubuntu-22.04-arm,success,post cache pull,0.109
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,,,,,run,91.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415097,rust,macos-15,success,job,64.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415097,rust,macos-15,success,Set up job,1.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415097,rust,macos-15,success,Run actions/checkout@v7,2.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415097,rust,macos-15,success,Run nixbuild/nix-quick-install-action@v35,3.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415097,rust,macos-15,success,Run nix build --print-build-logs ./examples/rust,55.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415097,rust,macos-15,success,Post Run actions/checkout@v7,0.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415097,rust,macos-15,success,Complete job,1.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415105,python,ubuntu-22.04-arm,success,job,59.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415105,python,ubuntu-22.04-arm,success,Set up job,3.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415105,python,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415105,python,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415105,python,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/python,52.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415105,python,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415105,python,ubuntu-22.04-arm,success,Complete job,0.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415112,rust,ubuntu-22.04-arm,success,job,44.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415112,rust,ubuntu-22.04-arm,success,Set up job,1.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415112,rust,ubuntu-22.04-arm,success,Run actions/checkout@v7,2.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415112,rust,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,0.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415112,rust,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/rust,38.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415112,rust,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,1.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415112,rust,ubuntu-22.04-arm,success,Complete job,0.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415120,python,macos-15,success,job,79.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415120,python,macos-15,success,Set up job,2.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415120,python,macos-15,success,Run actions/checkout@v7,1.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415120,python,macos-15,success,Run nixbuild/nix-quick-install-action@v35,3.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415120,python,macos-15,success,Run nix build --print-build-logs ./examples/python,69.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415120,python,macos-15,success,Post Run actions/checkout@v7,1.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415120,python,macos-15,success,Complete job,1.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415138,eval-heavy,ubuntu-22.04-arm,success,job,21.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415138,eval-heavy,ubuntu-22.04-arm,success,Set up job,3.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415138,eval-heavy,ubuntu-22.04-arm,success,Run actions/checkout@v7,2.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415138,eval-heavy,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415138,eval-heavy,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/eval-heavy,13.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415138,eval-heavy,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415138,eval-heavy,ubuntu-22.04-arm,success,Complete job,0.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415280,eval-heavy,macos-15,success,job,45.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415280,eval-heavy,macos-15,success,Set up job,1.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415280,eval-heavy,macos-15,success,Run actions/checkout@v7,2.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415280,eval-heavy,macos-15,success,Run nixbuild/nix-quick-install-action@v35,7.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415280,eval-heavy,macos-15,success,Run nix build --print-build-logs ./examples/eval-heavy,30.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415280,eval-heavy,macos-15,success,Post Run actions/checkout@v7,2.0
+33924007726,build-raw-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188415280,eval-heavy,macos-15,success,Complete job,0.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,,,,,run,164.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427018,rust,ubuntu-22.04-arm,success,job,30.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427018,rust,ubuntu-22.04-arm,success,Set up job,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427018,rust,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427018,rust,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427018,rust,ubuntu-22.04-arm,success,Run nix-community/cache-nix-action@v7,24.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427018,rust,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/rust,0.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427018,rust,ubuntu-22.04-arm,success,Post Run nix-community/cache-nix-action@v7,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427018,rust,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427018,rust,ubuntu-22.04-arm,success,Complete job,0.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427038,python,macos-15,success,job,75.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427038,python,macos-15,success,Set up job,2.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427038,python,macos-15,success,Run actions/checkout@v7,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427038,python,macos-15,success,Run nixbuild/nix-quick-install-action@v35,4.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427038,python,macos-15,success,Run nix-community/cache-nix-action@v7,60.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427038,python,macos-15,success,Run nix build --print-build-logs ./examples/python,2.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427038,python,macos-15,success,Post Run nix-community/cache-nix-action@v7,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427038,python,macos-15,success,Post Run actions/checkout@v7,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427038,python,macos-15,success,Complete job,0.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427041,eval-heavy,ubuntu-22.04-arm,success,job,21.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427041,eval-heavy,ubuntu-22.04-arm,success,Set up job,2.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427041,eval-heavy,ubuntu-22.04-arm,success,Run actions/checkout@v7,2.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427041,eval-heavy,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427041,eval-heavy,ubuntu-22.04-arm,success,Run nix-community/cache-nix-action@v7,8.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427041,eval-heavy,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/eval-heavy,4.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427041,eval-heavy,ubuntu-22.04-arm,success,Post Run nix-community/cache-nix-action@v7,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427041,eval-heavy,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427041,eval-heavy,ubuntu-22.04-arm,success,Complete job,0.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427097,eval-heavy,macos-15,success,job,67.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427097,eval-heavy,macos-15,success,Set up job,3.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427097,eval-heavy,macos-15,success,Run actions/checkout@v7,2.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427097,eval-heavy,macos-15,success,Run nixbuild/nix-quick-install-action@v35,9.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427097,eval-heavy,macos-15,success,Run nix-community/cache-nix-action@v7,38.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427097,eval-heavy,macos-15,success,Run nix build --print-build-logs ./examples/eval-heavy,9.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427097,eval-heavy,macos-15,success,Post Run nix-community/cache-nix-action@v7,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427097,eval-heavy,macos-15,success,Post Run actions/checkout@v7,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427097,eval-heavy,macos-15,success,Complete job,2.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427144,rust,macos-15,success,job,56.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427144,rust,macos-15,success,Set up job,3.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427144,rust,macos-15,success,Run actions/checkout@v7,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427144,rust,macos-15,success,Run nixbuild/nix-quick-install-action@v35,4.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427144,rust,macos-15,success,Run nix-community/cache-nix-action@v7,43.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427144,rust,macos-15,success,Run nix build --print-build-logs ./examples/rust,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427144,rust,macos-15,success,Post Run nix-community/cache-nix-action@v7,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427144,rust,macos-15,success,Post Run actions/checkout@v7,0.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427144,rust,macos-15,success,Complete job,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427211,python,ubuntu-22.04-arm,success,job,32.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427211,python,ubuntu-22.04-arm,success,Set up job,2.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427211,python,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427211,python,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,0.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427211,python,ubuntu-22.04-arm,success,Run nix-community/cache-nix-action@v7,23.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427211,python,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/python,2.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427211,python,ubuntu-22.04-arm,success,Post Run nix-community/cache-nix-action@v7,0.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427211,python,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924008051,build-cache-nix-examples,push,2026-09-04T22:05:29Z,10709f346614338e9d2424b91ce4a355281e2d64,101188427211,python,ubuntu-22.04-arm,success,Complete job,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,,,,,run,127.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439218,eval-heavy,ubuntu-22.04-arm,success,job,13.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439218,eval-heavy,ubuntu-22.04-arm,success,Set up job,1.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439218,eval-heavy,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439218,eval-heavy,ubuntu-22.04-arm,success,Run ./,3.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439218,eval-heavy,ubuntu-22.04-arm,success,build,5.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439218,eval-heavy,ubuntu-22.04-arm,success,Post Run ./,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439218,eval-heavy,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439218,eval-heavy,ubuntu-22.04-arm,success,Complete job,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439218,eval-heavy,ubuntu-22.04-arm,success,seed digest,0.045
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439218,eval-heavy,ubuntu-22.04-arm,success,cache pull,2.153
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439218,eval-heavy,ubuntu-22.04-arm,success,mount seed,0.333
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439218,eval-heavy,ubuntu-22.04-arm,success,post cache pull,0.113
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439236,rust,ubuntu-22.04-arm,success,job,16.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439236,rust,ubuntu-22.04-arm,success,Set up job,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439236,rust,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439236,rust,ubuntu-22.04-arm,success,Run ./,9.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439236,rust,ubuntu-22.04-arm,success,build,3.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439236,rust,ubuntu-22.04-arm,success,Post Run ./,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439236,rust,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439236,rust,ubuntu-22.04-arm,success,Complete job,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439236,rust,ubuntu-22.04-arm,success,seed digest,0.05
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439236,rust,ubuntu-22.04-arm,success,cache pull,7.481
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439236,rust,ubuntu-22.04-arm,success,mount seed,0.673
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439236,rust,ubuntu-22.04-arm,success,post cache pull,0.109
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439246,python,ubuntu-22.04-arm,success,job,21.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439246,python,ubuntu-22.04-arm,success,Set up job,2.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439246,python,ubuntu-22.04-arm,success,Run actions/checkout@v7,3.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439246,python,ubuntu-22.04-arm,success,Run ./,8.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439246,python,ubuntu-22.04-arm,success,build,5.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439246,python,ubuntu-22.04-arm,success,Post Run ./,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439246,python,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439246,python,ubuntu-22.04-arm,success,Complete job,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439246,python,ubuntu-22.04-arm,success,seed digest,0.043
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439246,python,ubuntu-22.04-arm,success,cache pull,6.473
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439246,python,ubuntu-22.04-arm,success,mount seed,0.815
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439246,python,ubuntu-22.04-arm,success,post cache pull,0.109
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439309,rust,macos-15,success,job,31.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439309,rust,macos-15,success,Set up job,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439309,rust,macos-15,success,Run actions/checkout@v7,1.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439309,rust,macos-15,success,Run ./,16.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439309,rust,macos-15,success,build,6.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439309,rust,macos-15,success,Post Run ./,3.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439309,rust,macos-15,success,Post Run actions/checkout@v7,1.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439309,rust,macos-15,success,Complete job,1.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439309,rust,macos-15,success,seed digest,0.071
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439309,rust,macos-15,success,cache pull,8.268
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439309,rust,macos-15,success,mount seed,6.992
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439309,rust,macos-15,success,post cache pull,3.328
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439318,eval-heavy,macos-15,success,job,17.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439318,eval-heavy,macos-15,success,Set up job,1.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439318,eval-heavy,macos-15,success,Run actions/checkout@v7,2.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439318,eval-heavy,macos-15,success,Run ./,4.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439318,eval-heavy,macos-15,success,build,7.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439318,eval-heavy,macos-15,success,Post Run ./,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439318,eval-heavy,macos-15,success,Post Run actions/checkout@v7,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439318,eval-heavy,macos-15,success,Complete job,1.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439318,eval-heavy,macos-15,success,seed digest,0.055
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439318,eval-heavy,macos-15,success,cache pull,1.796
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439318,eval-heavy,macos-15,success,mount seed,2.223
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439318,eval-heavy,macos-15,success,post cache pull,0.159
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439335,python,macos-15,success,job,33.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439335,python,macos-15,success,Set up job,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439335,python,macos-15,success,Run actions/checkout@v7,1.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439335,python,macos-15,success,Run ./,18.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439335,python,macos-15,success,build,8.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439335,python,macos-15,success,Post Run ./,3.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439335,python,macos-15,success,Post Run actions/checkout@v7,0.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439335,python,macos-15,success,Complete job,1.0
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439335,python,macos-15,success,seed digest,0.046
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439335,python,macos-15,success,cache pull,5.047
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439335,python,macos-15,success,mount seed,12.853
+33924012715,build-examples,workflow_dispatch,2026-09-04T22:05:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101188439335,python,macos-15,success,post cache pull,2.711
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,,,,,run,223.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452542,rust,ubuntu-22.04-arm,success,job,31.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452542,rust,ubuntu-22.04-arm,success,Set up job,2.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452542,rust,ubuntu-22.04-arm,success,Run actions/checkout@v7,0.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452542,rust,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452542,rust,ubuntu-22.04-arm,success,Run nix-community/cache-nix-action@v7,25.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452542,rust,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/rust,1.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452542,rust,ubuntu-22.04-arm,success,Post Run nix-community/cache-nix-action@v7,0.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452542,rust,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,1.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452542,rust,ubuntu-22.04-arm,success,Complete job,0.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452551,python,ubuntu-22.04-arm,success,job,26.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452551,python,ubuntu-22.04-arm,success,Set up job,1.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452551,python,ubuntu-22.04-arm,success,Run actions/checkout@v7,2.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452551,python,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,0.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452551,python,ubuntu-22.04-arm,success,Run nix-community/cache-nix-action@v7,19.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452551,python,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/python,2.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452551,python,ubuntu-22.04-arm,success,Post Run nix-community/cache-nix-action@v7,0.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452551,python,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452551,python,ubuntu-22.04-arm,success,Complete job,0.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452568,eval-heavy,macos-15,success,job,36.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452568,eval-heavy,macos-15,success,Set up job,2.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452568,eval-heavy,macos-15,success,Run actions/checkout@v7,1.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452568,eval-heavy,macos-15,success,Run nixbuild/nix-quick-install-action@v35,4.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452568,eval-heavy,macos-15,success,Run nix-community/cache-nix-action@v7,21.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452568,eval-heavy,macos-15,success,Run nix build --print-build-logs ./examples/eval-heavy,5.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452568,eval-heavy,macos-15,success,Post Run nix-community/cache-nix-action@v7,0.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452568,eval-heavy,macos-15,success,Post Run actions/checkout@v7,1.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452568,eval-heavy,macos-15,success,Complete job,0.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452603,python,macos-15,success,job,91.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452603,python,macos-15,success,Set up job,2.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452603,python,macos-15,success,Run actions/checkout@v7,2.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452603,python,macos-15,success,Run nixbuild/nix-quick-install-action@v35,3.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452603,python,macos-15,success,Run nix-community/cache-nix-action@v7,77.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452603,python,macos-15,success,Run nix build --print-build-logs ./examples/python,2.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452603,python,macos-15,success,Post Run nix-community/cache-nix-action@v7,1.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452603,python,macos-15,success,Post Run actions/checkout@v7,0.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452603,python,macos-15,success,Complete job,1.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452608,rust,macos-15,success,job,69.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452608,rust,macos-15,success,Set up job,2.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452608,rust,macos-15,success,Run actions/checkout@v7,1.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452608,rust,macos-15,success,Run nixbuild/nix-quick-install-action@v35,3.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452608,rust,macos-15,success,Run nix-community/cache-nix-action@v7,56.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452608,rust,macos-15,success,Run nix build --print-build-logs ./examples/rust,2.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452608,rust,macos-15,success,Post Run nix-community/cache-nix-action@v7,0.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452608,rust,macos-15,success,Post Run actions/checkout@v7,1.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452608,rust,macos-15,success,Complete job,1.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452634,eval-heavy,ubuntu-22.04-arm,success,job,20.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452634,eval-heavy,ubuntu-22.04-arm,success,Set up job,3.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452634,eval-heavy,ubuntu-22.04-arm,success,Run actions/checkout@v7,2.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452634,eval-heavy,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452634,eval-heavy,ubuntu-22.04-arm,success,Run nix-community/cache-nix-action@v7,8.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452634,eval-heavy,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/eval-heavy,4.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452634,eval-heavy,ubuntu-22.04-arm,success,Post Run nix-community/cache-nix-action@v7,0.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452634,eval-heavy,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,1.0
+33924014578,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:05:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101188452634,eval-heavy,ubuntu-22.04-arm,success,Complete job,0.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,,,,,run,245.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457470,eval-heavy,macos-15,success,job,45.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457470,eval-heavy,macos-15,success,Set up job,1.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457470,eval-heavy,macos-15,success,Run actions/checkout@v7,2.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457470,eval-heavy,macos-15,success,Run nixbuild/nix-quick-install-action@v35,4.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457470,eval-heavy,macos-15,success,Run nix build --print-build-logs ./examples/eval-heavy,33.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457470,eval-heavy,macos-15,success,Post Run actions/checkout@v7,1.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457470,eval-heavy,macos-15,success,Complete job,1.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457473,rust,ubuntu-22.04-arm,success,job,44.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457473,rust,ubuntu-22.04-arm,success,Set up job,0.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457473,rust,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457473,rust,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457473,rust,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/rust,38.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457473,rust,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457473,rust,ubuntu-22.04-arm,success,Complete job,0.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457481,python,macos-15,success,job,77.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457481,python,macos-15,success,Set up job,1.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457481,python,macos-15,success,Run actions/checkout@v7,1.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457481,python,macos-15,success,Run nixbuild/nix-quick-install-action@v35,6.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457481,python,macos-15,success,Run nix build --print-build-logs ./examples/python,65.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457481,python,macos-15,success,Post Run actions/checkout@v7,1.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457481,python,macos-15,success,Complete job,0.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457487,python,ubuntu-22.04-arm,success,job,61.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457487,python,ubuntu-22.04-arm,success,Set up job,1.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457487,python,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457487,python,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,0.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457487,python,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/python,56.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457487,python,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457487,python,ubuntu-22.04-arm,success,Complete job,0.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457497,eval-heavy,ubuntu-22.04-arm,success,job,18.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457497,eval-heavy,ubuntu-22.04-arm,success,Set up job,2.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457497,eval-heavy,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457497,eval-heavy,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457497,eval-heavy,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/eval-heavy,12.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457497,eval-heavy,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457497,eval-heavy,ubuntu-22.04-arm,success,Complete job,0.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457541,rust,macos-15,success,job,81.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457541,rust,macos-15,success,Set up job,1.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457541,rust,macos-15,success,Run actions/checkout@v7,2.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457541,rust,macos-15,success,Run nixbuild/nix-quick-install-action@v35,4.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457541,rust,macos-15,success,Run nix build --print-build-logs ./examples/rust,69.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457541,rust,macos-15,success,Post Run actions/checkout@v7,1.0
+33924016824,build-raw-examples,workflow_dispatch,2026-09-04T22:05:37Z,10709f346614338e9d2424b91ce4a355281e2d64,101188457541,rust,macos-15,success,Complete job,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,,,,,run,79.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579349,rust,macos-15,success,job,32.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579349,rust,macos-15,success,Set up job,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579349,rust,macos-15,success,Run actions/checkout@v7,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579349,rust,macos-15,success,Run ./,19.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579349,rust,macos-15,success,build,6.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579349,rust,macos-15,success,Post Run ./,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579349,rust,macos-15,success,Post Run actions/checkout@v7,0.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579349,rust,macos-15,success,Complete job,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579349,rust,macos-15,success,seed digest,0.076
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579349,rust,macos-15,success,cache pull,11.7
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579349,rust,macos-15,success,mount seed,6.815
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579349,rust,macos-15,success,post cache pull,0.384
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579363,rust,ubuntu-22.04-arm,success,job,19.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579363,rust,ubuntu-22.04-arm,success,Set up job,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579363,rust,ubuntu-22.04-arm,success,Run actions/checkout@v7,0.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579363,rust,ubuntu-22.04-arm,success,Run ./,11.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579363,rust,ubuntu-22.04-arm,success,build,3.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579363,rust,ubuntu-22.04-arm,success,Post Run ./,0.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579363,rust,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579363,rust,ubuntu-22.04-arm,success,Complete job,0.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579363,rust,ubuntu-22.04-arm,success,seed digest,0.047
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579363,rust,ubuntu-22.04-arm,success,cache pull,9.598
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579363,rust,ubuntu-22.04-arm,success,mount seed,0.669
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579363,rust,ubuntu-22.04-arm,success,post cache pull,0.109
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579378,eval-heavy,macos-15,success,job,26.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579378,eval-heavy,macos-15,success,Set up job,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579378,eval-heavy,macos-15,success,Run actions/checkout@v7,2.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579378,eval-heavy,macos-15,success,Run ./,8.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579378,eval-heavy,macos-15,success,build,10.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579378,eval-heavy,macos-15,success,Post Run ./,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579378,eval-heavy,macos-15,success,Post Run actions/checkout@v7,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579378,eval-heavy,macos-15,success,Complete job,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579378,eval-heavy,macos-15,success,seed digest,0.102
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579378,eval-heavy,macos-15,success,cache pull,4.372
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579378,eval-heavy,macos-15,success,mount seed,2.798
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579378,eval-heavy,macos-15,success,post cache pull,0.863
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579381,python,macos-15,success,job,55.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579381,python,macos-15,success,Set up job,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579381,python,macos-15,success,Run actions/checkout@v7,2.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579381,python,macos-15,success,Run ./,29.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579381,python,macos-15,success,build,17.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579381,python,macos-15,success,Post Run ./,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579381,python,macos-15,success,Post Run actions/checkout@v7,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579381,python,macos-15,success,Complete job,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579381,python,macos-15,success,seed digest,0.095
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579381,python,macos-15,success,cache pull,15.202
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579381,python,macos-15,success,mount seed,13.984
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579381,python,macos-15,success,post cache pull,0.607
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579388,eval-heavy,ubuntu-22.04-arm,success,job,15.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579388,eval-heavy,ubuntu-22.04-arm,success,Set up job,0.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579388,eval-heavy,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579388,eval-heavy,ubuntu-22.04-arm,success,Run ./,7.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579388,eval-heavy,ubuntu-22.04-arm,success,build,5.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579388,eval-heavy,ubuntu-22.04-arm,success,Post Run ./,0.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579388,eval-heavy,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579388,eval-heavy,ubuntu-22.04-arm,success,Complete job,0.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579388,eval-heavy,ubuntu-22.04-arm,success,seed digest,0.048
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579388,eval-heavy,ubuntu-22.04-arm,success,cache pull,5.892
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579388,eval-heavy,ubuntu-22.04-arm,success,mount seed,0.33
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579388,eval-heavy,ubuntu-22.04-arm,success,post cache pull,0.11
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579390,python,ubuntu-22.04-arm,success,job,21.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579390,python,ubuntu-22.04-arm,success,Set up job,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579390,python,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579390,python,ubuntu-22.04-arm,success,Run ./,9.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579390,python,ubuntu-22.04-arm,success,build,6.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579390,python,ubuntu-22.04-arm,success,Post Run ./,0.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579390,python,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,2.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579390,python,ubuntu-22.04-arm,success,Complete job,0.0
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579390,python,ubuntu-22.04-arm,success,seed digest,0.048
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579390,python,ubuntu-22.04-arm,success,cache pull,8.255
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579390,python,ubuntu-22.04-arm,success,mount seed,0.72
+33924373218,build-examples,workflow_dispatch,2026-09-04T22:10:33Z,10709f346614338e9d2424b91ce4a355281e2d64,101189579390,python,ubuntu-22.04-arm,success,post cache pull,0.416
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,,,,,run,122.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587776,rust,macos-15,success,job,84.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587776,rust,macos-15,success,Set up job,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587776,rust,macos-15,success,Run actions/checkout@v7,2.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587776,rust,macos-15,success,Run nixbuild/nix-quick-install-action@v35,11.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587776,rust,macos-15,success,Run nix-community/cache-nix-action@v7,63.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587776,rust,macos-15,success,Run nix build --print-build-logs ./examples/rust,2.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587776,rust,macos-15,success,Post Run nix-community/cache-nix-action@v7,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587776,rust,macos-15,success,Post Run actions/checkout@v7,0.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587776,rust,macos-15,success,Complete job,0.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587803,python,ubuntu-22.04-arm,success,job,33.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587803,python,ubuntu-22.04-arm,success,Set up job,6.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587803,python,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587803,python,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587803,python,ubuntu-22.04-arm,success,Run nix-community/cache-nix-action@v7,20.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587803,python,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/python,2.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587803,python,ubuntu-22.04-arm,success,Post Run nix-community/cache-nix-action@v7,0.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587803,python,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587803,python,ubuntu-22.04-arm,success,Complete job,0.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587870,eval-heavy,ubuntu-22.04-arm,success,job,18.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587870,eval-heavy,ubuntu-22.04-arm,success,Set up job,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587870,eval-heavy,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587870,eval-heavy,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587870,eval-heavy,ubuntu-22.04-arm,success,Run nix-community/cache-nix-action@v7,7.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587870,eval-heavy,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/eval-heavy,5.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587870,eval-heavy,ubuntu-22.04-arm,success,Post Run nix-community/cache-nix-action@v7,0.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587870,eval-heavy,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587870,eval-heavy,ubuntu-22.04-arm,success,Complete job,0.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587888,rust,ubuntu-22.04-arm,success,job,37.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587888,rust,ubuntu-22.04-arm,success,Set up job,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587888,rust,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587888,rust,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587888,rust,ubuntu-22.04-arm,success,Run nix-community/cache-nix-action@v7,28.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587888,rust,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/rust,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587888,rust,ubuntu-22.04-arm,success,Post Run nix-community/cache-nix-action@v7,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587888,rust,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587888,rust,ubuntu-22.04-arm,success,Complete job,0.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587889,eval-heavy,macos-15,success,job,56.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587889,eval-heavy,macos-15,success,Set up job,2.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587889,eval-heavy,macos-15,success,Run actions/checkout@v7,2.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587889,eval-heavy,macos-15,success,Run nixbuild/nix-quick-install-action@v35,4.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587889,eval-heavy,macos-15,success,Run nix-community/cache-nix-action@v7,36.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587889,eval-heavy,macos-15,success,Run nix build --print-build-logs ./examples/eval-heavy,6.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587889,eval-heavy,macos-15,success,Post Run nix-community/cache-nix-action@v7,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587889,eval-heavy,macos-15,success,Post Run actions/checkout@v7,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587889,eval-heavy,macos-15,success,Complete job,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587895,python,macos-15,success,job,106.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587895,python,macos-15,success,Set up job,2.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587895,python,macos-15,success,Run actions/checkout@v7,2.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587895,python,macos-15,success,Run nixbuild/nix-quick-install-action@v35,6.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587895,python,macos-15,success,Run nix-community/cache-nix-action@v7,87.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587895,python,macos-15,success,Run nix build --print-build-logs ./examples/python,3.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587895,python,macos-15,success,Post Run nix-community/cache-nix-action@v7,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587895,python,macos-15,success,Post Run actions/checkout@v7,1.0
+33924375140,build-cache-nix-examples,workflow_dispatch,2026-09-04T22:10:35Z,10709f346614338e9d2424b91ce4a355281e2d64,101189587895,python,macos-15,success,Complete job,1.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,,,,,run,188.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592192,rust,macos-15,success,job,71.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592192,rust,macos-15,success,Set up job,1.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592192,rust,macos-15,success,Run actions/checkout@v7,2.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592192,rust,macos-15,success,Run nixbuild/nix-quick-install-action@v35,3.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592192,rust,macos-15,success,Run nix build --print-build-logs ./examples/rust,61.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592192,rust,macos-15,success,Post Run actions/checkout@v7,1.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592192,rust,macos-15,success,Complete job,0.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592222,python,macos-15,success,job,105.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592222,python,macos-15,success,Set up job,1.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592222,python,macos-15,success,Run actions/checkout@v7,2.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592222,python,macos-15,success,Run nixbuild/nix-quick-install-action@v35,12.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592222,python,macos-15,success,Run nix build --print-build-logs ./examples/python,86.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592222,python,macos-15,success,Post Run actions/checkout@v7,1.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592222,python,macos-15,success,Complete job,1.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592264,rust,ubuntu-22.04-arm,success,job,45.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592264,rust,ubuntu-22.04-arm,success,Set up job,1.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592264,rust,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592264,rust,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592264,rust,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/rust,38.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592264,rust,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592264,rust,ubuntu-22.04-arm,success,Complete job,0.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592272,eval-heavy,ubuntu-22.04-arm,success,job,19.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592272,eval-heavy,ubuntu-22.04-arm,success,Set up job,1.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592272,eval-heavy,ubuntu-22.04-arm,success,Run actions/checkout@v7,1.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592272,eval-heavy,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,1.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592272,eval-heavy,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/eval-heavy,13.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592272,eval-heavy,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592272,eval-heavy,ubuntu-22.04-arm,success,Complete job,0.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592299,eval-heavy,macos-15,success,job,59.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592299,eval-heavy,macos-15,success,Set up job,2.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592299,eval-heavy,macos-15,success,Run actions/checkout@v7,1.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592299,eval-heavy,macos-15,success,Run nixbuild/nix-quick-install-action@v35,7.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592299,eval-heavy,macos-15,success,Run nix build --print-build-logs ./examples/eval-heavy,44.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592299,eval-heavy,macos-15,success,Post Run actions/checkout@v7,1.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592299,eval-heavy,macos-15,success,Complete job,2.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592318,python,ubuntu-22.04-arm,success,job,59.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592318,python,ubuntu-22.04-arm,success,Set up job,2.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592318,python,ubuntu-22.04-arm,success,Run actions/checkout@v7,2.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592318,python,ubuntu-22.04-arm,success,Run nixbuild/nix-quick-install-action@v35,0.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592318,python,ubuntu-22.04-arm,success,Run nix build --print-build-logs ./examples/python,52.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592318,python,ubuntu-22.04-arm,success,Post Run actions/checkout@v7,0.0
+33924376786,build-raw-examples,workflow_dispatch,2026-09-04T22:10:36Z,10709f346614338e9d2424b91ce4a355281e2d64,101189592318,python,ubuntu-22.04-arm,success,Complete job,0.0
