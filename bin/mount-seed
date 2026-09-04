@@ -100,10 +100,13 @@ if [[ $(uname -s) == Darwin ]]; then
   # block layer, which is what macOS has instead of overlayfs.
   # -owners off presents the volume as owned by the mounting user, so
   # nix runs unprivileged for the rest of the job exactly as on linux.
+  # -noautofsck skips fsck_apfs before mounting: it walks every inode,
+  # which cost 23s on a closure-sized volume, and the image is
+  # read-only under the shadow so there is nothing for it to repair.
   sudo hdiutil attach "$out/store.dmg" \
     -shadow "${RUNNER_TEMP:-/tmp}/seed.shadow" \
     -mountpoint /nix \
-    -owners off -nobrowse -noautoopen -noverify
+    -owners off -nobrowse -noautoopen -noverify -noautofsck
 
   seedmeta=/nix/.seed
 
