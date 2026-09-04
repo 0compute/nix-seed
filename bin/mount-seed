@@ -66,15 +66,16 @@ curl -sS -K "$conf" \
   -o "$manifest" "https://$registry/v2/$path/manifests/$digest"
 verify "${digest#sha256:}" "$manifest"
 
-# each blob in four parallel range requests. the blob endpoint redirects
-# to blob storage behind a CDN, which honours ranges (the registry itself
-# does not) and needs no token. measured against actions/cache on the
-# rust seed (654 MB linux, 579 MB darwin, 18 samples each): 1.5s against
-# 4-14s on ubuntu-arm, 4s against 4-12s on macos-15. four streams also
-# hide a cold CDN edge, where a single stream takes 7-21s; more streams
-# gain nothing. no cache save on the seed side, no 10 GB cap, no
-# eviction. the parts are concatenated in order (single-digit suffixes).
-streams=4
+# each blob in sixteen parallel range requests. the blob endpoint
+# redirects to blob storage behind a CDN, which honours ranges (the
+# registry itself does not) and needs no token. warm at the edge, four
+# streams fetched the rust seed (654 MB linux, 579 MB darwin) in 1.5s on
+# ubuntu-arm and 4s on macos-15 against 4-14s for an actions/cache
+# restore; cold, or on a slow storage shard, the same fetch took up to
+# 34s. each range is its own origin fetch, so more streams are the lever
+# on the cold case. no cache save on the seed side, no 10 GB cap, no
+# eviction. the parts are concatenated in order (two-digit suffixes).
+streams=16
 jq --raw-output '
   .layers[]
   | "\(.digest | ltrimstr("sha256:")) \(.size) \(
@@ -91,11 +92,14 @@ jq --raw-output '
       last=$(((i + 1) * chunk - 1))
       ((last < size)) || last=$((size - 1))
       ((i == 0)) || args+=(--next)
-      args+=("$location" --range "$first-$last" --output "$out/$name.$i")
+      args+=(
+        "$location" --range "$first-$last"
+        --output "$out/$name.$(printf %02d $i)"
+      )
     done
     curl -sS --parallel --parallel-max $streams "${args[@]}"
-    cat "$out/$name".[0-9] >"$out/$name"
-    rm "$out/$name".[0-9]
+    cat "$out/$name".[0-9][0-9] >"$out/$name"
+    rm "$out/$name".[0-9][0-9]
     verify "$hex" "$out/$name"
   done
 rm "$conf"

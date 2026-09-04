@@ -119,12 +119,14 @@ seed's only artefact: `registration`, the `nix-store --load-db` dump that marks
 the baked paths valid in a fresh database, and `env`, a symlink to a `buildEnv`
 providing `bin/` for `PATH` and `etc/nix/nix.conf` for the build configuration.
 
-The consumer pulls the blob straight from the registry with four parallel range
-requests (the blob endpoint redirects to CDN-fronted storage that honours
-ranges; measured at 1.5s for 654 MB on `ubuntu-22.04-arm` and 4s for 579 MB on
-`macos-15`, against 4-14s for an `actions/cache` restore of the same bytes, and
-with no save step, size cap or eviction), verifies it against the digest in
-`.seed.lock`, and mounts it as a pair:
+The consumer pulls the blob straight from the registry with sixteen parallel
+range requests (the blob endpoint redirects to CDN-fronted storage that honours
+ranges; warm at the edge, four streams fetched 654 MB in 1.5s on
+`ubuntu-22.04-arm` and 579 MB in 4s on `macos-15` against 4-14s for an
+`actions/cache` restore of the same bytes, with no save step, size cap or
+eviction; cold or on a slow shard the same fetch took up to 34s, which is what
+the extra streams are for), verifies it against the digest in `.seed.lock`, and
+mounts it as a pair:
 
 ```sh
 mount -t squashfs -o loop,ro store.squashfs /nix/.ro-store
