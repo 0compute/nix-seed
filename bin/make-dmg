@@ -29,7 +29,13 @@ out=${2:?output .dmg path required}
 # So the step is not purely transfer-bound; decompression on read gives
 # back what the smaller transfer saves. Set SEED_DMG_FORMAT=ULMO if
 # cache or registry storage is the binding constraint rather than time.
-format=${SEED_DMG_FORMAT:-ULFO}
+#
+# UDRO (uncompressed) under test: attaching rust's ULFO image took
+# 22-28s in every round against 6-11s for python's larger one, so the
+# cost tracks the volume's metadata, not its bytes -- and each metadata
+# read on a compressed image decompresses a chunk. -noautofsck did not
+# move it (run 33892039949).
+format=${SEED_DMG_FORMAT:-UDRO}
 
 work=$(mktemp -d)
 mnt=$work/mnt
