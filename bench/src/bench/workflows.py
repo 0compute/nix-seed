@@ -232,23 +232,32 @@ def recorded(target: Path) -> set[int]:
         return {int(row["run_id"]) for row in csv.DictReader(f)}
 
 
+def status(message: str) -> None:
+    """Progress on stderr, unbuffered: a full collection takes minutes."""
+    print(message, file=sys.stderr, flush=True)
+
+
 def collect(target: Path) -> None:
     client = Client()
     done = recorded(target)
+    status(f"{target}: {len(done)} runs recorded; listing completed runs")
     todo = [run for run in completed_runs(client) if run.id not in done]
     if not todo:
-        print(f"{target}: up to date ({len(done)} runs)")
+        status(f"{target}: up to date ({len(done)} runs)")
         return
-    print(f"{target}: {len(done)} runs recorded, {len(todo)} to fetch")
+    status(f"{target}: {len(todo)} runs to fetch")
     new = not target.exists()
     with target.open("a", newline="") as f:
         writer = csv.DictWriter(f, FIELDS)
         if new:
             writer.writeheader()
-        for run in todo:
+        for i, run in enumerate(todo, 1):
+            status(
+                f"[{i}/{len(todo)}] {run.workflow} {run.id} {run.created_at}"
+            )
             writer.writerows(rows(client, run))
             f.flush()
-            print(f"  {run.workflow} {run.id} {run.created_at}", flush=True)
+    status(f"{target}: {len(done) + len(todo)} runs recorded")
 
 
 @app.command()
