@@ -1,12 +1,11 @@
 """Graph the collected workflow timings: one panel per build workflow, one
 line per matrix job (example, runner), job wall clock per commit. Runs
 of the same commit are one sample: the line is their median and the band
-their interquartile range, so noise between runs of one commit shows as
-band width and a change between commits shows as a step. The x axis is
-the sequence of commits built, in order of first run, labelled with the
-abbreviated commit. Successful jobs only, so a cancelled or failed run
-does not read as a fast one, and only examples that still exist under
-examples/ on runners the workflow's matrix still lists."""
+their interquartile range. The x axis is the sequence of commits built,
+in order of first run, labelled with the abbreviated commit. Successful
+jobs only, so a cancelled or failed run does not read as a fast one, and
+only examples that still exist under examples/ on runners the workflow's
+matrix still lists."""
 
 from __future__ import annotations
 
@@ -14,19 +13,22 @@ import csv
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from statistics import quantiles
 
-import matplotlib
 import matplotlib.pyplot as plt
 import typer
-import yaml
 
-matplotlib.use("Agg")
-# element ids are hashed from this salt instead of a random one, so the
-# same CSV gives the same SVG bytes (the creation date is dropped too)
-matplotlib.rcParams["svg.hashsalt"] = "bench"
+from bench.common import (
+    WORKFLOWS,
+    cap,
+    commit_order,
+    configure,
+    current_examples,
+    matrix_os,
+    save,
+    summarise,
+)
 
-WORKFLOWS = ("build-examples", "build-cache-nix-examples", "build-raw-examples")
+configure()
 
 app = typer.Typer(add_completion=False)
 
@@ -40,46 +42,6 @@ class Panel:
     jobs: dict[str, dict[int, list[float]]] = field(
         default_factory=lambda: defaultdict(lambda: defaultdict(list))
     )
-
-
-@dataclass(frozen=True)
-class Summary:
-    """A job's runs on one commit: median and interquartile range."""
-
-    x: int
-    low: float
-    mid: float
-    high: float
-
-
-def summarise(samples: dict[int, list[float]]) -> list[Summary]:
-    out = []
-    for x, values in sorted(samples.items()):
-        if len(values) < 2:
-            out.append(Summary(x, values[0], values[0], values[0]))
-            continue
-        q1, q2, q3 = quantiles(values, n=4)
-        out.append(Summary(x, q1, q2, q3))
-    return out
-
-
-def current_examples(examples: Path) -> set[str]:
-    """Example names (flake dirs under EXAMPLES, as the matrix names them,
-    e.g. "hello/innocent") that still exist: deleted examples are history,
-    not a series worth a line."""
-    return {
-        flake.parent.relative_to(examples).as_posix()
-        for flake in examples.glob("**/flake.nix")
-    }
-
-
-def matrix_os(workflows: Path, workflow: str) -> set[str]:
-    """The runners the workflow's build matrix lists today: runners it
-    used to run on are history, not a series worth a line."""
-    with (workflows / f"{workflow}.yaml").open() as f:
-        return set(
-            yaml.safe_load(f)["jobs"]["build"]["strategy"]["matrix"]["os"]
-        )
 
 
 def panels(
@@ -104,12 +66,8 @@ def panels(
                 samples[workflow].append((run_id, job, float(row["seconds"])))
     result: dict[str, Panel] = {}
     for workflow in WORKFLOWS:
-        panel = Panel()
-        ordinal: dict[str, int] = {}
-        for _, sha in sorted(runs[workflow].values()):
-            if sha not in ordinal:
-                ordinal[sha] = len(panel.commits)
-                panel.commits.append(sha)
+        ordinal = commit_order(runs[workflow])
+        panel = Panel(list(ordinal))
         for run_id, job, secs in samples[workflow]:
             _, sha = runs[workflow][run_id]
             panel.jobs[job][ordinal[sha]].append(secs)
@@ -145,12 +103,7 @@ def render(source: Path, out: Path, examples: Path, workflows: Path) -> None:
                 alpha=0.15,
                 linewidth=0,
             )
-        # the axis stops at twice the 95th percentile: a series that is an
-        # outlier in its entirety (a one-off multi-minute example) is cut
-        # off rather than flattening every other one, while the slowest
-        # ordinary series stays in view
-        if shown:
-            ax.set_ylim(0, 2 * quantiles(shown, n=20)[-1])
+        cap(ax, shown)
         ax.set_xticks(
             range(len(panel.commits)),
             [sha[:7] for sha in panel.commits],
@@ -173,8 +126,7 @@ def render(source: Path, out: Path, examples: Path, workflows: Path) -> None:
     fig.suptitle(
         f"{source.name}: build workflows, one line per (example, runner)"
     )
-    # no creation date in the SVG: the same CSV must give the same bytes
-    fig.savefig(out, metadata={"Date": None})
+    save(fig, out)
 
 
 @app.command()
