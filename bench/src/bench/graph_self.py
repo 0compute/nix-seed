@@ -18,7 +18,6 @@ import matplotlib.pyplot as plt
 import typer
 
 from bench.common import (
-    cap,
     commit_order,
     configure,
     current_examples,
@@ -101,14 +100,15 @@ def render(source: Path, out: Path, examples: Path, workflows: Path) -> None:
                 heights[x] = secs
             ax.bar(xs, heights, bottom=bottom, width=0.8, label=step)
             bottom = [b + h for b, h in zip(bottom, heights, strict=True)]
-        cap(ax, [b for b in bottom if b])
+        # the tallest bar sets the axis: every segment is meant to be read
+        ax.set_ylim(0, max(bottom))
         ax.set_xticks(
             xs, [sha[:7] for sha in commits], rotation=90, fontsize="x-small"
         )
         example, os = lane
         ax.set_title(
             f"{example} on {os}: seconds per step, stacked; median across "
-            "the commit's successful runs; y capped at 2 x p95"
+            "the commit's successful runs"
         )
         ax.set_ylabel("seconds")
         ax.set_xlabel("commits in order of first run")
