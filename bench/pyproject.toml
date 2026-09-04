@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nix-seed-bench"
+version = "0.1.0"
+description = "Timings of the nix-seed example workflows: collect and graph"
+requires-python = ">=3.14"
+# the devshell provides these (modules/devshells.nix); keep both in step
+dependencies = ["matplotlib", "typer"]
+
+[project.scripts]
+bench-workflows = "bench.workflows:app"
+bench-graph = "bench.graph:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 80

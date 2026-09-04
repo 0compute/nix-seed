@@ -1,5 +1,6 @@
 /.env
 /.env.artstd
 /.nvim.local.lua
+__pycache__/
 result
 result-out/
