@@ -17,13 +17,15 @@ import matplotlib.pyplot as plt
 import typer
 
 from bench.common import (
+    WINDOW,
     cap,
     commit_order,
     configure,
     current_examples,
+    draw_series,
     matrix_os,
+    medians,
     save,
-    summarise,
 )
 
 configure()
@@ -92,20 +94,9 @@ def render(source: Path, out: Path, examples: Path, workflows: Path) -> None:
         for step in STEPS:
             if step not in samples[lane]:
                 continue
-            points = summarise(samples[lane][step])
-            shown += [p.mid for p in points]
-            xs = [p.x for p in points]
-            (line,) = ax.plot(
-                xs, [p.mid for p in points], marker=".", linewidth=1, label=step
-            )
-            ax.fill_between(
-                xs,
-                [p.low for p in points],
-                [p.high for p in points],
-                color=line.get_color(),
-                alpha=0.15,
-                linewidth=0,
-            )
+            points = medians(samples[lane][step])
+            shown += [v for _, v in points]
+            draw_series(ax, points, step)
         cap(ax, shown)
         ax.set_xticks(
             range(len(commits)),
@@ -115,8 +106,9 @@ def render(source: Path, out: Path, examples: Path, workflows: Path) -> None:
         )
         example, os = lane
         ax.set_title(
-            f"{example} on {os}: seconds per step, successful runs, "
-            "median per commit with interquartile band, y capped at 2 x p95"
+            f"{example} on {os}: seconds per step, successful runs. "
+            "dots: median per commit (hollow: outlier); line: rolling "
+            f"median of {WINDOW} commits; y capped at 2 x p95"
         )
         ax.set_ylabel("seconds")
         ax.set_xlabel("commits in order of first run")

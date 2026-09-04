@@ -18,14 +18,16 @@ import matplotlib.pyplot as plt
 import typer
 
 from bench.common import (
+    WINDOW,
     WORKFLOWS,
     cap,
     commit_order,
     configure,
     current_examples,
+    draw_series,
     matrix_os,
+    medians,
     save,
-    summarise,
 )
 
 configure()
@@ -89,20 +91,9 @@ def render(source: Path, out: Path, examples: Path, workflows: Path) -> None:
         panel = data[workflow]
         shown: list[float] = []
         for job, samples in sorted(panel.jobs.items()):
-            points = summarise(samples)
-            shown += [p.mid for p in points]
-            xs = [p.x for p in points]
-            (line,) = ax.plot(
-                xs, [p.mid for p in points], marker=".", linewidth=1, label=job
-            )
-            ax.fill_between(
-                xs,
-                [p.low for p in points],
-                [p.high for p in points],
-                color=line.get_color(),
-                alpha=0.15,
-                linewidth=0,
-            )
+            points = medians(samples)
+            shown += [v for _, v in points]
+            draw_series(ax, points, job)
         cap(ax, shown)
         ax.set_xticks(
             range(len(panel.commits)),
@@ -111,8 +102,9 @@ def render(source: Path, out: Path, examples: Path, workflows: Path) -> None:
             fontsize="x-small",
         )
         ax.set_title(
-            f"{workflow}: wall clock per matrix job, successful runs, "
-            "median per commit with interquartile band, y capped at 2 x p95"
+            f"{workflow}: wall clock per matrix job, successful runs. "
+            "dots: median per commit (hollow: outlier); line: rolling "
+            f"median of {WINDOW} commits; y capped at 2 x p95"
         )
         ax.set_ylabel("job wall clock (seconds)")
         ax.set_xlabel("commits in order of first run")

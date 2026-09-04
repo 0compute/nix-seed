@@ -3,9 +3,8 @@ commit are summarised, and how figures are written."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
-from statistics import quantiles
+from statistics import median, quantiles
 
 import matplotlib
 import yaml
@@ -25,27 +24,73 @@ def save(fig: Figure, out: Path) -> None:
     fig.savefig(out, metadata={"Date": None})
 
 
-@dataclass(frozen=True)
-class Summary:
-    """One series' runs on one commit: median and interquartile range."""
+# commits either side of a point that count as its neighbourhood, for
+# both the outlier test and the trend line: a real shift outlasts it, a
+# stalled run does not
+WINDOW = 5
+# a point further than this many (scaled) median absolute deviations
+# from its neighbourhood's median is a stall, not a trend
+DEVIATIONS = 3.0
 
-    x: int
-    low: float
-    mid: float
-    high: float
+# (commit ordinal, seconds)
+Point = tuple[int, float]
 
 
-def summarise(samples: dict[int, list[float]]) -> list[Summary]:
-    """Runs of one commit are samples of the same thing: noise between
-    them becomes band width, a change between commits a step."""
-    out = []
-    for x, values in sorted(samples.items()):
-        if len(values) < 2:
-            out.append(Summary(x, values[0], values[0], values[0]))
-            continue
-        q1, q2, q3 = quantiles(values, n=4)
-        out.append(Summary(x, q1, q2, q3))
-    return out
+def medians(samples: dict[int, list[float]]) -> list[Point]:
+    """Runs of one commit are samples of the same thing: one point per
+    commit, at their median."""
+    return [(x, median(values)) for x, values in sorted(samples.items())]
+
+
+def neighbourhoods(values: list[float]) -> list[list[float]]:
+    half = WINDOW // 2
+    return [values[max(0, i - half) : i + half + 1] for i in range(len(values))]
+
+
+def hampel(values: list[float]) -> tuple[list[float], list[bool]]:
+    """Hampel filter: replace a point that sits DEVIATIONS scaled MADs
+    from its neighbourhood's median with that median, and say which. The
+    MAD is floored at 5% of the median so a flat run of identical values
+    does not turn the next tenth of a second into an outlier."""
+    cleaned, flagged = [], []
+    for value, local in zip(values, neighbourhoods(values), strict=True):
+        centre = median(local)
+        mad = 1.4826 * median(abs(v - centre) for v in local)
+        outlier = abs(value - centre) > DEVIATIONS * max(mad, 0.05 * centre)
+        cleaned.append(centre if outlier else value)
+        flagged.append(outlier)
+    return cleaned, flagged
+
+
+def rolling_median(values: list[float]) -> list[float]:
+    return [median(local) for local in neighbourhoods(values)]
+
+
+def draw_series(
+    ax: matplotlib.axes.Axes, points: list[Point], label: str
+) -> None:
+    """One series in two layers: every commit's median as a faint dot
+    (hollow where the Hampel filter called it an outlier), and the trend,
+    a rolling median of the cleaned values, as the line that carries the
+    label."""
+    xs = [x for x, _ in points]
+    raw = [v for _, v in points]
+    cleaned, flagged = hampel(raw)
+    (line,) = ax.plot(xs, rolling_median(cleaned), linewidth=1.5, label=label)
+    colour = line.get_color()
+    kept = [(x, v) for x, v, f in zip(xs, raw, flagged, strict=True) if not f]
+    dropped = [(x, v) for x, v, f in zip(xs, raw, flagged, strict=True) if f]
+    if kept:
+        ax.plot(*zip(*kept, strict=True), ".", color=colour, alpha=0.3)
+    if dropped:
+        ax.plot(
+            *zip(*dropped, strict=True),
+            "o",
+            markerfacecolor="none",
+            color=colour,
+            alpha=0.5,
+            markersize=4,
+        )
 
 
 def commit_order(runs: dict[int, tuple[str, str]]) -> dict[str, int]:
