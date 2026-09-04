@@ -21,6 +21,9 @@ import typer
 import yaml
 
 matplotlib.use("Agg")
+# element ids are hashed from this salt instead of a random one, so the
+# same CSV gives the same SVG bytes (the creation date is dropped too)
+matplotlib.rcParams["svg.hashsalt"] = "bench"
 
 WORKFLOWS = ("build-examples", "build-cache-nix-examples", "build-raw-examples")
 # runs per rolling median; odd, so the middle run is a real sample
@@ -170,7 +173,8 @@ def render(source: Path, out: Path, examples: Path, workflows: Path) -> None:
     fig.suptitle(
         f"{source.name}: build workflows, one line per (example, runner)"
     )
-    fig.savefig(out)
+    # no creation date in the SVG: the same CSV must give the same bytes
+    fig.savefig(out, metadata={"Date": None})
 
 
 @app.command()
