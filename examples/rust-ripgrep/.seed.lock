@@ -1,9 +1,7 @@
 {
   "repository": "ghcr.io/roundtablelove/nix-seed/examples/rust-ripgrep/seed",
   "systems": {
-    "aarch64-darwin": "sha256:89e158230ddcc55f7e0404789a8b109b264361c5ee9fdedfa4af3973a2c6b8f4",
-    "aarch64-linux": "sha256:3d357a5b2de47dbe1d097e4d8996535df347e2e94611b52faa8c9f0c4b347a19",
-    "x86_64-linux": "sha256:750721b6700b019a9f0f4cccb45760bde5190373cf7b534b47239cc372b8303e"
+    "aarch64-linux": "sha256:8784398e7f69413b1393758c67482708b7cb38c90a71c9aa04dcbf2b281410bc"
   },
-  "tag": "2b54d900149a584b5067799ccc33244d73dee2c2"
+  "tag": "8e6198b33f61b02574d9eb82ee83af9741b1b951"
 }
