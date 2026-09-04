@@ -51,7 +51,7 @@ runs:
       env:
         REGISTRY_USER: ${{ github.actor }}
         REGISTRY_PASS: ${{ inputs.github_token }}
-      run: |
+      run: |-
         "$GITHUB_ACTION_PATH"/bin/mount-seed ${{ inputs.path }} \
           "$RUNNER_TEMP/seed" "$RUNNER_TEMP/seed-cache" \
           "${{ steps.seed.outputs.digest }}" \
