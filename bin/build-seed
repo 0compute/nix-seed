@@ -109,7 +109,7 @@ name=$(nix eval --raw $seed.name)
 tag=$(nix eval --raw $seed.tag)
 system=$(nix eval --impure --raw --expr builtins.currentSystem)
 # the artifact and its format come from the seed itself rather than being
-# hard-coded: linux ships store.squashfs, darwin store.dmg.
+# hard-coded: linux ships store.squashfs, darwin store.dmg.zst.
 format=$(nix eval --raw $seed.format)
 artifact=$(nix eval --raw $seed.artifact)
 

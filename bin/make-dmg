@@ -17,25 +17,14 @@ set -eu -o pipefail
 stage=${1:?staging directory required}
 out=${2:?output .dmg path required}
 
-# ULFO (lzfse) on measurement, not on principle. lzma does compress
-# better -- ~27% smaller blobs across all seven examples -- and the
-# reasonable guess was that this would pay off on darwin, where an
-# actions/cache entry restores at roughly 50 MB/s against roughly
-# 234 MB/s on linux. It does not. At n=5 per example the consumer's
-# restore-and-mount step was unchanged (median deltas -3s..+3s, mean
-# under a second), while lzma cost 50-200s more per darwin seed. python
-# makes the point: its ULFO blob is 237MB larger and its step is 5s
-# faster.
-# So the step is not purely transfer-bound; decompression on read gives
-# back what the smaller transfer saves. Set SEED_DMG_FORMAT=ULMO if
-# cache or registry storage is the binding constraint rather than time.
-#
-# UDRO (uncompressed) under test: attaching rust's ULFO image took
-# 22-28s in every round against 6-11s for python's larger one, so the
-# cost tracks the volume's metadata, not its bytes -- and each metadata
-# read on a compressed image decompresses a chunk. -noautofsck did not
-# move it (run 33892039949).
-format=${SEED_DMG_FORMAT:-UDRO}
+# The image is uncompressed (UDRO) and shipped inside a zstd stream that
+# the consumer decodes once before attaching. A compressed UDIF image
+# (lzfse or lzma) pays the codec on every read instead: attaching
+# rust's lzfse image took 22-28s in every round against 6-11s for
+# python's larger one, because attach walks the volume's metadata and
+# the cost tracks inodes rather than bytes; evaluation off the mounted
+# image then varied 5-9x run to run. Uncompressed, attach is 1-5s and
+# evaluation sits in a 1.5s band. See DESIGN.md#macos.
 
 work=$(mktemp -d)
 mnt=$work/mnt
@@ -76,10 +65,14 @@ ln -s "$(readlink "$stage/env")" "$mnt/.seed/env"
 
 hdiutil detach "$mnt"
 
+hdiutil convert "$work/rw.sparseimage" -format UDRO -o "$work/store.dmg"
+
+# zstd for transport only: the registry blob and the cache entry would
+# otherwise carry 3-4 GB of raw blocks. Level 9 mirrors mkSeed's
+# squashfs default; -T0 uses every core.
 mkdir -p "$(dirname "$out")"
 rm -f "$out"
-hdiutil convert "$work/rw.sparseimage" -format "$format" -o "$out"
-# hdiutil appends .dmg when the output has no extension it recognises
-[[ -f $out ]] || mv "$out.dmg" "$out"
+zstd -T0 -9 --quiet "$work/store.dmg" -o "$out"
 
-echo >&2 "built $out ($format, $(du -h "$out" | cut -f1))"
+echo >&2 "built $out (UDRO $(du -h "$work/store.dmg" | cut -f1)" \
+  "-> zstd $(du -h "$out" | cut -f1))"

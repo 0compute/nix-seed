@@ -100,6 +100,12 @@ if [[ $(uname -s) == Darwin ]]; then
   # block layer, which is what macOS has instead of overlayfs.
   # -owners off presents the volume as owned by the mounting user, so
   # nix runs unprivileged for the rest of the job exactly as on linux.
+  # the artifact is a zstd stream of an *uncompressed* image, decoded
+  # once here so hdiutil reads plain blocks: a compressed UDIF image
+  # pays the codec on every read -- 22-28s to attach rust's lzfse image
+  # and a 5-9x spread in evaluation time. see DESIGN.md#macos. zstd
+  # ships on GitHub's macOS images (actions/cache depends on it too).
+  zstd -d --quiet "$out/store.dmg.zst" -o "$out/store.dmg"
   sudo hdiutil attach "$out/store.dmg" \
     -shadow "${RUNNER_TEMP:-/tmp}/seed.shadow" \
     -mountpoint /nix \

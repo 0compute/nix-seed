@@ -173,7 +173,9 @@ let
   # what the consumer will fetch, per platform. bin/build-seed reads
   # both from passthru rather than hard-coding a filename.
   format = if stdenv.hostPlatform.isDarwin then "dmg" else "squashfs";
-  artifact = "store.${format}";
+  # the dmg is uncompressed -- attach and every read go through the
+  # codec otherwise, see DESIGN.md#macos -- and travels under zstd.
+  artifact = if format == "dmg" then "store.dmg.zst" else "store.squashfs";
 
   passthru = {
     inherit
