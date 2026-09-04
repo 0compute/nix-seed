@@ -21,7 +21,7 @@ runs:
   steps:
 
     # the lock names the registry image and this system's digest; the
-    # blob is pulled straight from the registry (sixteen parallel range
+    # blob is pulled straight from the registry (eight parallel range
     # requests, see bin/mount-seed) and verified against that digest.
     - name: seed digest
       id: seed

@@ -119,17 +119,21 @@ seed's only artefact: `registration`, the `nix-store --load-db` dump that marks
 the baked paths valid in a fresh database, and `env`, a symlink to a `buildEnv`
 providing `bin/` for `PATH` and `etc/nix/nix.conf` for the build configuration.
 
-The consumer pulls the blob straight from the registry with sixteen parallel
+The consumer pulls the blob straight from the registry with eight parallel
 range requests: the blob endpoint redirects to CDN-fronted storage that honours
 ranges. Measured on the rust seed (654 MB on `ubuntu-22.04-arm`, 579 MB on
-`macos-15`) that is 1.5s and 4s at the median against 4-14s for an
+`macos-15`) that is 1.5-3s and 4s at the median against 4-14s for an
 `actions/cache` restore of the same bytes, with no save step, size cap or
 eviction. It has a tail the cache did not: about one fetch in five on arm took
-14-34s, cold or warm, on varying storage shards, and going from four to sixteen
-streams did not move it. An `actions/cache` entry as the primary path with this
-fetch as the miss path was tried and dropped in favour of the better median and
-the simpler action. The consumer verifies the bytes against the digest in
-`.seed.lock`, and mounts them as a pair:
+14-34s during busy hours, cold or warm, on varying storage shards; a stream
+under 2 MB/s for 10s is aborted and re-requested for that reason. A sweep of
+1-64 streams was flat from 2 to 32 once the edge was warm (arm ~225 MB/s,
+macOS ~145 MB/s regardless), eight had the best median on both runners, and a
+single stream is the one setting that pays for a cold edge (8-21s). An
+`actions/cache` entry as the primary path with this fetch as the miss path was
+tried and dropped in favour of the better median and the simpler action. The
+consumer verifies the bytes against the digest in `.seed.lock`, and mounts them
+as a pair:
 
 ```sh
 mount -t squashfs -o loop,ro store.squashfs /nix/.ro-store

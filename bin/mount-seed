@@ -66,17 +66,19 @@ curl -sS -K "$conf" \
   -o "$manifest" "https://$registry/v2/$path/manifests/$digest"
 verify "${digest#sha256:}" "$manifest"
 
-# each blob in sixteen parallel range requests. the blob endpoint
+# each blob in eight parallel range requests. the blob endpoint
 # redirects to blob storage behind a CDN, which honours ranges (the
 # registry itself does not) and needs no token. measured on the rust
-# seed (654 MB linux, 579 MB darwin): 1.5s on ubuntu-arm and 4s on
+# seed (654 MB linux, 579 MB darwin): 1.5-3s on ubuntu-arm and 4s on
 # macos-15 at the median, against 4-14s for an actions/cache restore of
 # the same bytes, but with a tail -- 14-34s in about one fetch in five
-# on arm, cold or warm, on varying storage shards, and the stream count
-# does not move it. the registry is the primary path regardless: no
-# cache save on the seed side, no 10 GB cap, no eviction, and the median
-# wins. the parts are concatenated in order (two-digit suffixes).
-streams=16
+# on arm during busy hours, on varying storage shards. a sweep of 1-64
+# streams (six samples each, both runners) is flat from 2 to 32 once
+# the edge is warm; eight had the best median on both and the tightest
+# spread on arm, hides the cold single-stream case (8-21s), and keeps
+# the number of concurrent origin fetches on a miss small. the parts
+# are concatenated in order (two-digit suffixes).
+streams=8
 jq --raw-output '
   .layers[]
   | "\(.digest | ltrimstr("sha256:")) \(.size) \(
