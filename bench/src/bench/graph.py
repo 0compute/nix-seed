@@ -4,7 +4,8 @@ axis is the sequence of runs, labelled with the abbreviated commit each
 run built, so idle hours do not stretch the plot and a change in the
 code lines up with a change in the timings. Successful jobs only, so a
 cancelled or failed run does not read as a fast one, and only examples
-that still exist under examples/."""
+that still exist under examples/ on runners the workflow's matrix still
+lists."""
 
 from __future__ import annotations
 
@@ -17,6 +18,7 @@ from statistics import median, quantiles
 import matplotlib
 import matplotlib.pyplot as plt
 import typer
+import yaml
 
 matplotlib.use("Agg")
 
@@ -62,7 +64,19 @@ def current_examples(examples: Path) -> set[str]:
     }
 
 
-def panels(source: Path, examples: set[str]) -> dict[str, Panel]:
+def matrix_os(workflows: Path, workflow: str) -> set[str]:
+    """The runners the workflow's build matrix lists today: runners it
+    used to run on are history, not a series worth a line."""
+    with (workflows / f"{workflow}.yaml").open() as f:
+        return set(
+            yaml.safe_load(f)["jobs"]["build"]["strategy"]["matrix"]["os"]
+        )
+
+
+def panels(
+    source: Path, examples: set[str], workflows: Path
+) -> dict[str, Panel]:
+    runners = {w: matrix_os(workflows, w) for w in WORKFLOWS}
     runs: dict[str, dict[int, tuple[str, str]]] = defaultdict(dict)
     samples: dict[str, list[tuple[int, str, float]]] = defaultdict(list)
     with source.open(newline="") as f:
@@ -74,6 +88,7 @@ def panels(source: Path, examples: set[str]) -> dict[str, Panel]:
                 row["step"] == "job"
                 and row["conclusion"] == "success"
                 and row["example"] in examples
+                and row["os"] in runners[workflow]
             ):
                 job = f"{row['example']} {row['os']}"
                 samples[workflow].append((run_id, job, float(row["seconds"])))
@@ -108,8 +123,8 @@ def smoothed(values: list[Point], window: int = WINDOW) -> list[Point]:
     ]
 
 
-def render(source: Path, out: Path, examples: Path) -> None:
-    data = panels(source, current_examples(examples))
+def render(source: Path, out: Path, examples: Path, workflows: Path) -> None:
+    data = panels(source, current_examples(examples), workflows)
     # constrained layout makes room for the legends beside the axes
     # instead of shrinking the axes under them
     fig, axes = plt.subplots(
@@ -163,10 +178,11 @@ def main(
     source: Path = Path("bench/workflows.csv"),
     out: Path = Path("bench/workflows.svg"),
     examples: Path = Path("examples"),
+    workflows: Path = Path(".github/workflows"),
 ) -> None:
     """Graph SOURCE (from bench-workflows) into OUT, for the examples that
-    still exist under EXAMPLES."""
-    render(source, out, examples)
+    still exist under EXAMPLES on the runners the WORKFLOWS matrices list."""
+    render(source, out, examples, workflows)
     print(out)
 
 

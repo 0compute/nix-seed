@@ -14,6 +14,7 @@
           # both in step
           (python3.withPackages (p: [
             p.matplotlib
+            p.pyyaml
             p.typer
           ]))
         ]
