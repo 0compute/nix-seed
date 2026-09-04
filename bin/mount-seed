@@ -88,6 +88,12 @@ jq --raw-output '
       "https://$registry/v2/$path/blobs/sha256:$hex")
     chunk=$(((size + streams - 1) / streams))
     args=()
+    # per-stream options go inside each --next group: curl scopes them
+    # to the URL that follows. a stream under 2 MB/s for 10s is a stall
+    # (a healthy one runs at 7-30 MB/s, a stalled one under 1), so it is
+    # aborted and re-requested; the retry tends to land on another CDN
+    # node or a segment warmed meanwhile. each stream reports its bytes
+    # and time so a slow fetch can be read back from the log.
     for ((i = 0; i < streams; i++)); do
       first=$((i * chunk))
       last=$(((i + 1) * chunk - 1))
@@ -96,6 +102,8 @@ jq --raw-output '
       args+=(
         "$location" --range "$first-$last"
         --output "$out/$name.$(printf %02d $i)"
+        --speed-limit 2000000 --speed-time 10 --retry 3
+        --write-out '%{filename_effective}: %{size_download} B %{time_total}s\n'
       )
     done
     curl -sS --parallel --parallel-max $streams "${args[@]}"
