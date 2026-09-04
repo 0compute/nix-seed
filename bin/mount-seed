@@ -105,7 +105,9 @@ if [[ $(uname -s) == Darwin ]]; then
   # pays the codec on every read -- 22-28s to attach rust's lzfse image
   # and a 5-9x spread in evaluation time. see DESIGN.md#macos. zstd
   # ships on GitHub's macOS images (actions/cache depends on it too).
-  zstd -d --quiet "$out/store.dmg.zst" -o "$out/store.dmg"
+  # via stdin: zstd ignores a symlink named as an input file, and
+  # $out/store.dmg.zst is one (into the verified blob).
+  zstd -d --quiet <"$out/store.dmg.zst" >"$out/store.dmg"
   sudo hdiutil attach "$out/store.dmg" \
     -shadow "${RUNNER_TEMP:-/tmp}/seed.shadow" \
     -mountpoint /nix \
