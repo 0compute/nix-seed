@@ -38,9 +38,9 @@
           help = "collect build-* workflow timings into bench/workflows.csv";
         }
         {
-          name = "bench-graph";
-          command = ''python -m bench.graph "$@"'';
-          help = "graph bench/workflows.csv into bench/workflows.svg";
+          name = "bench-graph-jobs";
+          command = ''python -m bench.graph_jobs "$@"'';
+          help = "graph job wall clock from bench/workflows.csv";
         }
       ];
     };
