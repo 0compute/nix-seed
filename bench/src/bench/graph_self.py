@@ -1,11 +1,12 @@
 """Graph the seeded build (build-examples) step by step: one panel per
-(example, runner), one line per step of the nix-seed action plus the
-consumer's build step, seconds per commit. Runs of the same commit are
-one sample: the line is their median and the band their interquartile
-range. The x axis is the sequence of commits built, in order of first
-run, labelled with the abbreviated commit. Successful jobs only, and
-only examples that still exist under examples/ on runners the workflow's
-matrix still lists."""
+(example, runner), one stacked bar per commit whose segments are the
+steps of the nix-seed action plus the consumer's build step, in
+execution order, so the bar is the job and each segment that step's
+share of it. Runs of the same commit are one sample, at their median;
+nothing is smoothed across commits. The x axis is the sequence of
+commits built, in order of first run, labelled with the abbreviated
+commit. Successful jobs only, and only examples that still exist under
+examples/ on runners the workflow's matrix still lists."""
 
 from __future__ import annotations
 
@@ -17,12 +18,10 @@ import matplotlib.pyplot as plt
 import typer
 
 from bench.common import (
-    WINDOW,
     cap,
     commit_order,
     configure,
     current_examples,
-    draw_series,
     matrix_os,
     medians,
     save,
@@ -31,9 +30,10 @@ from bench.common import (
 configure()
 
 WORKFLOW = "build-examples"
-# the composite action's steps in order, then the consumer's own build.
-# `pull seed` is what `mount seed` was called before the cache existed.
-STEPS = ("seed digest", "cache pull", "mount seed", "post cache pull", "build")
+# the composite action's steps and the consumer's own build, in execution
+# order (the post step runs after the build). `pull seed` is what `mount
+# seed` was called before the cache existed.
+STEPS = ("seed digest", "cache pull", "mount seed", "build", "post cache pull")
 RENAMED = {"pull seed": "mount seed"}
 
 app = typer.Typer(add_completion=False)
@@ -89,37 +89,37 @@ def render(source: Path, out: Path, examples: Path, workflows: Path) -> None:
     fig, axes = plt.subplots(
         len(lanes), 1, figsize=(16, 4 * len(lanes)), layout="constrained"
     )
+    xs = range(len(commits))
     for ax, lane in zip(axes, lanes, strict=True):
-        shown: list[float] = []
+        # one bar per commit, one segment per step in execution order:
+        # the bar is the job, each segment that step's share of it. the
+        # only aggregation is the median across the commit's runs.
+        bottom = [0.0] * len(commits)
         for step in STEPS:
-            if step not in samples[lane]:
-                continue
-            points = medians(samples[lane][step])
-            shown += [v for _, v in points]
-            draw_series(ax, points, step)
-        cap(ax, shown)
+            heights = [0.0] * len(commits)
+            for x, secs in medians(samples[lane].get(step, {})):
+                heights[x] = secs
+            ax.bar(xs, heights, bottom=bottom, width=0.8, label=step)
+            bottom = [b + h for b, h in zip(bottom, heights, strict=True)]
+        cap(ax, [b for b in bottom if b])
         ax.set_xticks(
-            range(len(commits)),
-            [sha[:7] for sha in commits],
-            rotation=90,
-            fontsize="x-small",
+            xs, [sha[:7] for sha in commits], rotation=90, fontsize="x-small"
         )
         example, os = lane
         ax.set_title(
-            f"{example} on {os}: seconds per step, successful runs. "
-            "dots: median per commit (hollow: outlier); line: rolling "
-            f"median of {WINDOW} commits; y capped at 2 x p95"
+            f"{example} on {os}: seconds per step, stacked; median across "
+            "the commit's successful runs; y capped at 2 x p95"
         )
         ax.set_ylabel("seconds")
         ax.set_xlabel("commits in order of first run")
-        ax.grid(alpha=0.3)
+        ax.grid(alpha=0.3, axis="y")
         ax.legend(
             title="step",
             fontsize="small",
             loc="upper left",
             bbox_to_anchor=(1, 1),
         )
-    fig.suptitle(f"{source.name}: {WORKFLOW}, one line per step")
+    fig.suptitle(f"{source.name}: {WORKFLOW}, steps stacked per commit")
     save(fig, out)
 
 
