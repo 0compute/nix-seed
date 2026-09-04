@@ -180,7 +180,7 @@ def render(source: Path, out: Path, examples: Path, workflows: Path) -> None:
 @app.command()
 def main(
     source: Path = Path("bench/workflows.csv"),
-    out: Path = Path("bench/workflows.svg"),
+    out: Path = Path("bench/jobs.svg"),
     examples: Path = Path("examples"),
     workflows: Path = Path(".github/workflows"),
 ) -> None:
