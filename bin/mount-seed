@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # shellcheck disable=2086
-# fetch, verify, and mount the seed as /nix/store: take the OCI blobs
-# from the actions/cache entry the action restored, or pull them straight
-# from the registry, verify them against the lock digest, mount the
-# image read-only under a writable layer, register the baked closure
+# fetch, verify, and mount the seed as /nix/store: pull the OCI blobs
+# straight from the registry, verify them against the lock digest, mount
+# the image read-only under a writable layer, register the baked closure
 # in a fresh nix db, and put the seeded toolchain on PATH. after this the
 # store is ready for the caller's own `nix build`: the seeded nix is on
 # PATH, the store belongs to the caller, and the baked nix.conf has no
@@ -27,11 +26,31 @@ repository=$(jq --exit-status --raw-output .repository "$lock")
 registry=${repository%%/*}
 path=${repository#*/}
 
+mkdir -p "$out"
+
+# a pull token, kept out of the trace and passed to curl as a config
+# file so it never appears on a command line. REGISTRY_USER/PASS are
+# optional: public packages get an anonymous token.
+conf=$out/curl.conf
+{
+  set +x
+  token=$(
+    curl -sS -G ${REGISTRY_USER:+-u "$REGISTRY_USER:$REGISTRY_PASS"} \
+      --data-urlencode "scope=repository:$path:pull" \
+      "https://$registry/token?service=$registry" \
+      | jq --exit-status --raw-output .token
+  )
+  (
+    umask 077
+    printf 'header = "Authorization: Bearer %s"\n' "$token" >"$conf"
+  )
+  set -x
+} 2>/dev/null
+
 # verify the manifest against the lock digest, then each blob against
-# the manifest, so a corrupt or poisoned blob -- downloaded or restored
-# from cache -- is rejected before it is mounted. openssl: hardware
-# sha256 (~2GB/s); the runner's coreutils sha256sum is scalar
-# (~250MB/s) and would dominate the hot path.
+# the manifest, so a corrupt or poisoned blob is rejected before it is
+# mounted. openssl: hardware sha256 (~2GB/s); the runner's coreutils
+# sha256sum is scalar (~250MB/s) and would dominate the hot path.
 verify() {
   local got
   got=$(openssl dgst -sha256 -r "$2")
@@ -42,59 +61,34 @@ verify() {
 }
 
 manifest=$out/manifest.json
+curl -sS -K "$conf" \
+  -H 'Accept: application/vnd.oci.image.manifest.v1+json' \
+  -o "$manifest" "https://$registry/v2/$path/manifests/$digest"
+verify "${digest#sha256:}" "$manifest"
 
-# "<hex> <size> <title>" per layer
-layers() {
-  jq --raw-output '
-    .layers[]
-    | "\(.digest | ltrimstr("sha256:")) \(.size) \(
-        .annotations["org.opencontainers.image.title"]
-          // error("untitled layer"))"' \
-    "$manifest"
-}
-
-verified() {
-  [[ -f $manifest ]] || return 1
-  verify "${digest#sha256:}" "$manifest"
-  layers | while read -r hex _ name; do
-    verify "$hex" "$out/$name"
-  done
-}
-
-# straight from the registry: a pull token (kept out of the trace and
-# passed to curl as a config file so it never appears on a command line;
-# REGISTRY_USER/PASS are optional, public packages get an anonymous
-# token), the manifest by digest, then each blob in sixteen parallel
-# range requests. the blob endpoint redirects to blob storage behind a
-# CDN, which honours ranges (the registry itself does not) and needs no
-# token. the parts are concatenated in order (two-digit suffixes).
-fetch() {
-  local conf token location hex size name chunk first last i args
-  conf=$out/curl.conf
-  {
-    set +x
-    token=$(
-      curl -sS -G ${REGISTRY_USER:+-u "$REGISTRY_USER:$REGISTRY_PASS"} \
-        --data-urlencode "scope=repository:$path:pull" \
-        "https://$registry/token?service=$registry" \
-        | jq --exit-status --raw-output .token
-    )
-    (
-      umask 077
-      printf 'header = "Authorization: Bearer %s"\n' "$token" >"$conf"
-    )
-    set -x
-  } 2>/dev/null
-  curl -sS -K "$conf" \
-    -H 'Accept: application/vnd.oci.image.manifest.v1+json' \
-    -o "$manifest" "https://$registry/v2/$path/manifests/$digest"
-  verify "${digest#sha256:}" "$manifest"
-  layers | while read -r hex size name; do
+# each blob in sixteen parallel range requests. the blob endpoint
+# redirects to blob storage behind a CDN, which honours ranges (the
+# registry itself does not) and needs no token. measured on the rust
+# seed (654 MB linux, 579 MB darwin): 1.5s on ubuntu-arm and 4s on
+# macos-15 at the median, against 4-14s for an actions/cache restore of
+# the same bytes, but with a tail -- 14-34s in about one fetch in five
+# on arm, cold or warm, on varying storage shards, and the stream count
+# does not move it. the registry is the primary path regardless: no
+# cache save on the seed side, no 10 GB cap, no eviction, and the median
+# wins. the parts are concatenated in order (two-digit suffixes).
+streams=16
+jq --raw-output '
+  .layers[]
+  | "\(.digest | ltrimstr("sha256:")) \(.size) \(
+      .annotations["org.opencontainers.image.title"]
+        // error("untitled layer"))"' \
+  "$manifest" |
+  while read -r hex size name; do
     location=$(curl -sS -K "$conf" -o /dev/null -w '%{redirect_url}' \
       "https://$registry/v2/$path/blobs/sha256:$hex")
-    chunk=$(((size + 15) / 16))
+    chunk=$(((size + streams - 1) / streams))
     args=()
-    for ((i = 0; i < 16; i++)); do
+    for ((i = 0; i < streams; i++)); do
       first=$((i * chunk))
       last=$(((i + 1) * chunk - 1))
       ((last < size)) || last=$((size - 1))
@@ -104,25 +98,12 @@ fetch() {
         --output "$out/$name.$(printf %02d $i)"
       )
     done
-    curl -sS --parallel --parallel-max 16 "${args[@]}"
+    curl -sS --parallel --parallel-max $streams "${args[@]}"
     cat "$out/$name".[0-9][0-9] >"$out/$name"
     rm "$out/$name".[0-9][0-9]
+    verify "$hex" "$out/$name"
   done
-  rm "$conf"
-}
-
-# $out is an actions/cache entry keyed by the seed digest: a hit skips
-# the fetch; a miss, or an entry that fails verification, fetches, and
-# the action saves $out after the job. measured on the rust seed (654 MB
-# arm, 579 MB darwin): a cache restore took 4-14s and never worse, while
-# the ranged fetch took 1.5-5s with a warm CDN edge but 14-34s in 5 of
-# 24 production fetches. so the fetch is the miss path, not the norm.
-verified || {
-  rm -rf "$out"
-  mkdir -p "$out"
-  fetch
-  verified
-}
+rm "$conf"
 
 # mount the baked store read-only under a writable layer, so the build
 # can add to it without ever rewriting it. no extraction either way:
@@ -168,10 +149,8 @@ if [[ $(uname -s) == Darwin ]]; then
   # ships on GitHub's macOS images (actions/cache depends on it too).
   # via stdin: zstd ignores a symlink named as an input file, and
   # $out/store.dmg.zst is one (into the verified blob).
-  # decoded outside $out, which is the cache entry: the raw image is
-  # 3-4 GB and must not be saved.
-  zstd -d --quiet <"$out/store.dmg.zst" >"${RUNNER_TEMP:-/tmp}/store.dmg"
-  sudo hdiutil attach "${RUNNER_TEMP:-/tmp}/store.dmg" \
+  zstd -d --quiet <"$out/store.dmg.zst" >"$out/store.dmg"
+  sudo hdiutil attach "$out/store.dmg" \
     -shadow "${RUNNER_TEMP:-/tmp}/seed.shadow" \
     -mountpoint /nix \
     -owners off -nobrowse -noautoopen -noverify

@@ -20,10 +20,9 @@ runs:
   using: composite
   steps:
 
-    # the lock names the registry image and this system's digest. the
-    # digest keys the cache entry (same digest -> same bytes, so the
-    # entry is immutable); a miss pulls straight from the registry and
-    # the entry is saved after the job. see bin/mount-seed.
+    # the lock names the registry image and this system's digest; the
+    # blob is pulled straight from the registry (sixteen parallel range
+    # requests, see bin/mount-seed) and verified against that digest.
     - name: seed digest
       id: seed
       shell: bash
@@ -36,13 +35,6 @@ runs:
         digest=$(jq -er --arg s "$system" '.systems[$s]' "$lock")
         echo "lock=$lock" >>"$GITHUB_OUTPUT"
         echo "digest=$digest" >>"$GITHUB_OUTPUT"
-        echo "key=${digest#sha256:}" >>"$GITHUB_OUTPUT"
-
-    - name: cache pull
-      uses: actions/cache@v6
-      with:
-        path: ${{ runner.temp }}/seed
-        key: seed-${{ runner.os }}-${{ runner.arch }}-${{ steps.seed.outputs.key }}
 
     - name: mount seed
       shell: bash
