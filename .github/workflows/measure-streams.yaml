@@ -1,0 +1,72 @@
+# measurement: fetch the rust seed blob from ghcr with 1..64 parallel
+# range streams on separate connections (--parallel-immediate), several
+# rounds each, and time download and reassembly.
+# dispatch by hand; read the timings from the job log.
+name: measure-streams
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-15
+          - ubuntu-22.04-arm
+    permissions:
+      packages: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: ghcr parallel ranges
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          system=$(uname -m | sed s/arm64/aarch64/)-$(uname -s | tr '[:upper:]' '[:lower:]')
+          lock=examples/rust/.seed.lock
+          digest=$(jq -er --arg s "$system" '.systems[$s]' $lock)
+          repository=$(jq -er .repository $lock)
+          path=${repository#ghcr.io/}
+          token=$(curl -sS -u "$GITHUB_ACTOR:$GH_TOKEN" \
+            "https://ghcr.io/token?scope=repository:$path:pull&service=ghcr.io" \
+            | jq -er .token)
+          manifest=$(curl -sS -H "Authorization: Bearer $token" \
+            -H 'Accept: application/vnd.oci.image.manifest.v1+json' \
+            "https://ghcr.io/v2/$path/manifests/$digest")
+          blob=$(jq -er '.layers[0].digest' <<<"$manifest")
+          size=$(jq -er '.layers[0].size' <<<"$manifest")
+          location=$(curl -sS -o /dev/null -w '%{redirect_url}' \
+            -H "Authorization: Bearer $token" \
+            "https://ghcr.io/v2/$path/blobs/$blob")
+          echo "blob $blob size $size"
+          now() { perl -MTime::HiRes=time -e 'printf "%.3f\n", time'; }
+          cd "$RUNNER_TEMP"
+          for round in 1 2 3; do
+            for n in 1 2 4 8 16 32 64; do
+              rm -f part.* blob
+              chunk=$(((size + n - 1) / n))
+              args=()
+              for ((i = 0; i < n; i++)); do
+                first=$((i * chunk))
+                last=$(((i + 1) * chunk - 1))
+                ((last < size)) || last=$((size - 1))
+                ((i == 0)) || args+=(--next)
+                args+=("$location" -r "$first-$last" -o "part.$(printf %02d "$i")")
+              done
+              t0=$(now)
+              curl -sS --parallel --parallel-immediate --parallel-max "$n" "${args[@]}"
+              t1=$(now)
+              cat part.* >blob
+              t2=$(now)
+              got=$(openssl dgst -sha256 -r blob)
+              [[ ${got%% *} == "${blob#sha256:}" ]] || { echo "digest mismatch"; exit 1; }
+              perl -e 'printf "round %d streams %2d: download %6.2fs (%5.1f MB/s) cat %5.2fs\n",
+                @ARGV[0,1], $ARGV[3]-$ARGV[2], $ARGV[5]/1e6/($ARGV[3]-$ARGV[2]), $ARGV[4]-$ARGV[3]' \
+                "$round" "$n" "$t0" "$t1" "$t2" "$size"
+            done
+          done
