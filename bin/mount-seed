@@ -71,19 +71,20 @@ curl -sS -K "$conf" \
   -o "$manifest" "https://$registry/v2/$path/manifests/$digest"
 verify "${digest#sha256:}" "$manifest"
 
-# each blob in eight parallel range requests. the blob endpoint
-# redirects to blob storage behind a CDN, which honours ranges (the
-# registry itself does not) and needs no token. measured on the rust
-# seed (654 MB linux, 579 MB darwin): 1.5-3s on ubuntu-arm and 4s on
-# macos-15 at the median, against 4-14s for an actions/cache restore of
-# the same bytes, but with a tail -- 14-34s in about one fetch in five
-# on arm during busy hours, on varying storage shards. a sweep of 1-64
-# streams (six samples each, both runners) is flat from 2 to 32 once
-# the edge is warm; eight had the best median on both and the tightest
-# spread on arm, hides the cold single-stream case (8-21s), and keeps
-# the number of concurrent origin fetches on a miss small. the parts
-# are concatenated in order (two-digit suffixes).
-streams=8
+# each blob in four parallel range requests, one connection each. the
+# blob endpoint redirects to blob storage behind a CDN, which honours
+# ranges (the registry itself does not) and needs no token. measured on
+# the rust seed (654 MB linux, 579 MB darwin): 1-2s on ubuntu-arm and
+# 3.6s on macos-15 at the median, against 4-14s for an actions/cache
+# restore of the same bytes, but with a tail -- 14-34s in about one
+# fetch in five on arm during busy hours, on varying storage shards. a
+# sweep of 1-64 streams (six samples each, both runners): four had the
+# best median on both (arm 1.1s against 1.7s for eight; macos 3.6s
+# against 3.9s), 16 and beyond pay for the extra connections (64: +2s
+# on arm, +1s on macos), and a single stream is the one setting that
+# pays for a cold edge (7-13s). the parts are concatenated in order
+# (two-digit suffixes).
+streams=4
 jq --raw-output '
   .layers[]
   | "\(.digest | ltrimstr("sha256:")) \(.size) \(
@@ -115,8 +116,9 @@ jq --raw-output '
     done
     # --parallel-immediate: a connection per stream. curl's default
     # multiplexes the streams over one HTTP/2 connection, so they share
-    # one congestion window and one flow-control window, which is what
-    # a 1-64 stream sweep flat from 2 to 32 looks like from outside.
+    # one congestion window and one flow-control window: multiplexed,
+    # the same sweep was flat at ~230 MB/s from 1 to 64 streams on arm,
+    # where separate connections reach 380-670 MB/s.
     curl -sS --parallel --parallel-immediate --parallel-max $streams \
       "${args[@]}"
     cat "$out/$name".[0-9][0-9] >"$out/$name"
