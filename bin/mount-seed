@@ -28,6 +28,11 @@ path=${repository#*/}
 
 mkdir -p "$out"
 
+# `::group::seed: <phase>` lines fold the log in the Actions UI and,
+# with the timestamps the log carries, let bench/ time each phase of
+# this one composite step separately.
+echo '::group::seed: fetch'
+
 # a pull token, kept out of the trace and passed to curl as a config
 # file so it never appears on a command line. REGISTRY_USER/PASS are
 # optional: public packages get an anonymous token.
@@ -108,12 +113,18 @@ jq --raw-output '
         --write-out '%{filename_effective}: %{size_download} B %{time_total}s\n'
       )
     done
-    curl -sS --parallel --parallel-max $streams "${args[@]}"
+    # --parallel-immediate: a connection per stream. curl's default
+    # multiplexes the streams over one HTTP/2 connection, so they share
+    # one congestion window and one flow-control window, which is what
+    # a 1-64 stream sweep flat from 2 to 32 looks like from outside.
+    curl -sS --parallel --parallel-immediate --parallel-max $streams \
+      "${args[@]}"
     cat "$out/$name".[0-9][0-9] >"$out/$name"
     rm "$out/$name".[0-9][0-9]
     verify "$hex" "$out/$name"
   done
 rm "$conf"
+echo '::endgroup::'
 
 # mount the baked store read-only under a writable layer, so the build
 # can add to it without ever rewriting it. no extraction either way:
@@ -159,16 +170,21 @@ if [[ $(uname -s) == Darwin ]]; then
   # ships on GitHub's macOS images (actions/cache depends on it too).
   # via stdin: zstd ignores a symlink named as an input file, and
   # $out/store.dmg.zst is one (into the verified blob).
+  echo '::group::seed: decode'
   zstd -d --quiet <"$out/store.dmg.zst" >"$out/store.dmg"
+  echo '::endgroup::'
+  echo '::group::seed: mount'
   sudo hdiutil attach "$out/store.dmg" \
     -shadow "${RUNNER_TEMP:-/tmp}/seed.shadow" \
     -mountpoint /nix \
     -owners off -nobrowse -noautoopen -noverify
+  echo '::endgroup::'
 
   seedmeta=/nix/.seed
 
 else
 
+  echo '::group::seed: mount'
   sudo mkdir -p /nix/.ro-store /nix/.rw/upper /nix/.rw/work /nix/store /nix/var/nix
   sudo mount -t squashfs -o loop,ro "$out/store.squashfs" /nix/.ro-store
   sudo mount -t overlay overlay \
@@ -185,6 +201,7 @@ else
   # (darwin gets the same effect from -owners off, above.)
   sudo chown "$(id -u):$(id -g)" /nix/store /nix/.rw/upper /nix/.rw/work
   sudo chown -R "$(id -u):$(id -g)" /nix/var
+  echo '::endgroup::'
 
   seedmeta=/nix/.ro-store/.seed
 
@@ -199,6 +216,7 @@ envbin=$seedenv/bin
 # link in seed nix.conf BEFORE touching the db: it sets
 # fsync-metadata = false, which load-db must see: a fsync per registered
 # record otherwise dominates the mount.
+echo '::group::seed: load db'
 sudo mkdir -p /etc/nix
 sudo ln -sf $seedenv/etc/nix/nix.conf /etc/nix/nix.conf
 
@@ -208,3 +226,4 @@ sudo ln -sf $seedenv/etc/nix/nix.conf /etc/nix/nix.conf
 # unprivileged now that the store belongs to the caller, so the db it
 # creates is owned by the user who will go on to build against it.
 "$envbin/nix-store" --load-db <"$seedmeta/registration"
+echo '::endgroup::'
