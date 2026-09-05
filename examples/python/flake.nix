@@ -34,20 +34,6 @@
                 inherit (pkgs) pythonInterpreters;
               }
             );
-            # python312, not `python` (3.14, the project's own interpreter):
-            # pyarrow and torch turned out not yet cached for 3.14 at this
-            # nixpkgs revision; 3.12 is established enough to be fully
-            # cached for everything below. `heavy` has no functional link
-            # to the project, so it doesn't need to match its interpreter.
-            #
-            # every package here is left unmodified and fully substituted,
-            # unlike `default`'s patched zstd: a qhull override (matplotlib
-            # and scipy both link it, tried first) forced scipy to rebuild,
-            # and scipy's meson build runs its own test suite unconditionally
-            # as part of the build itself -- not gated by doCheck, and tens
-            # of minutes long. `default`'s zstd override already gives this
-            # example a real forced build; `heavy` exists for closure size.
-            heavyPkgs = pkgs.python312Packages;
             # deliberately non-upstream: a patched dependency can never be
             # substituted from cache.nixos.org, so the caching workflows
             # have a real local build to amortise. let-bound, not exported:
@@ -72,27 +58,6 @@
                 (previous: {
                   buildInputs = (previous.buildInputs or [ ]) ++ [ expensive ];
                 });
-
-            # a heavier real-world stack alongside the hello-world default:
-            # numpy/scipy need BLAS, LAPACK and gfortran's runtime,
-            # matplotlib and Pillow need freetype/libjpeg/libtiff/libwebp,
-            # numba needs LLVM via llvmlite, pyarrow/opencv4 add their own
-            # sizeable C++ libraries. mkSeed harvests every package by
-            # default, so this rides in the same seed as default. measured
-            # (dry run, all fully substituted): 2.0 GiB.
-            heavy = pkgs.python312.withPackages (_: [
-              heavyPkgs.numpy
-              heavyPkgs.scipy
-              heavyPkgs.pandas
-              heavyPkgs.matplotlib
-              heavyPkgs.scikit-learn
-              heavyPkgs.pillow
-              heavyPkgs.numba
-              heavyPkgs.pyarrow
-              heavyPkgs.polars
-              heavyPkgs.opencv4
-              heavyPkgs.sympy
-            ]);
 
             seed = inputs.nix-seed.lib.mkSeed {
               inherit pkgs;
