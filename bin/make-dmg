@@ -49,13 +49,16 @@ hdiutil create -size "${megs}m" -fs 'Case-sensitive APFS' \
 hdiutil attach "$work/rw.sparseimage" -mountpoint "$mnt" \
   -owners off -nobrowse -noautoopen
 
-mkdir -p "$mnt/store" "$mnt/var/nix" "$mnt/.seed"
+mkdir -p "$mnt/.seed"
 
-# ditto preserves modes and symlinks; store paths land under store/ by
-# basename, so the volume mounted at /nix *is* /nix/store.
+# ditto preserves modes and symlinks; store paths land at the image root
+# by basename, so the volume mount-seed attaches at /nix/store *is*
+# /nix/store. /nix/var is deliberately absent: mount-seed creates it on
+# the runner's real disk instead, outside this image, so a database
+# write is not a copy-on-write into the shadow file. see DESIGN.md#macos.
 while read -r p; do
   [[ -n $p ]] || continue
-  ditto "$p" "$mnt/store/${p##*/}"
+  ditto "$p" "$mnt/${p##*/}"
 done <"$stage/store-paths"
 
 cp "$stage/registration" "$mnt/.seed/registration"
