@@ -18,6 +18,7 @@ Auth: GH_TOKEN or GITHUB_TOKEN, else `gh auth token`.
 from __future__ import annotations
 
 import csv
+import fcntl
 import json
 import os
 import re
@@ -262,6 +263,14 @@ def status(message: str) -> None:
 
 
 def collect(target: Path) -> None:
+    # one collector at a time: two appending the same runs concurrently
+    # would record them twice, and `recorded` only reads at the start
+    with (target.with_suffix(".lock")).open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        _collect(target)
+
+
+def _collect(target: Path) -> None:
     client = Client()
     done = recorded(target)
     status(f"{target}: {len(done)} runs recorded; listing completed runs")
