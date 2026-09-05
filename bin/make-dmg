@@ -45,10 +45,10 @@ megs=$((narsize * 3 / 2000000 + 512))
 # a case-sensitive filesystem is mandatory: the store holds paths that
 # differ only in case, and APFS defaults to case-insensitive. HFS+
 # rather than APFS: `hdiutil attach`'s cost tracks file count, not
-# bytes (see below), and HFS+'s metadata is a flat catalog B-tree
-# against APFS's copy-on-write object map, lighter per file to walk on
-# attach for a store of many small paths. experimental -- see
-# DESIGN.md#macos for the measurement.
+# bytes, and HFS+'s flat catalog B-tree is lighter per file to walk on
+# attach than APFS's copy-on-write object map -- six rounds each way
+# measured attach dropping from 4-5s to about 1.2-1.3s on both
+# examples. see DESIGN.md#macos.
 hdiutil create -size "${megs}m" -fs 'Case-sensitive Journaled HFS+' \
   -volname NixSeed -type SPARSE -o "$work/rw"
 hdiutil attach "$work/rw.sparseimage" -mountpoint "$mnt" \

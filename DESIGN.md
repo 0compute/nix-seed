@@ -194,7 +194,12 @@ choice:
   is Case-sensitive Journaled HFS+, not APFS: attach cost tracks file count
   (see below), and HFS+'s flat catalog B-tree is lighter to walk per file on
   attach than APFS's copy-on-write object map. `bin/make-dmg` used APFS
-  originally; this is under measurement, not yet a settled finding.
+  originally; six rounds each way on `python` and `rust` measured attach
+  dropping from 4-5s to about 1.2-1.3s on both, with no overlap between the
+  two sample ranges. Load-db got moderately slower on both (about 1.1-1.3s to
+  about 1.6-1.7s) despite writing to a plain directory outside the image
+  entirely, which the filesystem choice should not affect; read as noise
+  rather than a real cost until it recurs.
 - **Ownership comes from the mount, not a `chown`.** Linux gets a cheap chown
   from an overlayfs copy-up of the merged root; `hdiutil` has no analogue, so
   the image is attached `-owners off`, which presents it as the mounting
