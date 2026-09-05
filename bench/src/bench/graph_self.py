@@ -4,9 +4,10 @@ steps of the nix-seed action plus the consumer's build step, in
 execution order, so the bar is the job and each segment that step's
 share of it. Runs of the same commit are one sample, at their median;
 nothing is smoothed across commits. The x axis is the sequence of
-commits built, in order of first run, labelled with the abbreviated
-commit. Successful jobs only, and only examples that still exist under
-examples/ on runners the workflow's matrix still lists."""
+commits built, in order of first run, labelled only where the commit
+touched what the consumer runs. Successful jobs only, only examples that
+still exist under examples/ on runners the workflow's matrix still
+lists, and by default only the last 40 commits."""
 
 from __future__ import annotations
 
@@ -19,10 +20,12 @@ import typer
 
 from bench.common import (
     commit_order,
+    commit_ticks,
     configure,
     current_examples,
     matrix_os,
     medians,
+    relevant_commits,
     save,
 )
 
@@ -80,38 +83,45 @@ def load(
     return list(ordinal), samples
 
 
-def render(source: Path, out: Path, examples: Path, workflows: Path) -> None:
+def render(
+    source: Path,
+    out: Path,
+    examples: Path,
+    workflows: Path,
+    repo: Path,
+    last: int,
+) -> None:
     commits, samples = load(
         source, current_examples(examples), matrix_os(workflows, WORKFLOW)
     )
+    labelled = relevant_commits(repo)
+    first = max(0, len(commits) - last) if last else 0
     lanes = sorted(samples)
     fig, axes = plt.subplots(
         len(lanes), 1, figsize=(16, 4 * len(lanes)), layout="constrained"
     )
-    xs = range(len(commits))
+    xs = range(first, len(commits))
     for ax, lane in zip(axes, lanes, strict=True):
         # one bar per commit, one segment per step in execution order:
         # the bar is the job, each segment that step's share of it. the
         # only aggregation is the median across the commit's runs.
-        bottom = [0.0] * len(commits)
+        bottom = [0.0] * len(xs)
         for step in STEPS:
-            heights = [0.0] * len(commits)
+            heights = [0.0] * len(xs)
             for x, secs in medians(samples[lane].get(step, {})):
-                heights[x] = secs
+                if x >= first:
+                    heights[x - first] = secs
             ax.bar(xs, heights, bottom=bottom, width=0.8, label=step)
             bottom = [b + h for b, h in zip(bottom, heights, strict=True)]
         # the tallest bar sets the axis: every segment is meant to be read
         ax.set_ylim(0, max(bottom))
-        ax.set_xticks(
-            xs, [sha[:7] for sha in commits], rotation=90, fontsize="x-small"
-        )
+        commit_ticks(ax, commits, first, labelled)
         example, os = lane
         ax.set_title(
             f"{example} on {os}: seconds per step, stacked; median across "
             "the commit's successful runs"
         )
         ax.set_ylabel("seconds")
-        ax.set_xlabel("commits in order of first run")
         ax.grid(alpha=0.3, axis="y")
         ax.legend(
             title="step",
@@ -129,10 +139,14 @@ def main(
     out: Path = Path("bench/self.svg"),
     examples: Path = Path("examples"),
     workflows: Path = Path(".github/workflows"),
+    repo: Path = Path("."),
+    last: int = 40,
 ) -> None:
     """Graph the build-examples steps from SOURCE (bench-workflows) into
-    OUT, for the examples under EXAMPLES on the runners WORKFLOWS lists."""
-    render(source, out, examples, workflows)
+    OUT, for the examples under EXAMPLES on the runners WORKFLOWS lists,
+    the LAST commits (0 for all), labelled where REPO's history says the
+    commit could have changed the result."""
+    render(source, out, examples, workflows, repo, last)
     print(out)
 
 

@@ -3,6 +3,7 @@ commit are summarised, and how figures are written."""
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 from statistics import median, quantiles
 
@@ -126,3 +127,44 @@ def matrix_os(workflows: Path, workflow: str) -> set[str]:
         return set(
             yaml.safe_load(f)["jobs"]["build"]["strategy"]["matrix"]["os"]
         )
+
+
+# a commit touching one of these can change what the graphs measure;
+# lock commits (examples/*/.seed.lock) republish, they do not change it
+RELEVANT = (
+    "action.yaml",
+    "bin",
+    "mkseed",
+    "seed",
+    "examples/*/flake.nix",
+    "examples/*/flake.lock",
+    ".github/workflows/build-*.yaml",
+    ".github/workflows/seed-*.yaml",
+)
+
+
+def relevant_commits(repo: Path) -> set[str]:
+    """Commits that touched a RELEVANT path, from the repository's log."""
+    log = subprocess.check_output(
+        ["git", "-C", str(repo), "log", "--format=%H", "--", *RELEVANT],
+        text=True,
+    )
+    return set(log.split())
+
+
+def commit_ticks(
+    ax: matplotlib.axes.Axes, commits: list[str], first: int, labelled: set[str]
+) -> None:
+    """One tick per commit from FIRST on, labelled with the short hash only
+    where the commit is in LABELLED."""
+    ax.set_xlim(first - 0.5, len(commits) - 0.5)
+    ax.set_xticks(
+        range(first, len(commits)),
+        [sha[:7] if sha in labelled else "" for sha in commits[first:]],
+        rotation=90,
+        fontsize="x-small",
+    )
+    ax.set_xlabel(
+        "commits in order of first run; labelled where the consumer, "
+        "the seed or the examples changed"
+    )

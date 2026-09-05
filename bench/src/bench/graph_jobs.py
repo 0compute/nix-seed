@@ -13,7 +13,6 @@ matrix still lists, and by default only the last 40 commits."""
 from __future__ import annotations
 
 import csv
-import subprocess
 from collections import defaultdict
 from pathlib import Path
 
@@ -25,28 +24,17 @@ from bench.common import (
     WORKFLOWS,
     cap,
     commit_order,
+    commit_ticks,
     configure,
     current_examples,
     draw_series,
     matrix_os,
     medians,
+    relevant_commits,
     save,
 )
 
 configure()
-
-# a commit touching one of these can change what the graph measures;
-# lock commits (examples/*/.seed.lock) republish, they do not change it
-RELEVANT = (
-    "action.yaml",
-    "bin",
-    "mkseed",
-    "seed",
-    "examples/*/flake.nix",
-    "examples/*/flake.lock",
-    ".github/workflows/build-*.yaml",
-    ".github/workflows/seed-*.yaml",
-)
 
 app = typer.Typer(add_completion=False)
 
@@ -92,15 +80,6 @@ def load(
     return list(ordinal), lanes
 
 
-def relevant_commits(repo: Path) -> set[str]:
-    """Commits that touched a RELEVANT path, from the repository's log."""
-    log = subprocess.check_output(
-        ["git", "-C", str(repo), "log", "--format=%H", "--", *RELEVANT],
-        text=True,
-    )
-    return set(log.split())
-
-
 def render(
     source: Path,
     out: Path,
@@ -126,20 +105,10 @@ def render(
             shown += [v for _, v in points]
             draw_series(ax, points, workflow)
         cap(ax, shown)
-        ax.set_xlim(first - 0.5, len(commits) - 0.5)
-        ax.set_xticks(
-            range(first, len(commits)),
-            [sha[:7] if sha in labelled else "" for sha in commits[first:]],
-            rotation=90,
-            fontsize="x-small",
-        )
+        commit_ticks(ax, commits, first, labelled)
         example, os = lane
         ax.set_title(f"{example} on {os}: job wall clock, successful runs")
         ax.set_ylabel("seconds")
-        ax.set_xlabel(
-            "commits in order of first run; labelled where the consumer, "
-            "the seed or the examples changed"
-        )
         ax.grid(alpha=0.3)
         ax.legend(
             title=(
