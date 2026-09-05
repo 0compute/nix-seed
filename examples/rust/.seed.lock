@@ -1,8 +1,7 @@
 {
   "repository": "ghcr.io/roundtablelove/nix-seed/examples/rust/seed",
   "systems": {
-    "aarch64-darwin": "sha256:e5b767acc5c1ed818873b2f2d79e7bd991e2f75c81fc56b0d5685b1bedbfa4d2",
-    "aarch64-linux": "sha256:cd6a422cfd92180da23c6f3693a5014b5b750e22db15df954e2ebc1a2f2da01c"
+    "aarch64-linux": "sha256:73582118570abcaeedb3a7c347ca80295b411935d0a4fd89376bc90c13f01227"
   },
-  "tag": "8ac55f737f4800f40e01ca8543368629d4888373"
+  "tag": "047c36c256b79285946b4bb51fbd9250a2e7db9f"
 }
