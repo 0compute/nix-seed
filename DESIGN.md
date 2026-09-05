@@ -195,14 +195,16 @@ choice:
   from an overlayfs copy-up of the merged root; `hdiutil` has no analogue, so
   the image is attached `-owners off`, which presents it as the mounting
   user's. Nix then runs unprivileged exactly as on Linux.
-- **`/nix/var` is not part of the image.** The image holds only what becomes
-  `/nix/store`, attached there directly rather than at `/nix`; `/nix/var` is a
-  plain directory the consumer creates on the runner's real disk, `chown`ed
-  like Linux's. Baking it into the image (the first design) put every database
-  write behind the `-shadow` file's copy-on-write, the same block-level
-  indirection that makes attach itself expensive - `nix-store --load-db` cost
-  about 1s there against 0.15s for the identical write on Linux's native
-  `/nix/var`.
+- **`/nix/var` is a symlink out of the image, not a directory in it.** The
+  synthetic `/nix` mountpoint accepts only a single mount - a subdirectory
+  cannot be pre-created under it to attach the store alone - so the whole
+  image is still attached at `/nix`. `/nix/var` inside it is a symlink to a
+  fixed path, `/private/var/nix-seed`, which the consumer creates as an
+  ordinary directory before attaching. Baking `/nix/var` as a real directory
+  in the image (the first design) put every database write behind the
+  `-shadow` file's copy-on-write, the same block-level indirection that makes
+  attach itself expensive - `nix-store --load-db` cost about 1s there against
+  0.15s for the identical write on Linux's native `/nix/var`.
 - **The image is built outside the sandbox.** `hdiutil` needs
   `diskarbitrationd`, so unlike `mksquashfs` it cannot run in a `runCommand`.
   On Darwin `mkSeed` therefore emits the image's *inputs* - the same

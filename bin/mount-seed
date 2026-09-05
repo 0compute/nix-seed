@@ -176,19 +176,19 @@ if [[ $(uname -s) == Darwin ]]; then
   zstd -d --quiet <"$out/store.dmg.zst" >"$out/store.dmg"
   echo '::endgroup::'
   echo '::group::seed: mount'
-  # attached at /nix/store, not /nix: /nix/var stays a plain directory on
-  # the runner's real disk rather than living behind the image's shadow
-  # file, matching linux's ro-store-plus-native-var split. a database
-  # write is then ordinary disk I/O on both platforms. see DESIGN.md#macos.
-  sudo mkdir -p /nix/store /nix/var/nix
+  # /nix/var in the image is a symlink to this fixed path (bin/make-dmg),
+  # created here as a plain directory on the runner's real disk before
+  # attach: a database write then reaches native disk directly rather
+  # than the image's -shadow copy-on-write file. see DESIGN.md#macos.
+  sudo mkdir -p /private/var/nix-seed/nix
+  sudo chown -R "$(id -u):$(id -g)" /private/var/nix-seed
   sudo hdiutil attach "$out/store.dmg" \
     -shadow "${RUNNER_TEMP:-/tmp}/seed.shadow" \
-    -mountpoint /nix/store \
+    -mountpoint /nix \
     -owners off -nobrowse -noautoopen -noverify
-  sudo chown -R "$(id -u):$(id -g)" /nix/var
   echo '::endgroup::'
 
-  seedmeta=/nix/store/.seed
+  seedmeta=/nix/.seed
 
 else
 

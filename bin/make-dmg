@@ -49,16 +49,23 @@ hdiutil create -size "${megs}m" -fs 'Case-sensitive APFS' \
 hdiutil attach "$work/rw.sparseimage" -mountpoint "$mnt" \
   -owners off -nobrowse -noautoopen
 
-mkdir -p "$mnt/.seed"
+mkdir -p "$mnt/store" "$mnt/.seed"
 
-# ditto preserves modes and symlinks; store paths land at the image root
-# by basename, so the volume mount-seed attaches at /nix/store *is*
-# /nix/store. /nix/var is deliberately absent: mount-seed creates it on
-# the runner's real disk instead, outside this image, so a database
-# write is not a copy-on-write into the shadow file. see DESIGN.md#macos.
+# /nix/var is a symlink to a fixed path outside the image, not a
+# directory inside it: mount-seed attaches the whole image at /nix (the
+# synthetic mountpoint accepts nothing else -- a subdirectory cannot be
+# pre-created there to attach the store alone), so anything actually
+# stored under /nix/var would sit behind the -shadow copy-on-write file
+# like the rest of the volume. The symlink's target is real disk instead,
+# created by mount-seed before attach; nix follows it transparently.
+# see DESIGN.md#macos.
+ln -s /private/var/nix-seed "$mnt/var"
+
+# ditto preserves modes and symlinks; store paths land under store/ by
+# basename, so the volume mounted at /nix *is* /nix/store.
 while read -r p; do
   [[ -n $p ]] || continue
-  ditto "$p" "$mnt/${p##*/}"
+  ditto "$p" "$mnt/store/${p##*/}"
 done <"$stage/store-paths"
 
 cp "$stage/registration" "$mnt/.seed/registration"
