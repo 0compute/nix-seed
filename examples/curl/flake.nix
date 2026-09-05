@@ -30,7 +30,7 @@
           # curlMinimal.override, not a pkgs-wide overlay: only this one
           # package's zlib argument is replaced, everything else curl
           # links stays substitutable from cache.nixos.org.
-          default = pkgs.curlMinimal.override {
+          default = pkgs.curl.override {
             # deliberately non-upstream: a patched dependency can never be
             # substituted from cache.nixos.org, and curl rebuilds from
             # source behind it, so the caching workflows have a real
