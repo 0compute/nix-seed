@@ -1,0 +1,7 @@
+{
+  "repository": "ghcr.io/roundtablelove/nix-seed/examples/imagemagick/seed",
+  "systems": {
+    "aarch64-linux": "sha256:7037ed008beb87be800c0d154814fd7181436f905a5ac87f9ff0c725c2f26992"
+  },
+  "tag": "8d7e1c3333d1a8384318d44766725b8ba29eee3c"
+}
