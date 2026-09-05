@@ -189,8 +189,12 @@ choice:
   failure even when it succeeds, so the consumer tests for the directory
   rather than trusting the exit status, and the flag is spelled `-B` before
   macOS 26.
-- **The filesystem must be case-sensitive.** APFS defaults to insensitive, and
-  a store holds paths differing only in case.
+- **The filesystem must be case-sensitive.** A store holds paths differing
+  only in case, and both APFS and HFS+ default to insensitive. The base image
+  is Case-sensitive Journaled HFS+, not APFS: attach cost tracks file count
+  (see below), and HFS+'s flat catalog B-tree is lighter to walk per file on
+  attach than APFS's copy-on-write object map. `bin/make-dmg` used APFS
+  originally; this is under measurement, not yet a settled finding.
 - **Ownership comes from the mount, not a `chown`.** Linux gets a cheap chown
   from an overlayfs copy-up of the merged root; `hdiutil` has no analogue, so
   the image is attached `-owners off`, which presents it as the mounting
