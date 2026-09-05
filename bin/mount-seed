@@ -171,9 +171,12 @@ if [[ $(uname -s) == Darwin ]]; then
   # and a 5-9x spread in evaluation time. see DESIGN.md#macos. zstd
   # ships on GitHub's macOS images (actions/cache depends on it too).
   # via stdin: zstd ignores a symlink named as an input file, and
-  # $out/store.dmg.zst is one (into the verified blob).
+  # $out/store.dmg.zst is one (into the verified blob). -T0: bin/make-dmg
+  # compresses with -T0 too, which splits the stream into one frame per
+  # thread, so decode can run those frames in parallel on the same core
+  # count rather than the single thread `zstd -d` defaults to.
   echo '::group::seed: decode'
-  zstd -d --quiet <"$out/store.dmg.zst" >"$out/store.dmg"
+  zstd -d -T0 --quiet <"$out/store.dmg.zst" >"$out/store.dmg"
   echo '::endgroup::'
   echo '::group::seed: mount'
   # /nix/var in the image is a symlink to this fixed path (bin/make-dmg),
