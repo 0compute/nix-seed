@@ -56,6 +56,10 @@ START = re.compile(
 END = re.compile(
     r"##\[end-action id=(?P<id>[^;]*);.*?duration_ms=(?P<ms>\d+)\]"
 )
+# a mount-seed phase marker or its close, with the line's timestamp
+PHASE = re.compile(
+    r"^(?P<when>\S+Z) ##\[(?:group\](?P<name>seed: [^\r]*)|endgroup\])"
+)
 
 app = typer.Typer(add_completion=False)
 
@@ -158,6 +162,25 @@ def composite_steps(log: str) -> list[tuple[str, float]]:
     return steps
 
 
+def phase_steps(log: str) -> list[tuple[str, float]]:
+    """(name, seconds) for each `::group::seed: <phase>` that bin/mount-seed
+    prints, timed from the log's line timestamps to the matching
+    `::endgroup::`."""
+    steps = []
+    opened: tuple[str, datetime] | None = None
+    for line in log.splitlines():
+        m = PHASE.search(line)
+        if m is None:
+            continue
+        when = timestamp(m["when"])
+        if m["name"] is not None:
+            opened = (m["name"], when)
+        elif opened is not None:
+            steps.append((opened[0], (when - opened[1]).total_seconds()))
+            opened = None
+    return steps
+
+
 def completed_runs(client: Client) -> list[Run]:
     runs = []
     for workflow in WORKFLOWS:
@@ -220,7 +243,8 @@ def rows(client: Client, run: Run) -> Iterator[dict[str, object]]:
             for s in job["steps"]
         ]
         if run.workflow == "build-examples":
-            steps += composite_steps(client.log(job["id"]))
+            log = client.log(job["id"])
+            steps += composite_steps(log) + phase_steps(log)
         for name, secs in steps:
             yield {**base, "step": name, "seconds": secs}
 

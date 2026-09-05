@@ -34,8 +34,21 @@ configure()
 WORKFLOW = "build-examples"
 # the composite action's steps and the consumer's own build, in execution
 # order (the post step runs after the build). `pull seed` is what `mount
-# seed` was called before the cache existed.
-STEPS = ("seed digest", "cache pull", "mount seed", "build", "post cache pull")
+# seed` was called before the cache existed. from 2026-09-05 mount-seed
+# reports its phases (`seed: fetch` ...); where they exist the `mount
+# seed` total is dropped so the bar does not count them twice.
+STEPS = (
+    "seed digest",
+    "cache pull",
+    "mount seed",
+    "seed: fetch",
+    "seed: decode",
+    "seed: mount",
+    "seed: load db",
+    "build",
+    "post cache pull",
+)
+PHASES = tuple(s for s in STEPS if s.startswith("seed: "))
 RENAMED = {"pull seed": "mount seed"}
 
 app = typer.Typer(add_completion=False)
@@ -80,6 +93,10 @@ def load(
     for run_id, example, os, step, secs in rows:
         _, sha = runs[run_id]
         samples[example, os][step][ordinal[sha]].append(secs)
+    for steps in samples.values():
+        phased = {x for p in PHASES for x in steps.get(p, {})}
+        for x in phased:
+            steps.get("mount seed", {}).pop(x, None)
     return list(ordinal), samples
 
 
