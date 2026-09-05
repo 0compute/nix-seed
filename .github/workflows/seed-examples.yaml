@@ -43,6 +43,8 @@ jobs:
       id-token: write
       packages: write
     strategy:
+      # one example or platform failing should not cancel seeding the others
+      fail-fast: false
       matrix:
         example: ${{ fromJSON(needs.setup.outputs.examples) }}
         os:

@@ -39,6 +39,15 @@
                   echo '/* nix-seed benchmark */' >>x264.h
                 '';
               });
+              # forcing x264 to rebuild also forces ffmpeg-headless (an
+              # input of ffmpeg-full) to rebuild, which re-runs its FATE
+              # test suite -- normally skipped, since cache.nixos.org
+              # ships an already-tested build. fate-seek-hls fails in
+              # this sandbox; disabled since correctness of ffmpeg's own
+              # tests is not what this example measures.
+              ffmpeg-headless = prev.ffmpeg-headless.overrideAttrs (_: {
+                doCheck = false;
+              });
             }
           );
         in
