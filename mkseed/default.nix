@@ -100,15 +100,21 @@ let
   # every store path the seed must contain, as closureInfo rootPaths:
   #   - nix itself: the consumer runs it from the mounted store.
   #   - pathEnv: the buildEnv exposed at .seed/env (bin/ + etc/nix.conf).
-  #   - stdenv: `inputDerivation` (below) deliberately never sources
-  #     `$stdenv/setup` -- nixpkgs' own comment on it is "does not use
-  #     setup.sh or stdenv, to keep the env most pristine" -- so
-  #     stdenv's own store path never appears in what it captures.
+  #   - stdenv and stdenvNoCC: `inputDerivation` (below) deliberately
+  #     never sources `$stdenv/setup` -- nixpkgs' own comment on it is
+  #     "does not use setup.sh or stdenv, to keep the env most pristine"
+  #     -- so neither's store path ever appears in what it captures.
   #     `nix build` never notices, since a package whose output is
   #     already registered valid skips its builder (and so setup.sh)
   #     entirely; `nix develop` always re-runs part of the build to
-  #     construct the interactive environment, which does source it,
-  #     and fails trying to rebuild stdenv itself from scratch offline.
+  #     construct the interactive environment, which does source it.
+  #     both variants are needed: a devShell pulling in a prebuilt
+  #     toolchain (e.g. rust-overlay, which unpacks rather than
+  #     compiles) is built with stdenvNoCC, a genuinely different
+  #     derivation from stdenv, not merely stdenv without a compiler
+  #     attached later -- confirmed by finding nix develop, offline,
+  #     rebuilding stdenvNoCC's *own* recipe from bootstrap-tools up
+  #     when it alone was missing.
   #   - every flake input source, recursively -> offline flake
   #     *evaluation* (nix reads each locked input from the store).
   #   - each output's inputDerivation -> its full build-input closure,
@@ -119,6 +125,7 @@ let
       nix
       pathEnv
       stdenv
+      pkgs.stdenvNoCC
     ]
     ++ (
       let
