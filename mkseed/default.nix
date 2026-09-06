@@ -100,14 +100,25 @@ let
   # every store path the seed must contain, as closureInfo rootPaths:
   #   - nix itself: the consumer runs it from the mounted store.
   #   - pathEnv: the buildEnv exposed at .seed/env (bin/ + etc/nix.conf).
+  #   - stdenv: `inputDerivation` (below) deliberately never sources
+  #     `$stdenv/setup` -- nixpkgs' own comment on it is "does not use
+  #     setup.sh or stdenv, to keep the env most pristine" -- so
+  #     stdenv's own store path never appears in what it captures.
+  #     `nix build` never notices, since a package whose output is
+  #     already registered valid skips its builder (and so setup.sh)
+  #     entirely; `nix develop` always re-runs part of the build to
+  #     construct the interactive environment, which does source it,
+  #     and fails trying to rebuild stdenv itself from scratch offline.
   #   - every flake input source, recursively -> offline flake
   #     *evaluation* (nix reads each locked input from the store).
   #   - each output's inputDerivation -> its full build-input closure,
-  #     so the build runs offline without rebuilding stdenv/glibc.
+  #     so the build runs offline without rebuilding the rest of the
+  #     toolchain (rustc, glibc, ...).
   closure = pkgs.closureInfo {
     rootPaths = [
       nix
       pathEnv
+      stdenv
     ]
     ++ (
       let
