@@ -70,6 +70,7 @@ ln -s /private/var/nix-seed "$mnt/var"
 # basename, so the volume mounted at /nix *is* /nix/store.
 while read -r p; do
   [[ -n $p ]] || continue
+  echo >&2 "$(date -u +%H:%M:%S) ditto: $p"
   ditto "$p" "$mnt/store/${p##*/}"
 done <"$stage/store-paths"
 
