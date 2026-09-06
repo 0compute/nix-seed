@@ -120,6 +120,63 @@ let
   #   - each output's inputDerivation -> its full build-input closure,
   #     so the build runs offline without rebuilding the rest of the
   #     toolchain (rustc, glibc, ...).
+  #   - every declared output of every output's direct build inputs,
+  #     not just whichever one inputDerivation happened to capture: a
+  #     bare `buildInputs = [ foo ]` expands to foo's "out" *and* "dev"
+  #     via stdenv's multiple-outputs.sh setup hook, but inputDerivation
+  #     never sources setup.sh (see above), so a second output picked up
+  #     only through that hook -- e.g. libiconv's "dev", on a devShell
+  #     compiling against it -- is invisible to it. confirmed the same
+  #     way as stdenvNoCC: nix develop, offline, rebuilding libiconv
+  #     from its own recipe (bootstrap-stage2-stdenv-darwin up) when
+  #     just its "dev" output alone was missing.
+  # derivations the consumer flake exposes: apps, checks, devShells,
+  # packages. isDerivation reads only `.type` (cheap); the isNixSeed
+  # guard drops a nested seed before its inputDerivation is taken
+  # (which would recurse into this seed's own closure); selfFilter is
+  # the value-level predicate.
+  harvested = lib.filter
+    (
+      drv:
+      tryWarn "skipping a flake output that threw" false (
+        lib.isDerivation drv && !drv ? isNixSeed && selfFilter drv
+      )
+    )
+    (
+      let
+        outputs =
+          attr:
+          lib.attrValues (
+            lib.filterAttrs (name: _: selfFilterName name) (
+              self.${attr}.${system} or { }
+            )
+          );
+      in
+      # apps have { type = "app"; program = "..."; }.
+      map (app: app.package or null) (outputs "apps")
+      ++ lib.concatMap outputs [
+        "checks"
+        "devShells"
+        "packages"
+      ]
+    );
+  buildTimeRoots = lib.concatMap
+    (
+      drv:
+      tryWarn "no build inputs for a flake output (threw)" [ ] (
+        lib.concatMap (
+          input: if lib.isDerivation input then map (o: input.${o}) (input.outputs or [ "out" ]) else [ input ]
+        ) (
+          lib.concatMap (attr: drv.${attr} or [ ]) [
+            "buildInputs"
+            "nativeBuildInputs"
+            "propagatedBuildInputs"
+            "propagatedNativeBuildInputs"
+          ]
+        )
+      )
+    )
+    harvested;
   closure = pkgs.closureInfo {
     rootPaths = [
       nix
@@ -145,38 +202,9 @@ let
             drv.inputDerivation or drv
           )
         )
-        # derivations the consumer flake exposes. isDerivation reads only
-        # `.type` (cheap); the isNixSeed guard drops a nested seed before
-        # its inputDerivation is taken (which would recurse into this
-        # seed's own closure); selfFilter is the value-level predicate.
-        (
-          lib.filter
-            (
-              drv:
-              tryWarn "skipping a flake output that threw" false (
-                lib.isDerivation drv && !drv ? isNixSeed && selfFilter drv
-              )
-            )
-            (
-              let
-                outputs =
-                  attr:
-                  lib.attrValues (
-                    lib.filterAttrs (name: _: selfFilterName name) (
-                      self.${attr}.${system} or { }
-                    )
-                  );
-              in
-              # apps have { type = "app"; program = "..."; }.
-              map (app: app.package or null) (outputs "apps")
-              ++ lib.concatMap outputs [
-                "checks"
-                "devShells"
-                "packages"
-              ]
-            )
-        )
-    );
+        harvested
+    )
+    ++ buildTimeRoots;
   };
 
   # the seed: a squashfs of the build closure the consumer mounts as
