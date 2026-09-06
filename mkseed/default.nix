@@ -115,6 +115,15 @@ let
   #     attached later -- confirmed by finding nix develop, offline,
   #     rebuilding stdenvNoCC's *own* recipe from bootstrap-tools up
   #     when it alone was missing.
+  #   - bashInteractive: nix develop always needs a real, readline-
+  #     capable bash to build its interactive environment against,
+  #     regardless of what any devShell declares -- this is nix's own
+  #     choice, not the flake's, so nothing a consumer's flake exposes
+  #     ever references it and no other rule here would catch it.
+  #     confirmed the same way as stdenv/stdenvNoCC and libiconv above:
+  #     nix develop, offline, rebuilding it from its own recipe
+  #     (gettext, perl, bison, m4, readline -- and so bootstrap-tools up
+  #     to build *them*) when it alone was missing.
   #   - every flake input source, recursively -> offline flake
   #     *evaluation* (nix reads each locked input from the store).
   #   - each output's inputDerivation -> its full build-input closure,
@@ -183,6 +192,7 @@ let
       pathEnv
       stdenv
       pkgs.stdenvNoCC
+      pkgs.bashInteractive
     ]
     ++ (
       let
