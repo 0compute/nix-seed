@@ -10,7 +10,9 @@ fetched too. Post-job steps of the composite are prefixed `post `. A
 build-examples job also gets one `seed size` row, its `bytes` column
 holding the seed artifact's compressed size on the wire -- summed from
 bin/mount-seed's own parallel-stream download reports in that same log,
-so no extra registry call is needed.
+so no extra registry call is needed. A build-cache-nix-examples job
+gets a `cache size` row the same way, from cache-nix-action's own
+restored-archive report -- absent on a cache miss.
 
 Idempotent: runs already in the CSV are skipped, rows are appended per
 run, and the command exits early when nothing is new. Logs older than
@@ -71,6 +73,10 @@ PHASE = re.compile(
 # compressed size (store.squashfs or store.dmg.zst -- whichever this run
 # fetched), with no separate call to the registry needed.
 STREAM = re.compile(r"^\S+Z \S+: (?P<bytes>\d+) B [\d.]+s$", re.MULTILINE)
+# nix-community/cache-nix-action (a thin wrapper over actions/cache)
+# printing the archive size on a restore; only present on a cache hit,
+# same as actions/cache upstream -- a miss has nothing to report yet.
+CACHE = re.compile(r"Cache Size: ~[\d.]+ \S+ \((?P<bytes>\d+) B\)")
 
 app = typer.Typer(add_completion=False)
 
@@ -203,6 +209,14 @@ def seed_bytes(log: str) -> int | None:
     return sum(int(m["bytes"]) for m in matches)
 
 
+def cache_bytes(log: str) -> int | None:
+    """Compressed size of the actions/cache archive restored, straight
+    from cache-nix-action's own report. None on a cache miss, when there
+    is nothing to restore yet -- the run's first ever, or a key change."""
+    m = CACHE.search(log)
+    return int(m["bytes"]) if m else None
+
+
 def completed_runs(client: Client) -> list[Run]:
     runs = []
     for workflow in WORKFLOWS:
@@ -264,15 +278,17 @@ def rows(client: Client, run: Run) -> Iterator[dict[str, object]]:
             (s["name"], seconds(s["started_at"], s["completed_at"]))
             for s in job["steps"]
         ]
-        size = None
+        size = size_step = None
         if run.workflow == "build-examples":
             log = client.log(job["id"])
             steps += composite_steps(log) + phase_steps(log)
-            size = seed_bytes(log)
+            size, size_step = seed_bytes(log), "seed size"
+        elif run.workflow == "build-cache-nix-examples":
+            size, size_step = cache_bytes(client.log(job["id"])), "cache size"
         for name, secs in steps:
             yield {**base, "step": name, "seconds": secs}
         if size is not None:
-            yield {**base, "step": "seed size", "bytes": size}
+            yield {**base, "step": size_step, "bytes": size}
 
 
 def recorded(target: Path) -> set[int]:

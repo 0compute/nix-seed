@@ -47,6 +47,11 @@
           command = ''python -m bench.graph_self "$@"'';
           help = "graph build-examples step times from bench/workflows.csv";
         }
+        {
+          name = "bench-graph-size";
+          command = ''python -m bench.graph_size "$@"'';
+          help = "graph seed vs cache artifact size from bench/workflows.csv";
+        }
       ];
     };
 
