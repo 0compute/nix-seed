@@ -6,7 +6,11 @@ the job's wall clock. Top-level steps come from the jobs API; the steps
 inside the nix-seed composite action (seed digest, cache pull, mount
 seed) only exist in the job log, as `##[start-action display=...]` /
 `##[end-action ...;duration_ms=N]` markers, so build-examples logs are
-fetched too. Post-job steps of the composite are prefixed `post `.
+fetched too. Post-job steps of the composite are prefixed `post `. A
+build-examples job also gets one `seed size` row, its `bytes` column
+holding the seed artifact's compressed size on the wire -- summed from
+bin/mount-seed's own parallel-stream download reports in that same log,
+so no extra registry call is needed.
 
 Idempotent: runs already in the CSV are skipped, rows are appended per
 run, and the command exits early when nothing is new. Logs older than
@@ -49,6 +53,7 @@ FIELDS = (
     "conclusion",
     "step",
     "seconds",
+    "bytes",
 )
 JOB_NAME = re.compile(r"^build \((?P<example>[^,]+), (?P<os>[^)]+)\)$")
 START = re.compile(
@@ -61,6 +66,11 @@ END = re.compile(
 PHASE = re.compile(
     r"^(?P<when>\S+Z) ##\[(?:group\](?P<name>seed: [^\r]*)|endgroup\])"
 )
+# one of bin/mount-seed's parallel range-fetch streams reporting its own
+# downloaded bytes; summed across streams, this is the seed artifact's
+# compressed size (store.squashfs or store.dmg.zst -- whichever this run
+# fetched), with no separate call to the registry needed.
+STREAM = re.compile(r"^\S+Z \S+: (?P<bytes>\d+) B [\d.]+s$", re.MULTILINE)
 
 app = typer.Typer(add_completion=False)
 
@@ -182,6 +192,17 @@ def phase_steps(log: str) -> list[tuple[str, float]]:
     return steps
 
 
+def seed_bytes(log: str) -> int | None:
+    """Total bytes bin/mount-seed downloaded for the seed artifact: the
+    push is a single OCI blob, fetched as N parallel ranges, so summing
+    every stream's own reported byte count gives that blob's size --
+    the seed's compressed size on the wire -- with no registry call."""
+    matches = list(STREAM.finditer(log))
+    if not matches:
+        return None
+    return sum(int(m["bytes"]) for m in matches)
+
+
 def completed_runs(client: Client) -> list[Run]:
     runs = []
     for workflow in WORKFLOWS:
@@ -243,11 +264,15 @@ def rows(client: Client, run: Run) -> Iterator[dict[str, object]]:
             (s["name"], seconds(s["started_at"], s["completed_at"]))
             for s in job["steps"]
         ]
+        size = None
         if run.workflow == "build-examples":
             log = client.log(job["id"])
             steps += composite_steps(log) + phase_steps(log)
+            size = seed_bytes(log)
         for name, secs in steps:
             yield {**base, "step": name, "seconds": secs}
+        if size is not None:
+            yield {**base, "step": "seed size", "bytes": size}
 
 
 def recorded(target: Path) -> set[int]:
