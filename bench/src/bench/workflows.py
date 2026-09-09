@@ -1,13 +1,21 @@
-"""Collect step timings of the build-* example workflows into a CSV.
+"""Collect step timings of the build-* example workflows, and of
+seed-examples (the seed *producer*, DESIGN.md's "slow half" -- distinct
+from the build-* workflows, all of which are seed *consumers*), into a
+CSV.
 
 One `run` row per completed run (its wall clock), then one row per step
-of every `build (<example>, <os>)` job of that run, plus a `job` row with
-the job's wall clock. Top-level steps come from the jobs API; the steps
-inside the nix-seed composite action (seed digest, cache pull, mount
-seed) only exist in the job log, as `##[start-action display=...]` /
-`##[end-action ...;duration_ms=N]` markers, so build-examples logs are
-fetched too. Post-job steps of the composite are prefixed `post `. A
-build-examples job also gets one `seed size` row, its `bytes` column
+of every `build (<example>, <os>)` / `seed (<example>, <os>)` job of
+that run, plus a `job` row with the job's wall clock. Top-level steps
+come from the jobs API; the steps inside a composite action (seed
+digest, cache pull, mount seed for build-examples; Nix Setup, Cachix
+Setup, Build seed for seed-examples) only exist in the job log, as
+`##[start-action display=...]` / `##[end-action ...;duration_ms=N]`
+markers, so those two workflows' logs are fetched too. Post-job steps
+of a composite are prefixed `post `. bin/build-seed has no internal
+phase markers of its own (unlike bin/mount-seed), so seed-examples'
+"Build seed" step is one opaque total rather than a further breakdown.
+
+A build-examples job also gets one `seed size` row, its `bytes` column
 holding the seed artifact's compressed size on the wire -- summed from
 bin/mount-seed's own parallel-stream download reports in that same log,
 so no extra registry call is needed. A build-cache-nix-examples job
@@ -41,7 +49,12 @@ from pathlib import Path
 import typer
 
 REPO = "roundtablelove/nix-seed"
-WORKFLOWS = ("build-examples", "build-cache-nix-examples", "build-raw-examples")
+WORKFLOWS = (
+    "build-examples",
+    "build-cache-nix-examples",
+    "build-raw-examples",
+    "seed-examples",
+)
 API = f"https://api.github.com/repos/{REPO}"
 FIELDS = (
     "run_id",
@@ -57,7 +70,10 @@ FIELDS = (
     "seconds",
     "bytes",
 )
-JOB_NAME = re.compile(r"^build \((?P<example>[^,]+), (?P<os>[^)]+)\)$")
+# build-examples/build-cache-nix-examples/build-raw-examples name their
+# matrix jobs "build (<example>, <os>)"; seed-examples names its own
+# matrix job "seed (<example>, <os>)" -- same shape, different verb.
+JOB_NAME = re.compile(r"^(?:build|seed) \((?P<example>[^,]+), (?P<os>[^)]+)\)$")
 START = re.compile(
     r"##\[start-action display=(?P<name>[^;]*);id=(?P<id>[^\]]*)\]"
 )
@@ -285,6 +301,12 @@ def rows(client: Client, run: Run) -> Iterator[dict[str, object]]:
             size, size_step = seed_bytes(log), "seed size"
         elif run.workflow == "build-cache-nix-examples":
             size, size_step = cache_bytes(client.log(job["id"])), "cache size"
+        elif run.workflow == "seed-examples":
+            # the seed/ composite action's own steps (Nix Setup, the
+            # optional Cachix Setup, Build seed itself); bin/build-seed
+            # has no internal phase markers of its own, unlike
+            # bin/mount-seed, so "Build seed" is one opaque total.
+            steps += composite_steps(client.log(job["id"]))
         for name, secs in steps:
             yield {**base, "step": name, "seconds": secs}
         if size is not None:

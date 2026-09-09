@@ -120,13 +120,13 @@ def current_examples(examples: Path) -> set[str]:
     }
 
 
-def matrix_os(workflows: Path, workflow: str) -> set[str]:
-    """The runners the workflow's build matrix lists today: runners it
-    used to run on are history, not a series worth a line."""
+def matrix_os(workflows: Path, workflow: str, job: str = "build") -> set[str]:
+    """The runners the workflow's JOB matrix lists today: runners it
+    used to run on are history, not a series worth a line. JOB is the
+    workflow's own job key -- "build" for the build-* workflows,
+    "seed" for seed-examples."""
     with (workflows / f"{workflow}.yaml").open() as f:
-        return set(
-            yaml.safe_load(f)["jobs"]["build"]["strategy"]["matrix"]["os"]
-        )
+        return set(yaml.safe_load(f)["jobs"][job]["strategy"]["matrix"]["os"])
 
 
 # a commit touching one of these can change what the graphs measure;

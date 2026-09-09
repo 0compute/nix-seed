@@ -52,6 +52,11 @@
           command = ''python -m bench.graph_size "$@"'';
           help = "graph seed vs cache artifact size from bench/workflows.csv";
         }
+        {
+          name = "bench-graph-seed";
+          command = ''python -m bench.graph_seed "$@"'';
+          help = "graph seed-examples (the seed producer) step times";
+        }
       ];
     };
 

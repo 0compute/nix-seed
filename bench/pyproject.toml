@@ -15,6 +15,7 @@ bench-workflows = "bench.workflows:app"
 bench-graph-jobs = "bench.graph_jobs:app"
 bench-graph-self = "bench.graph_self:app"
 bench-graph-size = "bench.graph_size:app"
+bench-graph-seed = "bench.graph_seed:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]

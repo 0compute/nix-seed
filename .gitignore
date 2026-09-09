@@ -1,7 +1,8 @@
+bench/workflows.lock
+/.claude/
 /.env
 /.env.artstd
 /.nvim.local.lua
 __pycache__/
-bench/workflows.lock
 result
 result-out/
